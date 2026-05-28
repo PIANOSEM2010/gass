@@ -1,10 +1,15 @@
-export default function Page() {
-  return (
-    <div className="px-4 pt-8 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Peta Jalur</h1>
-      <div className="bg-white rounded-xl p-6 text-center text-gray-500">
-        Fitur sedang dikembangkan.
-      </div>
-    </div>
-  );
+import { createClient } from "@/lib/supabase/server";
+import PetaWrapper from "./peta-wrapper";
+
+export default async function PetaPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: markers } = await supabase
+    .from("road_markers")
+    .select("*")
+    .eq("approved", true)
+    .order("created_at", { ascending: false });
+
+  return <PetaWrapper initialMarkers={markers || []} userId={user?.id || null} />;
 }
