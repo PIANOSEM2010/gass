@@ -59,13 +59,26 @@ export default function SosButton({
         `Waktu: ${new Date().toLocaleString("id-ID")}\n\n` +
         `Pesan otomatis dari GASS (Goweser Aman, Saling Sadar).`;
 
-      const supabase = createClient();
+     const supabase = createClient();
       await supabase.from("sos_logs").insert({
         user_id: userId,
         lat: location.lat,
         lng: location.lng,
         message,
       });
+
+      // Fire-and-forget: kirim email backup ke admin
+      const { data: { user } } = await supabase.auth.getUser();
+      fetch("/api/sos-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lat: location.lat,
+          lng: location.lng,
+          userName,
+          userEmail: user?.email || null,
+        }),
+      }).catch((e) => console.warn("Email SOS gagal terkirim:", e));
 
       const waUrl = `https://wa.me/${primaryContact.whatsapp}?text=${encodeURIComponent(message)}`;
       window.open(waUrl, "_blank");

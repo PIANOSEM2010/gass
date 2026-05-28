@@ -11,7 +11,7 @@ export default async function AdminSosPage() {
   return (
     <div className="px-4 pt-6 pb-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">SOS Logs</h1>
-      <p className="text-sm text-gray-600 mb-6">100 SOS terbaru.</p>
+      <p className="text-sm text-gray-600 mb-6">Menampilkan {logs?.length || 0} dari maks. 100 SOS terbaru.</p>
       {(!logs || logs.length === 0) ? (
         <div className="bg-white rounded-xl p-8 text-center text-gray-500">Belum ada SOS tercatat.</div>
       ) : (
