@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return (
       <div className="px-4 pt-12 max-w-md mx-auto text-center">
         <h1 className="text-2xl font-bold text-red-700 mb-2">Akses Ditolak</h1>
-        <p className="text-gray-600 mb-6">Halaman ini khusus untuk admin GASS.</p>
+        <p className="text-gray-600 mb-6">Halaman ini khusus untuk admin BUG.</p>
         <Link href="/" className="inline-block bg-green-600 text-white px-5 py-2 rounded-lg font-medium">
           Kembali ke Beranda
         </Link>

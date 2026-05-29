@@ -43,7 +43,7 @@ export default async function AdminDashboard() {
   return (
     <div className="px-4 pt-6 pb-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
-      <p className="text-sm text-gray-600 mb-6">Ringkasan aktivitas platform GASS.</p>
+      <p className="text-sm text-gray-600 mb-6">Ringkasan aktivitas platform BUG.</p>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         {stats.map((s) => {

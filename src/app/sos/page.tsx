@@ -46,7 +46,7 @@ export default async function SosPage() {
       ) : (
         <SosButton
           userId={user.id}
-          userName={profile?.full_name || "Pengguna GASS"}
+          userName={profile?.full_name || "Pengguna BUG"}
           contacts={contacts}
         />
       )}
@@ -74,7 +74,7 @@ export default async function SosPage() {
         <p className="font-semibold mb-1">Cara kerja tombol SOS:</p>
         <ol className="list-decimal list-inside space-y-1">
           <li>Tekan tombol merah selama 2 detik</li>
-          <li>GASS akan minta izin akses lokasi GPS</li>
+          <li>BUG akan minta izin akses lokasi GPS</li>
           <li>WhatsApp terbuka otomatis ke kontak utama dengan pesan + koordinat</li>
           <li>Kejadian disimpan di riwayat SOS</li>
         </ol>

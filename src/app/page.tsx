@@ -13,8 +13,8 @@ export default function Home() {
   return (
     <div className="px-4 pt-8 max-w-md mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-green-700">GASS</h1>
-        <p className="text-sm text-gray-600 mt-1">Goweser Aman, Saling Sadar</p>
+        <h1 className="text-4xl font-bold text-green-700">BUG</h1>
+        <p className="text-sm text-gray-600 mt-1">Bulungan untuk Goweser</p>
         <p className="text-xs text-gray-500 mt-3 italic">&quot;Berbagi jalan, berbagi tanggung jawab&quot;</p>
       </div>
       <div className="grid grid-cols-2 gap-3">

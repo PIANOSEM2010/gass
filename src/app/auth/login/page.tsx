@@ -29,7 +29,7 @@ export default function LoginPage() {
   return (
     <div className="px-4 pt-12 max-w-md mx-auto">
       <h1 className="text-3xl font-bold text-green-700 text-center">Masuk</h1>
-      <p className="text-center text-gray-500 text-sm mt-1 mb-8">Selamat datang kembali di GASS</p>
+      <p className="text-center text-gray-500 text-sm mt-1 mb-8">Selamat datang kembali di BUG</p>
 
       <form onSubmit={handleLogin} className="bg-white rounded-xl p-6 shadow-sm space-y-4">
         <div>

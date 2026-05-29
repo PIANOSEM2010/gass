@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 <body style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #dc2626, #991b1b); color: white; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="margin: 0; font-size: 24px;">🚨 SOS DARURAT</h1>
-    <p style="margin: 4px 0 0 0; opacity: 0.9;">Platform GASS — Goweser Aman, Saling Sadar</p>
+    <p style="margin: 4px 0 0 0; opacity: 0.9;">Platform BUG — Bulungan untuk Goweser</p>
   </div>
   <div style="background: #fef2f2; padding: 24px; border: 2px solid #fecaca; border-top: 0; border-radius: 0 0 12px 12px;">
     <p style="margin: 0 0 16px 0; font-size: 16px; color: #7f1d1d;">
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     </div>
 
     <p style="margin: 20px 0 0 0; font-size: 12px; color: #6b7280; text-align: center;">
-      Pesan otomatis dari sistem GASS. Hubungi pelapor melalui WhatsApp atau lokasi terdekat.
+      Pesan otomatis dari sistem BUG. Hubungi pelapor melalui WhatsApp atau lokasi terdekat.
     </p>
   </div>
 </body>
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "GASS Alert <onboarding@resend.dev>",
+        from: "BUG Alert <onboarding@resend.dev>",
         to: [adminEmail],
         subject: `🚨 SOS dari ${userName} — Bulungan`,
         html,

@@ -52,12 +52,12 @@ export default function SosButton({
 
       const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
       const message =
-        `🚨 *SOS DARURAT — Platform GASS*\n\n` +
+        `🚨 *SOS DARURAT — Platform BUG*\n\n` +
         `${userName} membutuhkan bantuan segera.\n\n` +
         `📍 Lokasi: ${mapsUrl}\n` +
         `Koordinat: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n` +
         `Waktu: ${new Date().toLocaleString("id-ID")}\n\n` +
-        `Pesan otomatis dari GASS (Goweser Aman, Saling Sadar).`;
+        `Pesan otomatis dari BUG (Bulungan untuk Goweser).`;
 
      const supabase = createClient();
       await supabase.from("sos_logs").insert({
