@@ -1,3 +1,4 @@
+import SosAlertProvider from "./sos-alert-provider";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -21,9 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id">
       <body className={`${inter.className} bg-gray-50 min-h-screen`}>
-        <Navbar />
-        <main className="pb-20">{children}</main>
-      </body>
+  <SosAlertProvider />
+  <Navbar />
+  <main className="pb-20">{children}</main>
+</body>
     </html>
   );
 }

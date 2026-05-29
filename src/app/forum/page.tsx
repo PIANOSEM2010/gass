@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { MessageSquare, Plus, User } from "lucide-react";
+import SosActiveSection from "./sos-active-section";
 
 export default async function ForumPage() {
   const supabase = await createClient();
@@ -50,6 +51,7 @@ export default async function ForumPage() {
       <p className="text-sm text-gray-600 mb-6">
         Cerita, pertanyaan, dan laporan dari pelajar pesepeda Bulungan.
       </p>
+      <SosActiveSection />
 
       {!user && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-sm">
