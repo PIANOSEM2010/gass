@@ -21,7 +21,7 @@ export default async function AdminUsersPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-gray-900 truncate">{p.full_name || "—"}</p>
+                <p className="font-semibold text-gray-900 truncate">{p.full_name || "-"}</p>
                 {p.role === "admin" && (
                   <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Admin</span>
                 )}

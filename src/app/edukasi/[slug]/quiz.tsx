@@ -28,7 +28,7 @@ const QUIZ_BANK: Record<string, Question[]> = {
       question: "Apa prinsip utama saat menghadapi pengendara yang agresif?",
       options: ["Balas agresif", "Mengalah, keselamatan lebih penting dari gengsi", "Diam saja di tengah jalan", "Klakson balik"],
       correct: 1,
-      explanation: "Sebagai pengguna jalan rentan, mengalah bukan kalah — itu strategi bertahan hidup.",
+      explanation: "Sebagai pengguna jalan rentan, mengalah bukan kalah - itu strategi bertahan hidup.",
     },
   ],
   "etika-berbagi-jalan": [
@@ -40,13 +40,13 @@ const QUIZ_BANK: Record<string, Question[]> = {
     },
     {
       question: "Di persimpangan, prinsip yang harus dipegang adalah?",
-      options: ["Yang cepat duluan", "Sabar — 5 detik kesabaran cegah 5 minggu rumah sakit", "Klakson keras-keras", "Tutup mata, pasrah"],
+      options: ["Yang cepat duluan", "Sabar - 5 detik kesabaran cegah 5 minggu rumah sakit", "Klakson keras-keras", "Tutup mata, pasrah"],
       correct: 1,
       explanation: "Mayoritas kecelakaan terjadi di persimpangan. Berhenti sejenak, cek segala arah, baru maju.",
     },
     {
       question: "Apa yang harus dilakukan saat melihat teman ugal-ugalan di jalan?",
-      options: ["Diamkan, urusan dia", "Ikut ugal-ugalan biar seru", "Tegur — budaya jalan dibangun bersama", "Foto buat lucu-lucuan"],
+      options: ["Diamkan, urusan dia", "Ikut ugal-ugalan biar seru", "Tegur - budaya jalan dibangun bersama", "Foto buat lucu-lucuan"],
       correct: 2,
       explanation: "Membiarkan perilaku buruk = menormalkannya. Teguran ringan dari teman lebih efektif daripada aturan.",
     },
@@ -66,7 +66,7 @@ const QUIZ_BANK: Record<string, Question[]> = {
     },
     {
       question: "Mengapa pesepeda kadang sulit terlihat di persimpangan?",
-      options: ["Karena mereka transparan", "Karena ukurannya kecil — cek dua kali sebelum belok", "Karena kamera tertutup", "Karena mereka sengaja sembunyi"],
+      options: ["Karena mereka transparan", "Karena ukurannya kecil - cek dua kali sebelum belok", "Karena kamera tertutup", "Karena mereka sengaja sembunyi"],
       correct: 1,
       explanation: "Sudut buta + ukuran kecil pesepeda bikin mereka mudah terlewat. Cek dua kali adalah kebiasaan yang menyelamatkan nyawa.",
     },
@@ -96,7 +96,7 @@ const QUIZ_BANK: Record<string, Question[]> = {
       question: "Saat kamu mengalami kecelakaan, langkah pertama yang benar?",
       options: ["Langsung berdiri dan jalan", "Jangan panik, cek kondisi tubuh pelan-pelan", "Foto sepeda dulu untuk insurance", "Marah-marah ke yang nabrak"],
       correct: 1,
-      explanation: "Panik bikin keputusan buruk. Cek tubuh dulu — jangan paksa bergerak jika nyeri di leher/punggung/kepala.",
+      explanation: "Panik bikin keputusan buruk. Cek tubuh dulu - jangan paksa bergerak jika nyeri di leher/punggung/kepala.",
     },
     {
       question: "Nomor panggilan darurat nasional di Indonesia?",

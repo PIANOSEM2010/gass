@@ -52,7 +52,7 @@ export default function SosButton({
 
       const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
       const message =
-        `🚨 *SOS DARURAT — Platform BUG*\n\n` +
+        `🚨 *SOS DARURAT - Platform BUG*\n\n` +
         `${userName} membutuhkan bantuan segera.\n\n` +
         `📍 Lokasi: ${mapsUrl}\n` +
         `Koordinat: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n` +

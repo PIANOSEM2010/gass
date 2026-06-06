@@ -7,7 +7,7 @@ import Navbar from "@/components/navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BUG — Bulungan untuk Goweser",
+  title: "BUG - Bulungan untuk Goweser",
   description: "Platform keselamatan pelajar pesepeda Kabupaten Bulungan",
   manifest: "/manifest.json",
 };
