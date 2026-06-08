@@ -48,7 +48,6 @@ export default function SosAlertProvider() {
       const { data: { user } } = await supabase.auth.getUser();
       if (mounted) setCurrentUserId(user?.id || null);
 
-      // Request notification permission
       if (typeof window !== "undefined" && "Notification" in window) {
         if (Notification.permission === "default") {
           Notification.requestPermission();
@@ -57,28 +56,23 @@ export default function SosAlertProvider() {
     }
     init();
 
-    // Subscribe ke SOS baru
+    // Subscribe ke broadcast channel (bukan postgres_changes)
     const channel = supabase
-      .channel("global-sos-alert")
+      .channel("sos-broadcast")
       .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "sos_logs" },
-        async (payload) => {
-          const newLog = payload.new as { id: string; user_id: string; lat: number; lng: number; created_at: string };
-
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", newLog.user_id)
-            .single();
+        "broadcast",
+        { event: "new-sos" },
+        (msg) => {
+          console.log("[SosAlertProvider] Broadcast received:", msg);
+          const p = msg.payload as SosAlert;
 
           const alert: SosAlert = {
-            id: newLog.id,
-            user_id: newLog.user_id,
-            lat: newLog.lat,
-            lng: newLog.lng,
-            created_at: newLog.created_at,
-            author_name: profile?.full_name || "Pengguna",
+            id: p.id,
+            user_id: p.user_id,
+            lat: p.lat,
+            lng: p.lng,
+            created_at: p.created_at,
+            author_name: p.author_name || "Pengguna",
           };
 
           if (!mounted) return;
@@ -94,7 +88,9 @@ export default function SosAlertProvider() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[SosAlertProvider] Subscription status:", status);
+      });
 
     return () => {
       mounted = false;

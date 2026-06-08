@@ -59,13 +59,52 @@ export default function SosButton({
         `Waktu: ${new Date().toLocaleString("id-ID")}\n\n` +
         `Pesan otomatis dari BUG (Bulungan untuk Goweser).`;
 
-     const supabase = createClient();
-      await supabase.from("sos_logs").insert({
-        user_id: userId,
-        lat: location.lat,
-        lng: location.lng,
-        message,
-      });
+      const supabase = createClient();
+      const { data: inserted, error: insertError } = await supabase
+        .from("sos_logs")
+        .insert({
+          user_id: userId,
+          lat: location.lat,
+          lng: location.lng,
+          message,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw new Error(insertError.message);
+
+      // Kirim broadcast realtime via HTTP API (fire-and-forget, tidak perlu subscribe)
+      if (inserted) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey) {
+          fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              messages: [
+                {
+                  topic: "sos-broadcast",
+                  event: "new-sos",
+                  payload: {
+                    id: inserted.id,
+                    user_id: userId,
+                    lat: location.lat,
+                    lng: location.lng,
+                    created_at: inserted.created_at,
+                    author_name: userName,
+                  },
+                  private: false,
+                },
+              ],
+            }),
+          }).catch((e) => console.warn("Broadcast SOS gagal:", e));
+        }
+      }
 
       // Fire-and-forget: kirim email backup ke admin
       const { data: { user } } = await supabase.auth.getUser();
