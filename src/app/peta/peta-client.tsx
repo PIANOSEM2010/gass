@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { createClient } from "@/lib/supabase/client";
 import {
-  Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store,
+  Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, Car,
   ArrowLeft, ArrowRight, ArrowUp, ArrowUpLeft, ArrowUpRight,
   RotateCw, RotateCcw, Flag, Play, Square, Volume2,
 } from "lucide-react";
@@ -56,7 +56,7 @@ type NavStep = {
 
 type NavInfo = {
   instruction: string;
-  distanceToNext: number; // -1 = jangan tampilkan jarak
+  distanceToNext: number;
   type: number;
 };
 
@@ -81,6 +81,12 @@ const LANDMARK_CONFIG = {
   bengkel:   { label: "Bengkel Sepeda", emoji: "🔧", color: "#0d9488" },
   lainnya:   { label: "Lainnya", emoji: "📌", color: "#64748b" },
 };
+
+const TRAFFIC_LEGEND = [
+  { color: "#16a34a", label: "Lancar" },
+  { color: "#eab308", label: "Padat" },
+  { color: "#dc2626", label: "Macet" },
+];
 
 const MANEUVER_TEXT: Record<number, string> = {
   0: "Belok kiri", 1: "Belok kanan", 2: "Belok tajam ke kiri", 3: "Belok tajam ke kanan",
@@ -378,7 +384,6 @@ function NavLayer({
   const destRef = useRef(destination);
   destRef.current = destination;
 
-  // Reset progres saat rute/steps berubah (mulai + reroute)
   useEffect(() => {
     nextIdxRef.current = 1;
     announcedFarRef.current = false;
@@ -405,7 +410,6 @@ function NavLayer({
           map.panTo([lat, lng], { animate: true });
         }
 
-        // Tiba di tujuan
         const dest = destRef.current;
         if (dest) {
           const dDest = here.distanceTo(L.latLng(dest.lat, dest.lng));
@@ -416,7 +420,6 @@ function NavLayer({
           }
         }
 
-        // Deteksi keluar jalur
         const route = routeRef.current;
         if (route && route.length) {
           let minD = Infinity;
@@ -437,7 +440,6 @@ function NavLayer({
           offRouteRef.current = 0;
         }
 
-        // Panduan ke manuver berikutnya
         const st = stepsRef.current;
         if (!st || st.length === 0) return;
         let idx = nextIdxRef.current;
@@ -495,15 +497,16 @@ export default function PetaClient({
   const [landmarks] = useState<Landmark[]>(initialLandmarks);
   const [showZones, setShowZones] = useState(true);
   const [showLandmarks, setShowLandmarks] = useState(true);
+  const [showTraffic, setShowTraffic] = useState(false);
   const [filter, setFilter] = useState<keyof typeof TYPE_CONFIG | "all">("all");
   const [mode, setMode] = useState<Mode>("view");
 
-  // Lokasi saat ini
+  const tomtomKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
+
   const [userPos, setUserPos] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [tracking, setTracking] = useState(false);
   const [follow, setFollow] = useState(false);
 
-  // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -512,7 +515,6 @@ export default function PetaClient({
   const [searchLabel, setSearchLabel] = useState("");
   const searchDebounce = useRef<NodeJS.Timeout | null>(null);
 
-  // Report state
   const [showForm, setShowForm] = useState(false);
   const [pickedCoords, setPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [formType, setFormType] = useState<keyof typeof TYPE_CONFIG>("safe");
@@ -520,7 +522,6 @@ export default function PetaClient({
   const [formDesc, setFormDesc] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Route state
   const [pointA, setPointA] = useState<{ lat: number; lng: number } | null>(null);
   const [pointB, setPointB] = useState<{ lat: number; lng: number } | null>(null);
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
@@ -529,7 +530,6 @@ export default function PetaClient({
   const [routing, setRouting] = useState(false);
   const [routeSource, setRouteSource] = useState<"manual" | "search">("manual");
 
-  // Navigation state
   const [navigating, setNavigating] = useState(false);
   const [navInfo, setNavInfo] = useState<NavInfo | null>(null);
 
@@ -563,6 +563,15 @@ export default function PetaClient({
       /* tetap pakai rute lama jika reroute gagal */
     }
   }, []);
+
+  function toggleTraffic() {
+    if (!showTraffic && !tomtomKey) {
+      setError("TomTom API key belum di-setup. Tambahkan NEXT_PUBLIC_TOMTOM_API_KEY di .env.local lalu restart server.");
+      setTimeout(() => setError(""), 6000);
+      return;
+    }
+    setShowTraffic((s) => !s);
+  }
 
   function onSearchChange(value: string) {
     setSearchQuery(value);
@@ -769,10 +778,11 @@ export default function PetaClient({
   }
 
   const filteredMarkers = filter === "all" ? markers : markers.filter((m) => m.type === filter);
+  const showLegend = mode === "view" && !routeInfo && !navigating && ((showTraffic && !!tomtomKey) || (showZones && zones.length > 0));
 
   return (
     <div className="relative h-[calc(100vh-9rem)] w-full">
-      {/* Banner navigasi (saat navigasi aktif) */}
+      {/* Banner navigasi */}
       {navigating && navInfo && (
         <div className="absolute top-2 left-2 right-2 z-[1100] bg-purple-700 text-white rounded-xl shadow-lg px-4 py-3 flex items-center gap-3">
           <div className="flex-shrink-0">{maneuverIcon(navInfo.type, 32)}</div>
@@ -883,20 +893,35 @@ export default function PetaClient({
         <div className="absolute top-[6.5rem] left-2 right-2 z-[1200] bg-green-600 text-white text-sm px-3 py-2 rounded-lg shadow">{success}</div>
       )}
 
-      {/* Legenda zona rawan */}
-      {showZones && mode === "view" && !routeInfo && !navigating && zones.length > 0 && (
-        <div className="absolute bottom-16 left-2 z-[1000] bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
-          <p className="font-semibold text-gray-700 mb-1">Zona Rawan</p>
-          {(Object.keys(ZONE_CONFIG) as Array<keyof typeof ZONE_CONFIG>).map((cat) => (
-            <div key={cat} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: ZONE_CONFIG[cat].color }} />
-              <span className="text-gray-600">{ZONE_CONFIG[cat].label}</span>
+      {/* Legenda gabungan (lalu lintas + zona) */}
+      {showLegend && (
+        <div className="absolute bottom-16 left-2 z-[1000] flex flex-col gap-2 max-w-[60%]">
+          {showTraffic && tomtomKey && (
+            <div className="bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
+              <p className="font-semibold text-gray-700 mb-1">Lalu Lintas</p>
+              {TRAFFIC_LEGEND.map((t) => (
+                <div key={t.label} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
+                  <span className="text-gray-600">{t.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          {showZones && zones.length > 0 && (
+            <div className="bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
+              <p className="font-semibold text-gray-700 mb-1">Zona Rawan</p>
+              {(Object.keys(ZONE_CONFIG) as Array<keyof typeof ZONE_CONFIG>).map((cat) => (
+                <div key={cat} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: ZONE_CONFIG[cat].color }} />
+                  <span className="text-gray-600">{ZONE_CONFIG[cat].label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Route info card (saat belum navigasi) */}
+      {/* Route info card */}
       {routeInfo && !navigating && (
         <div className="absolute bottom-24 left-2 right-2 z-[1000] bg-white rounded-xl p-4 shadow-lg">
           <div className="flex items-center justify-between mb-2">
@@ -937,9 +962,19 @@ export default function PetaClient({
         </div>
       )}
 
-      {/* Tombol kanan bawah: landmark + zona + lokasi (disembunyikan saat navigasi) */}
+      {/* Tombol kanan bawah */}
       {!navigating && (
         <div className="absolute bottom-16 right-3 z-[1000] flex flex-col gap-2">
+          <button
+            onClick={toggleTraffic}
+            className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+              showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-white text-gray-700"
+            }`}
+            aria-label="Tampilkan lalu lintas"
+            title="Lalu lintas"
+          >
+            <Car size={20} />
+          </button>
           <button
             onClick={() => setShowLandmarks((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
@@ -1020,6 +1055,15 @@ export default function PetaClient({
           attribution='&copy; OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {showTraffic && tomtomKey && (
+          <TileLayer
+            key="tomtom-traffic"
+            attribution='Lalu lintas &copy; TomTom'
+            url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${tomtomKey}`}
+            zIndex={2}
+            opacity={0.85}
+          />
+        )}
         <ClickHandler
           mode={mode}
           onPickReport={handlePickReport}
@@ -1049,7 +1093,6 @@ export default function PetaClient({
         {!navigating && routeCoords.length === 0 && <FlyToSearch target={searchTarget} />}
         {!navigating && <FitRoute coords={routeCoords} />}
 
-        {/* Zona rawan */}
         {showZones && zones.map((z) => (
           <Circle
             key={z.id}
@@ -1074,7 +1117,6 @@ export default function PetaClient({
           </Circle>
         ))}
 
-        {/* Landmark */}
         {showLandmarks && landmarks.map((lm) => (
           <Marker key={lm.id} position={[lm.lat, lm.lng]} icon={makeLandmarkIcon(lm.category)}>
             <Popup>
