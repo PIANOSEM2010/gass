@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { createClient } from "@/lib/supabase/client";
 import {
-  Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, Car,
+  Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
   ArrowLeft, ArrowRight, ArrowUp, ArrowUpLeft, ArrowUpRight,
   RotateCw, RotateCcw, Flag, Play, Square, Volume2,
 } from "lucide-react";
@@ -83,9 +83,10 @@ const LANDMARK_CONFIG = {
 };
 
 const TRAFFIC_LEGEND = [
-  { color: "#16a34a", label: "Lancar" },
-  { color: "#eab308", label: "Padat" },
-  { color: "#dc2626", label: "Macet" },
+  { color: "#FFCE43", label: "Gangguan ringan" },
+  { color: "#FF8939", label: "Gangguan sedang" },
+  { color: "#F40000", label: "Gangguan berat" },
+  { color: "#C1272D", label: "Penutupan jalan" },
 ];
 
 const MANEUVER_TEXT: Record<number, string> = {
@@ -922,7 +923,7 @@ export default function PetaClient({
         <div className="absolute bottom-16 left-2 z-[1000] flex flex-col gap-2 max-w-[60%]">
           {showTraffic && tomtomKey && (
             <div className="bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
-              <p className="font-semibold text-gray-700 mb-1">Lalu Lintas</p>
+              <p className="font-semibold text-gray-700 mb-1">Insiden Jalan</p>
               {TRAFFIC_LEGEND.map((t) => (
                 <div key={t.label} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
                   <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
@@ -994,10 +995,10 @@ export default function PetaClient({
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
               showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-white text-gray-700"
             }`}
-            aria-label="Tampilkan lalu lintas"
-            title="Lalu lintas"
+            aria-label="Tampilkan insiden jalan"
+            title="Insiden & bahaya jalan"
           >
-            <Car size={20} />
+            <TriangleAlert size={20} />
           </button>
           <button
             onClick={() => setShowLandmarks((s) => !s)}
@@ -1081,11 +1082,11 @@ export default function PetaClient({
         />
         {showTraffic && tomtomKey && (
           <TileLayer
-            key="tomtom-traffic"
-            attribution='Lalu lintas &copy; TomTom'
-            url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${tomtomKey}`}
+            key="tomtom-incidents"
+            attribution='Insiden &copy; TomTom'
+            url={`https://api.tomtom.com/traffic/map/4/tile/incidents/s0/{z}/{x}/{y}.png?key=${tomtomKey}&t=-1`}
             zIndex={2}
-            opacity={0.85}
+            opacity={0.9}
           />
         )}
         <ClickHandler
