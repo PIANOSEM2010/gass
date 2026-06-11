@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { Siren, MapPin, Loader2, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Siren, MapPin, Loader2, CheckCircle2, WifiOff, Phone, MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Contact = {
@@ -10,7 +10,7 @@ type Contact = {
   is_primary: boolean;
 };
 
-type Status = "idle" | "getting-location" | "sending" | "sent" | "error";
+type Status = "idle" | "getting-location" | "sending" | "sent" | "offline-ready" | "error";
 
 export default function SosButton({
   userId,
@@ -25,8 +25,24 @@ export default function SosButton({
   const [errorMsg, setErrorMsg] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [holdProgress, setHoldProgress] = useState(0);
+  const [sosMessage, setSosMessage] = useState("");
+  const [online, setOnline] = useState(true);
 
   const primaryContact = contacts.find((c) => c.is_primary) || contacts[0];
+  const telNumber = primaryContact ? "+" + primaryContact.whatsapp.replace(/[^\d]/g, "") : "";
+
+  useEffect(() => {
+    function update() {
+      setOnline(navigator.onLine);
+    }
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
 
   function getLocation(): Promise<{ lat: number; lng: number }> {
     return new Promise((resolve, reject) => {
@@ -42,22 +58,35 @@ export default function SosButton({
     });
   }
 
+  function buildMessage(location: { lat: number; lng: number }) {
+    const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+    return (
+      `🚨 *SOS DARURAT - Platform BUG*\n\n` +
+      `${userName} membutuhkan bantuan segera.\n\n` +
+      `📍 Lokasi: ${mapsUrl}\n` +
+      `Koordinat: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n` +
+      `Waktu: ${new Date().toLocaleString("id-ID")}\n\n` +
+      `Pesan otomatis dari BUG (Bulungan untuk Goweser).`
+    );
+  }
+
   async function triggerSos() {
     setStatus("getting-location");
     setErrorMsg("");
     try {
       const location = await getLocation();
       setCoords(location);
-      setStatus("sending");
 
-      const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
-      const message =
-        `🚨 *SOS DARURAT - Platform BUG*\n\n` +
-        `${userName} membutuhkan bantuan segera.\n\n` +
-        `📍 Lokasi: ${mapsUrl}\n` +
-        `Koordinat: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n` +
-        `Waktu: ${new Date().toLocaleString("id-ID")}\n\n` +
-        `Pesan otomatis dari BUG (Bulungan untuk Goweser).`;
+      const message = buildMessage(location);
+      setSosMessage(message);
+
+      // OFFLINE: tidak bisa ke server. Alihkan ke SMS / telepon (jaringan seluler).
+      if (!navigator.onLine) {
+        setStatus("offline-ready");
+        return;
+      }
+
+      setStatus("sending");
 
       const supabase = createClient();
       const { data: inserted, error: insertError } = await supabase
@@ -73,7 +102,7 @@ export default function SosButton({
 
       if (insertError) throw new Error(insertError.message);
 
-      // Kirim broadcast realtime via HTTP API (fire-and-forget, tidak perlu subscribe)
+      // Broadcast realtime via HTTP API (fire-and-forget)
       if (inserted) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -106,7 +135,7 @@ export default function SosButton({
         }
       }
 
-      // Fire-and-forget: kirim email backup ke admin
+      // Email backup ke admin (fire-and-forget)
       const { data: { user } } = await supabase.auth.getUser();
       fetch("/api/sos-email", {
         method: "POST",
@@ -133,7 +162,7 @@ export default function SosButton({
   let progressInterval: NodeJS.Timeout | null = null;
 
   function startHold() {
-    if (status !== "idle" && status !== "error" && status !== "sent") return;
+    if (status !== "idle" && status !== "error" && status !== "sent" && status !== "offline-ready") return;
     setHoldProgress(0);
     progressInterval = setInterval(() => {
       setHoldProgress((p) => Math.min(100, p + 5));
@@ -150,6 +179,57 @@ export default function SosButton({
     if (status === "idle" || status === "error") setHoldProgress(0);
   }
 
+  function reset() {
+    setStatus("idle");
+    setCoords(null);
+    setHoldProgress(0);
+    setSosMessage("");
+  }
+
+  // Layar OFFLINE
+  if (status === "offline-ready") {
+    const smsUrl = `sms:${telNumber}?body=${encodeURIComponent(sosMessage)}`;
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+        <WifiOff size={44} className="text-amber-600 mx-auto mb-3" />
+        <h2 className="font-bold text-amber-800 text-lg mb-1">Mode Offline</h2>
+        <p className="text-sm text-amber-700 mb-4">
+          Tidak ada koneksi internet. Lokasimu sudah didapat — kirim lewat SMS atau telepon langsung lewat jaringan seluler.
+        </p>
+        {coords && (
+          <div className="bg-white rounded-lg p-3 text-xs text-gray-600 inline-flex items-center gap-2 mb-4">
+            <MapPin size={14} />
+            {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+          </div>
+        )}
+        <div className="space-y-2">
+          <button
+            onClick={() => { window.location.href = smsUrl; }}
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+          >
+            <MessageSquare size={18} /> Kirim SMS Lokasi ke {primaryContact?.name}
+          </button>
+          <button
+            onClick={() => { window.location.href = "tel:110"; }}
+            className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+          >
+            <Phone size={18} /> Telepon 110 (Polisi)
+          </button>
+          <button
+            onClick={() => { window.location.href = `tel:${telNumber}`; }}
+            className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2"
+          >
+            <Phone size={18} /> Telepon {primaryContact?.name}
+          </button>
+        </div>
+        <button onClick={reset} className="block w-full mt-4 text-sm text-amber-700 underline">
+          Kembali ke tombol SOS
+        </button>
+      </div>
+    );
+  }
+
+  // Layar TERKIRIM (online)
   if (status === "sent") {
     return (
       <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
@@ -165,7 +245,7 @@ export default function SosButton({
           </div>
         )}
         <button
-          onClick={() => { setStatus("idle"); setCoords(null); setHoldProgress(0); }}
+          onClick={reset}
           className="block w-full mt-4 text-sm text-green-700 underline"
         >
           Kembali ke tombol SOS
@@ -176,6 +256,12 @@ export default function SosButton({
 
   return (
     <div className="flex flex-col items-center">
+      {!online && (
+        <div className="mb-4 w-full max-w-xs bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 flex items-center justify-center gap-2 text-center">
+          <WifiOff size={14} /> Mode offline — SOS akan dikirim via SMS / telepon
+        </div>
+      )}
+
       <button
         onMouseDown={startHold}
         onMouseUp={cancelHold}
@@ -206,10 +292,17 @@ export default function SosButton({
         )}
       </button>
 
-      <p className="text-xs text-gray-500 mt-6 text-center">
-        Akan menghubungi: <span className="font-medium text-gray-700">{primaryContact.name}</span>
+      <button
+        onClick={() => { window.location.href = "tel:110"; }}
+        className="mt-4 text-sm font-semibold text-red-600 underline underline-offset-2 flex items-center gap-1.5"
+      >
+        <Phone size={14} /> Hubungkan dengan 110
+      </button>
+
+      <p className="text-xs text-gray-500 mt-3 text-center">
+        Akan menghubungi: <span className="font-medium text-gray-700">{primaryContact?.name}</span>
         <br />
-        <span className="text-gray-400">+{primaryContact.whatsapp}</span>
+        <span className="text-gray-400">{telNumber}</span>
       </p>
 
       {status === "error" && (
