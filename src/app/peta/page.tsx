@@ -11,5 +11,22 @@ export default async function PetaPage() {
     .eq("approved", true)
     .order("created_at", { ascending: false });
 
-  return <PetaWrapper initialMarkers={markers || []} userId={user?.id || null} />;
+  const { data: zones } = await supabase
+    .from("danger_zones")
+    .select("id, category, title, description, lat, lng, radius")
+    .order("created_at", { ascending: false });
+
+  const { data: landmarks } = await supabase
+    .from("landmarks")
+    .select("id, category, title, description, lat, lng")
+    .order("created_at", { ascending: false });
+
+  return (
+    <PetaWrapper
+      initialMarkers={markers || []}
+      initialZones={zones || []}
+      initialLandmarks={landmarks || []}
+      userId={user?.id || null}
+    />
+  );
 }
