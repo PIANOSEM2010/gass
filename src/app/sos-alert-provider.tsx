@@ -52,12 +52,29 @@ export default function SosAlertProvider() {
     function speakSos(name: string) {
       try {
         if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+        const synth = window.speechSynthesis;
         const text = `Perhatian, darurat. Atas nama ${name}, membutuhkan bantuan di lokasi ini. Mohon segera berikan pertolongan.`;
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "id-ID";
-        u.rate = 0.95;
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(u);
+        const run = () => {
+          const voices = synth.getVoices();
+          const v =
+            voices.find((x) => /google/i.test(x.name) && /^id/i.test(x.lang)) ||
+            voices.find((x) => x.lang === "id-ID") ||
+            voices.find((x) => x.lang && x.lang.toLowerCase().startsWith("id")) ||
+            null;
+          const u = new SpeechSynthesisUtterance(text);
+          if (v) u.voice = v;
+          u.lang = "id-ID";
+          u.rate = 0.98;
+          u.pitch = 1.0;
+          synth.cancel();
+          synth.speak(u);
+        };
+        if (synth.getVoices().length === 0) {
+          synth.onvoiceschanged = () => { synth.onvoiceschanged = null; run(); };
+          synth.getVoices();
+        } else {
+          run();
+        }
       } catch {
         /* ignore */
       }

@@ -119,14 +119,38 @@ function maneuverIcon(type: number, size = 24) {
   }
 }
 
+function pickIndonesianVoice(): SpeechSynthesisVoice | null {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  return (
+    voices.find((v) => /google/i.test(v.name) && /^id/i.test(v.lang)) ||
+    voices.find((v) => v.lang === "id-ID") ||
+    voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("id")) ||
+    voices.find((v) => /indonesia/i.test(v.name)) ||
+    null
+  );
+}
+
 function speak(text: string) {
   try {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "id-ID";
-    u.rate = 1.0;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+    const synth = window.speechSynthesis;
+    const run = () => {
+      const u = new SpeechSynthesisUtterance(text);
+      const v = pickIndonesianVoice();
+      if (v) u.voice = v;
+      u.lang = "id-ID";
+      u.rate = 0.98;
+      u.pitch = 1.0;
+      synth.cancel();
+      synth.speak(u);
+    };
+    if (synth.getVoices().length === 0) {
+      synth.onvoiceschanged = () => { synth.onvoiceschanged = null; run(); };
+      synth.getVoices();
+    } else {
+      run();
+    }
   } catch {
     /* ignore */
   }

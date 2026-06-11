@@ -230,7 +230,7 @@ export default function SosButton({
   }
 
   // Layar TERKIRIM (online)
-  if (status === "sent") {
+if (status === "sent") {
     return (
       <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
         <CheckCircle2 size={48} className="text-green-600 mx-auto mb-3" />
@@ -239,14 +239,20 @@ export default function SosButton({
           WhatsApp telah dibuka ke kontak utama. Pastikan kamu menekan tombol kirim di WhatsApp.
         </p>
         {coords && (
-          <div className="bg-white rounded-lg p-3 text-xs text-gray-600 inline-flex items-center gap-2">
+          <div className="bg-white rounded-lg p-3 text-xs text-gray-600 inline-flex items-center gap-2 mb-4">
             <MapPin size={14} />
             {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
           </div>
         )}
         <button
+          onClick={() => { window.location.href = "tel:110"; }}
+          className="w-full bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 animate-pulse"
+        >
+          <Phone size={18} /> Telepon 110 Sekarang
+        </button>
+        <button
           onClick={reset}
-          className="block w-full mt-4 text-sm text-green-700 underline"
+          className="block w-full mt-3 text-sm text-green-700 underline"
         >
           Kembali ke tombol SOS
         </button>
