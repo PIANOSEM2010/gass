@@ -145,7 +145,7 @@ export default function SosAlertProvider() {
 
   // Tampilkan layar darurat penuh saat notifikasi push diklik
   useEffect(() => {
-    function addFromPush(p) {
+    function addFromPush(p: { id?: string | null; author_name?: string; lat?: number; lng?: number }) {
       const alert = {
         id: p.id || `push-${Date.now()}`,
         user_id: "",
@@ -163,8 +163,8 @@ export default function SosAlertProvider() {
         addFromPush({
           id: sp.get("id"),
           author_name: sp.get("name") || undefined,
-          lat: sp.get("lat") ? parseFloat(sp.get("lat")) : undefined,
-          lng: sp.get("lng") ? parseFloat(sp.get("lng")) : undefined,
+          lat: sp.get("lat") ? parseFloat(sp.get("lat") as string) : undefined,
+          lng: sp.get("lng") ? parseFloat(sp.get("lng") as string) : undefined,
         });
         const url = new URL(window.location.href);
         ["sosAlert", "id", "name", "lat", "lng"].forEach((k) => url.searchParams.delete(k));
@@ -175,7 +175,7 @@ export default function SosAlertProvider() {
     }
 
     if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
-      const onMessage = (event) => {
+      const onMessage = (event: MessageEvent) => {
         if (event.data && event.data.type === "sos-notification-click") {
           addFromPush(event.data.payload || {});
         }
