@@ -528,6 +528,12 @@ export default function PetaClient({
 
   const tomtomKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
 
+  // Otomatis nyalakan GPS saat halaman peta dibuka (langsung minta izin lokasi)
+  useEffect(() => {
+    setTracking(true);
+    setFollow(true);
+  }, []);
+
   const [userPos, setUserPos] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [tracking, setTracking] = useState(false);
   const [follow, setFollow] = useState(false);
