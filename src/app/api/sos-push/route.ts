@@ -1,0 +1,99 @@
+import { NextResponse } from "next/server";
+import webpush from "web-push";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+
+type PushSub = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_id: string;
+};
+
+export async function POST(req: Request) {
+  try {
+    // 1. Pastikan pemanggil sudah login
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Ambil data SOS dari body
+    const body = await req.json();
+    const { id, author_name, lat, lng } = body || {};
+
+    // 3. Konfigurasi VAPID
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    const subject = process.env.VAPID_SUBJECT;
+    if (!publicKey || !privateKey || !subject) {
+      return NextResponse.json({ error: "VAPID belum di-setup" }, { status: 500 });
+    }
+    webpush.setVapidDetails(subject, publicKey, privateKey);
+
+    // 4. Client admin (service role) untuk baca semua langganan
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+      return NextResponse.json({ error: "Service role belum di-setup" }, { status: 500 });
+    }
+    const admin = createAdminClient(supabaseUrl, serviceKey);
+
+    // 5. Ambil semua langganan KECUALI milik si pengirim
+    const { data, error } = await admin
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth, user_id")
+      .neq("user_id", user.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    const subs = (data ?? []) as PushSub[];
+    if (subs.length === 0) {
+      return NextResponse.json({ sent: 0, cleaned: 0 });
+    }
+
+    // 6. Isi notifikasi (cocok dengan public/sw.js)
+    const notifPayload = JSON.stringify({
+      title: "🚨 SOS Darurat",
+      body: `${author_name || "Pengguna"} membutuhkan bantuan`,
+      url: "/",
+      tag: `sos-${id || Date.now()}`,
+      payload: { id: id || null, author_name: author_name || "Pengguna", lat, lng },
+    });
+
+    // 7. Kirim ke semua; bersihkan langganan mati (404/410)
+    let sent = 0;
+    const toDelete: string[] = [];
+    await Promise.all(
+      subs.map(async (s) => {
+        try {
+          await webpush.sendNotification(
+            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+            notifPayload,
+            { urgency: "high", TTL: 3600 }
+          );
+          sent++;
+        } catch (err) {
+          const status = (err as { statusCode?: number })?.statusCode;
+          if (status === 404 || status === 410) {
+            toDelete.push(s.endpoint);
+          }
+        }
+      })
+    );
+
+    if (toDelete.length > 0) {
+      await admin.from("push_subscriptions").delete().in("endpoint", toDelete);
+    }
+
+    return NextResponse.json({ sent, cleaned: toDelete.length });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Gagal mengirim push" },
+      { status: 500 }
+    );
+  }
+}

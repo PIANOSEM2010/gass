@@ -143,6 +143,48 @@ export default function SosAlertProvider() {
     };
   }, []);
 
+  // Tampilkan layar darurat penuh saat notifikasi push diklik
+  useEffect(() => {
+    function addFromPush(p) {
+      const alert = {
+        id: p.id || `push-${Date.now()}`,
+        user_id: "",
+        lat: typeof p.lat === "number" ? p.lat : 0,
+        lng: typeof p.lng === "number" ? p.lng : 0,
+        created_at: new Date().toISOString(),
+        author_name: p.author_name || "Pengguna",
+      };
+      setAlerts((prev) => [alert, ...prev.filter((a) => a.id !== alert.id)].slice(0, 5));
+    }
+
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("sosAlert") === "1") {
+        addFromPush({
+          id: sp.get("id"),
+          author_name: sp.get("name") || undefined,
+          lat: sp.get("lat") ? parseFloat(sp.get("lat")) : undefined,
+          lng: sp.get("lng") ? parseFloat(sp.get("lng")) : undefined,
+        });
+        const url = new URL(window.location.href);
+        ["sosAlert", "id", "name", "lat", "lng"].forEach((k) => url.searchParams.delete(k));
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    } catch {
+      /* ignore */
+    }
+
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      const onMessage = (event) => {
+        if (event.data && event.data.type === "sos-notification-click") {
+          addFromPush(event.data.payload || {});
+        }
+      };
+      navigator.serviceWorker.addEventListener("message", onMessage);
+      return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+    }
+  }, []);
+
   function dismiss(id: string) {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
     try {

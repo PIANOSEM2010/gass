@@ -137,6 +137,20 @@ export default function SosButton({
 
       // Email backup ke admin (fire-and-forget)
       const { data: { user } } = await supabase.auth.getUser();
+      // Kirim Web Push ke pengguna lain yang berlangganan (fire-and-forget)
+      if (inserted) {
+        fetch("/api/sos-push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: inserted.id,
+            author_name: userName,
+            lat: location.lat,
+            lng: location.lng,
+          }),
+        }).catch((e) => console.warn("Push SOS gagal:", e));
+      }
+
       fetch("/api/sos-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import SosButton from "./sos-button";
+import PushEnroll from "./push-enroll";
 import { Users, History } from "lucide-react";
 
 export default async function SosPage() {
@@ -44,11 +45,16 @@ export default async function SosPage() {
           </Link>
         </div>
       ) : (
-        <SosButton
-          userId={user.id}
-          userName={profile?.full_name || "Pengguna BUG"}
-          contacts={contacts}
-        />
+        <>
+          <div className="mb-6">
+            <PushEnroll />
+          </div>
+          <SosButton
+            userId={user.id}
+            userName={profile?.full_name || "Pengguna BUG"}
+            contacts={contacts}
+          />
+        </>
       )}
 
       <div className="mt-8 grid grid-cols-2 gap-3">
