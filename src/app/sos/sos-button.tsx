@@ -162,6 +162,16 @@ export default function SosButton({
         }),
       }).catch((e) => console.warn("Email SOS gagal terkirim:", e));
 
+      // Kirim WhatsApp OTOMATIS via Fonnte ke semua kontak darurat + admin (fire-and-forget)
+      fetch("/api/sos-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          contacts: contacts.map((c) => c.whatsapp),
+        }),
+      }).catch((e) => console.warn("WhatsApp SOS gagal terkirim:", e));
+
       const waUrl = `https://wa.me/${primaryContact.whatsapp}?text=${encodeURIComponent(message)}`;
       window.open(waUrl, "_blank");
 
@@ -250,7 +260,7 @@ if (status === "sent") {
         <CheckCircle2 size={48} className="text-green-600 mx-auto mb-3" />
         <h2 className="font-bold text-green-800 text-lg mb-2">SOS Terkirim</h2>
         <p className="text-sm text-green-700 mb-3">
-          WhatsApp telah dibuka ke kontak utama. Pastikan kamu menekan tombol kirim di WhatsApp.
+          Pesan SOS otomatis telah dikirim ke kontak daruratmu & admin. WhatsApp juga terbuka ke kontak utama — kamu bisa menekan kirim untuk mengirim dari nomormu sendiri.
         </p>
         {coords && (
           <div className="bg-white rounded-lg p-3 text-xs text-gray-600 inline-flex items-center gap-2 mb-4">
