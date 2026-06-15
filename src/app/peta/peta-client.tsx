@@ -1080,7 +1080,7 @@ export default function PetaClient({
       )}
 
       {/* Tombol kanan bawah */}
-      {!navigating && (
+      {!navigating && !routeInfo && (
         <div className="absolute bottom-16 right-3 z-[1000] flex flex-col gap-2">
           <button
             onClick={toggleTraffic}
