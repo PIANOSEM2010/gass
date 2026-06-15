@@ -3,6 +3,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
@@ -298,6 +301,83 @@ function FitRoute({ coords }: { coords: [number, number][] }) {
       map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
     }
   }, [coords, map]);
+  return null;
+}
+
+// Cluster group dari leaflet.markercluster (vanilla, hanya butuh Leaflet)
+type ClusterGroup = L.FeatureGroup & { addLayers: (layers: L.Layer[]) => void };
+
+// Layer landmark dengan clustering: titik berdekatan digabung jadi lingkaran
+// berangka, memisah saat di-zoom. Bikin peta tetap ringan walau ratusan titik.
+function LandmarkClusterLayer({
+  landmarks,
+  onNavigate,
+}: {
+  landmarks: Landmark[];
+  onNavigate: (lm: Landmark) => void;
+}) {
+  const map = useMap();
+  const onNavRef = useRef(onNavigate);
+  onNavRef.current = onNavigate;
+
+  useEffect(() => {
+    const group = (L as unknown as {
+      markerClusterGroup: (opts?: Record<string, unknown>) => ClusterGroup;
+    }).markerClusterGroup({
+      maxClusterRadius: 55,
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      chunkedLoading: true,
+    });
+
+    const built = landmarks.map((lm) => {
+      const cfg = LANDMARK_CONFIG[lm.category];
+      const marker = L.marker([lm.lat, lm.lng], { icon: makeLandmarkIcon(lm.category) });
+
+      const container = document.createElement("div");
+      container.style.maxWidth = "220px";
+      container.style.fontSize = "14px";
+
+      const title = document.createElement("p");
+      title.style.cssText = "font-weight:600;margin:0 0 2px;";
+      title.textContent = `${cfg.emoji} ${lm.title}`;
+      container.appendChild(title);
+
+      const label = document.createElement("p");
+      label.style.cssText = "font-size:12px;color:#6b7280;margin:0 0 4px;";
+      label.textContent = cfg.label;
+      container.appendChild(label);
+
+      if (lm.description) {
+        const desc = document.createElement("p");
+        desc.style.cssText = "font-size:12px;color:#4b5563;margin:0 0 8px;";
+        desc.textContent = lm.description;
+        container.appendChild(desc);
+      }
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "🧭 Arahkan ke Lokasi Ini";
+      btn.style.cssText =
+        "width:100%;background:#7c3aed;color:#fff;padding:8px 10px;border-radius:8px;font-weight:600;font-size:12px;border:none;cursor:pointer;";
+      btn.addEventListener("click", () => {
+        map.closePopup();
+        onNavRef.current(lm);
+      });
+      container.appendChild(btn);
+
+      marker.bindPopup(container);
+      return marker;
+    });
+
+    group.addLayers(built);
+    map.addLayer(group);
+
+    return () => {
+      map.removeLayer(group);
+    };
+  }, [landmarks, map]);
+
   return null;
 }
 
@@ -620,7 +700,7 @@ export default function PetaClient({
     setSearching(true);
     setShowResults(true);
     try {
-      const viewbox = "116.8,3.3,117.9,2.3";
+      const viewbox = "115.4,4.6,118.1,2.4";
       const url =
         `https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=id` +
         `&viewbox=${viewbox}&bounded=0&q=${encodeURIComponent(query)}`;
@@ -669,6 +749,11 @@ export default function PetaClient({
     setPointA(origin);
     setPointB(dest);
     await calculateRoute(origin, dest);
+  }
+
+  // Dipanggil dari tombol "Arahkan ke Lokasi Ini" pada popup landmark
+  function navigateToLandmark(lm: Landmark) {
+    routeFromCurrentLocation({ lat: lm.lat, lng: lm.lng });
   }
 
   function clearSearch() {
@@ -1149,17 +1234,9 @@ export default function PetaClient({
           </Circle>
         ))}
 
-        {showLandmarks && landmarks.map((lm) => (
-          <Marker key={lm.id} position={[lm.lat, lm.lng]} icon={makeLandmarkIcon(lm.category)}>
-            <Popup>
-              <div className="text-sm max-w-[220px]">
-                <p className="font-semibold mb-1">{LANDMARK_CONFIG[lm.category].emoji} {lm.title}</p>
-                <p className="text-xs text-gray-500 mb-1">{LANDMARK_CONFIG[lm.category].label}</p>
-                {lm.description && <p className="text-gray-600 text-xs">{lm.description}</p>}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {showLandmarks && (
+          <LandmarkClusterLayer landmarks={landmarks} onNavigate={navigateToLandmark} />
+        )}
 
         {filteredMarkers.map((m) => (
           <Marker key={m.id} position={[m.lat, m.lng]} icon={makeIcon(m.type)}>
