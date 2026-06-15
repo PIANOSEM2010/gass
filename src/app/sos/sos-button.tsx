@@ -89,18 +89,26 @@ export default function SosButton({
       setStatus("sending");
 
       const supabase = createClient();
-      const { data: inserted, error: insertError } = await supabase
-        .from("sos_logs")
-        .insert({
-          user_id: userId,
-          lat: location.lat,
-          lng: location.lng,
-          message,
-        })
-        .select()
-        .single();
 
-      if (insertError) throw new Error(insertError.message);
+      // Simpan log SOS lewat server (service role) agar tidak terhalang RLS / sesi kedaluwarsa.
+      // Kalaupun gagal, alur SOS tetap lanjut — keselamatan diutamakan.
+      let inserted: { id: string; created_at: string } | null = null;
+      try {
+        const logRes = await fetch("/api/sos-log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            lat: location.lat,
+            lng: location.lng,
+            message,
+          }),
+        });
+        const logJson = await logRes.json().catch(() => null);
+        if (logJson?.ok) inserted = { id: logJson.id, created_at: logJson.created_at };
+      } catch (e) {
+        console.warn("Simpan log SOS gagal:", e);
+      }
 
       // Broadcast realtime via HTTP API (fire-and-forget)
       if (inserted) {
