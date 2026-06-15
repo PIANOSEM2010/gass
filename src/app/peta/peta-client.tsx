@@ -32,7 +32,7 @@ type Zone = {
 
 type Landmark = {
   id: string;
-  category: "belanja" | "kuliner" | "kantor" | "kesehatan" | "bengkel" | "lainnya";
+  category: "belanja" | "kuliner" | "kantor" | "kesehatan" | "bengkel" | "lainnya" | "sekolah";
   title: string;
   description: string | null;
   lat: number;
@@ -80,6 +80,7 @@ const LANDMARK_CONFIG = {
   kesehatan: { label: "Kesehatan", emoji: "🏥", color: "#dc2626" },
   bengkel:   { label: "Bengkel Sepeda", emoji: "🔧", color: "#0d9488" },
   lainnya:   { label: "Lainnya", emoji: "📌", color: "#64748b" },
+  sekolah:   { label: "Sekolah", emoji: "🎓", color: "#7c3aed" },
 };
 
 const TRAFFIC_LEGEND = [
