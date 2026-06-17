@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Siren, BookOpen, Users, User } from "lucide-react";
+import { Home, Map, Siren, BookOpen, Users, User, Bike } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Beranda", icon: Home },
   { href: "/peta", label: "Peta", icon: Map },
+  { href: "/catat", label: "Gowes", icon: Bike },
   { href: "/sos", label: "SOS", icon: Siren },
   { href: "/edukasi", label: "Edukasi", icon: BookOpen },
   { href: "/profil", label: "Profil", icon: User },
