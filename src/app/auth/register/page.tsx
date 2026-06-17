@@ -3,14 +3,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
+type MemberType = "pelajar" | "pekerja";
+
 export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [school, setSchool] = useState("");
+  const [memberType, setMemberType] = useState<MemberType>("pelajar");
+  const [organization, setOrganization] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const isPelajar = memberType === "pelajar";
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -21,7 +26,11 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        data: { full_name: fullName, school },
+        data: {
+          full_name: fullName,
+          member_type: memberType,
+          organization,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -66,16 +75,45 @@ export default function RegisterPage() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Asal Sekolah</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setMemberType("pelajar")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
+                isPelajar ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"
+              }`}
+            >
+              🎓 Pelajar
+            </button>
+            <button
+              type="button"
+              onClick={() => setMemberType("pekerja")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
+                !isPelajar ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"
+              }`}
+            >
+              🏢 Pekerja
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {isPelajar ? "Asal Sekolah" : "Asal Instansi"}
+          </label>
           <input
             type="text"
-            value={school}
-            onChange={(e) => setSchool(e.target.value)}
+            required
+            value={organization}
+            onChange={(e) => setOrganization(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="SMA Negeri ... Bulungan"
+            placeholder={isPelajar ? "SMA Negeri ... Bulungan" : "Nama kantor / instansi"}
           />
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <input
