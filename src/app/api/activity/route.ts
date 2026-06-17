@@ -1,9 +1,8 @@
 // src/app/api/activity/route.ts
-// Simpan ride + hitung streak (service role, bypass RLS). Reset ketat ala Snapstreak.
+// Simpan ride + hitung streak berdasar TOTAL jarak hari itu (service role, bypass RLS).
 export const runtime = "nodejs";
 
 function witaDate(offsetDays = 0): string {
-  // WITA = UTC+8
   return new Date(Date.now() + 8 * 3600 * 1000 + offsetDays * 86400000)
     .toISOString()
     .slice(0, 10);
@@ -31,14 +30,24 @@ export async function POST(req: Request) {
     const yesterday = witaDate(-1);
     const headers = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 
-    // 1) Simpan aktivitas
+    // 1) Simpan aktivitas (tunggu sampai commit)
     await fetch(`${url}/rest/v1/activities`, {
       method: "POST",
       headers,
       body: JSON.stringify({ user_id: userId, distance_m, duration_s, path, activity_date: today, started_at, ended_at }),
     });
 
-    // 2) Ambil streak lama
+    // 2) Hitung TOTAL jarak hari ini (semua ride hari ini, termasuk yang baru disimpan)
+    const sumRes = await fetch(
+      `${url}/rest/v1/activities?user_id=eq.${userId}&activity_date=eq.${today}&select=distance_m`,
+      { headers }
+    );
+    const acts = await sumRes.json().catch(() => []);
+    const todayTotal = Array.isArray(acts)
+      ? acts.reduce((s: number, a: { distance_m?: number }) => s + (Number(a?.distance_m) || 0), 0)
+      : distance_m;
+
+    // 3) Ambil streak lama
     const getRes = await fetch(
       `${url}/rest/v1/user_streaks?user_id=eq.${userId}&select=current_streak,longest_streak,last_activity_date,total_distance_m,total_rides`,
       { headers }
@@ -51,19 +60,17 @@ export async function POST(req: Request) {
     const prevDist = Number(ex?.total_distance_m ?? 0);
     const prevRides = ex?.total_rides ?? 0;
 
-    // 3) Hitung streak baru (hanya kalau ride >= 1 km)
-    const qualifies = distance_m >= 1000;
+    // 4) Streak maju kalau TOTAL hari ini >= 1 km DAN hari ini belum dihitung
+    const qualifies = todayTotal >= 1000;
     let newStreak = prevStreak;
     let newLast = prevLast;
-    if (qualifies) {
-      if (prevLast === today) newStreak = prevStreak || 1;
-      else if (prevLast === yesterday) newStreak = prevStreak + 1;
-      else newStreak = 1;
+    if (qualifies && prevLast !== today) {
+      newStreak = prevLast === yesterday ? prevStreak + 1 : 1;
       newLast = today;
     }
     const newLongest = Math.max(prevLongest, newStreak);
 
-    // 4) Upsert streak
+    // 5) Upsert streak
     await fetch(`${url}/rest/v1/user_streaks`, {
       method: "POST",
       headers: { ...headers, Prefer: "resolution=merge-duplicates" },
@@ -81,7 +88,12 @@ export async function POST(req: Request) {
     });
 
     const effective = newLast === today || newLast === yesterday ? newStreak : 0;
-    return Response.json({ ok: true, current_streak: effective, qualifies });
+    return Response.json({
+      ok: true,
+      current_streak: effective,
+      qualifies,
+      today_km: Math.round((todayTotal / 1000) * 100) / 100,
+    });
   } catch (err) {
     return Response.json({ ok: false, error: err instanceof Error ? err.message : "error" }, { status: 500 });
   }

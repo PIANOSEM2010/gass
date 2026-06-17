@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Play, Square, Loader2, Save, Trash2, CheckCircle2,
@@ -9,6 +9,7 @@ import {
 type Pt = { lat: number; lng: number };
 type Status = "idle" | "tracking" | "finished" | "saving" | "saved";
 type BoardItem = { user_id: string; name: string; org: string; km: number; rides: number; streak: number };
+type WakeLockLike = { release: () => Promise<void> };
 
 function haversine(a: Pt, b: Pt): number {
   const R = 6371000;
@@ -35,47 +36,94 @@ export default function CatatClient({
   const [status, setStatus] = useState<Status>("idle");
   const [distance, setDistance] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [speed, setSpeed] = useState(0); // km/jam, sesaat
   const [error, setError] = useState("");
   const [savedStreak, setSavedStreak] = useState<number | null>(null);
+  const [savedQualifies, setSavedQualifies] = useState(false);
+  const [savedTodayKm, setSavedTodayKm] = useState(0);
 
   const watchIdRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef(0);
   const endRef = useRef(0);
   const lastPtRef = useRef<Pt | null>(null);
+  const lastTimeRef = useRef(0);
   const distRef = useRef(0);
   const pathRef = useRef<Pt[]>([]);
+  const wakeRef = useRef<WakeLockLike | null>(null);
+
+  const acquireWake = useCallback(async () => {
+    try {
+      const nav = navigator as unknown as { wakeLock?: { request: (t: "screen") => Promise<WakeLockLike> } };
+      if (nav.wakeLock) wakeRef.current = await nav.wakeLock.request("screen");
+    } catch { /* tidak didukung, abaikan */ }
+  }, []);
+  const releaseWake = useCallback(() => {
+    try { wakeRef.current?.release(); } catch { /* abaikan */ }
+    wakeRef.current = null;
+  }, []);
+
+  // Ambil ulang wake lock saat kembali ke aplikasi (wake lock lepas otomatis saat tab disembunyikan)
+  useEffect(() => {
+    function onVis() {
+      if (document.visibilityState === "visible" && watchIdRef.current !== null) acquireWake();
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [acquireWake]);
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-  }, []);
+    releaseWake();
+  }, [releaseWake]);
 
   function start() {
     if (typeof navigator === "undefined" || !navigator.geolocation) { setError("Browser tidak mendukung GPS"); return; }
-    setError(""); distRef.current = 0; pathRef.current = []; lastPtRef.current = null;
-    setDistance(0); setDuration(0); setSavedStreak(null);
+    setError(""); distRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastTimeRef.current = 0;
+    setDistance(0); setDuration(0); setSpeed(0); setSavedStreak(null);
     startRef.current = Date.now(); setStatus("tracking");
+    acquireWake();
     timerRef.current = setInterval(() => setDuration(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
     watchIdRef.current = navigator.geolocation.watchPosition(
       (p) => {
         const acc = p.coords.accuracy;
         const pt = { lat: p.coords.latitude, lng: p.coords.longitude };
+        const now = Date.now();
         if (acc && acc > 35) return;
+
+        // Kecepatan sesaat: utamakan dari perangkat, jika tidak ada hitung dari segmen
+        let inst = -1;
+        const devSpeed = p.coords.speed;
+        if (typeof devSpeed === "number" && devSpeed >= 0 && !Number.isNaN(devSpeed)) inst = devSpeed * 3.6;
+
         const last = lastPtRef.current;
         if (last) {
           const d = haversine(last, pt);
-          if (d >= 4 && d < 100) { distRef.current += d; setDistance(distRef.current); pathRef.current.push(pt); lastPtRef.current = pt; }
-          else if (d >= 100) { lastPtRef.current = pt; }
-        } else { lastPtRef.current = pt; pathRef.current.push(pt); }
+          if (d >= 4 && d < 100) {
+            const segT = lastTimeRef.current ? (now - lastTimeRef.current) / 1000 : 0;
+            if (inst < 0 && segT > 0) inst = (d / segT) * 3.6;
+            distRef.current += d;
+            setDistance(distRef.current);
+            pathRef.current.push(pt);
+            lastPtRef.current = pt;
+            lastTimeRef.current = now;
+          } else if (d >= 100) {
+            lastPtRef.current = pt; lastTimeRef.current = now;
+          }
+        } else {
+          lastPtRef.current = pt; lastTimeRef.current = now; pathRef.current.push(pt);
+        }
+        if (inst >= 0) setSpeed(inst > 120 ? 0 : inst);
       },
       (err) => setError(err.message || "Gagal mengambil lokasi GPS"),
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }
     );
   }
+
   function finish() { endRef.current = Date.now(); stopTracking(); setStatus("finished"); }
   function discard() {
-    setStatus("idle"); setDistance(0); setDuration(0); setSavedStreak(null); setError("");
+    setStatus("idle"); setDistance(0); setDuration(0); setSpeed(0); setSavedStreak(null); setError("");
     distRef.current = 0; pathRef.current = []; lastPtRef.current = null;
   }
   async function save() {
@@ -93,6 +141,8 @@ export default function CatatClient({
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Gagal menyimpan");
       setSavedStreak(typeof data.current_streak === "number" ? data.current_streak : null);
+      setSavedQualifies(Boolean(data.qualifies));
+      setSavedTodayKm(typeof data.today_km === "number" ? data.today_km : 0);
       setStatus("saved");
       router.refresh();
     } catch (e) {
@@ -101,8 +151,8 @@ export default function CatatClient({
   }
 
   const km = (distance / 1000).toFixed(2);
-  const speed = duration > 0 ? ((distance / 1000) / (duration / 3600)).toFixed(1) : "0.0";
-  const qualifies = distance >= 1000;
+  const avgSpeed = duration > 0 ? (distance / 1000) / (duration / 3600) : 0;
+  const displaySpeed = (status === "tracking" ? speed : avgSpeed).toFixed(1);
   const medal = ["🥇", "🥈", "🥉"];
 
   return (
@@ -139,7 +189,7 @@ export default function CatatClient({
             </div>
             <div className="grid grid-cols-2 gap-3 mt-6">
               <div className="bg-white/15 rounded-2xl py-3 text-center"><p className="text-xs opacity-80">Waktu</p><p className="text-2xl font-bold tabular-nums">{fmtDuration(duration)}</p></div>
-              <div className="bg-white/15 rounded-2xl py-3 text-center"><p className="text-xs opacity-80">Kecepatan</p><p className="text-2xl font-bold tabular-nums">{speed}<span className="text-sm font-medium"> km/j</span></p></div>
+              <div className="bg-white/15 rounded-2xl py-3 text-center"><p className="text-xs opacity-80">{status === "tracking" ? "Kecepatan" : "Rata-rata"}</p><p className="text-2xl font-bold tabular-nums">{displaySpeed}<span className="text-sm font-medium"> km/j</span></p></div>
             </div>
           </div>
 
@@ -155,13 +205,13 @@ export default function CatatClient({
                 Merekam perjalanan...
               </div>
               <button onClick={finish} className="w-full bg-red-600 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
-              <p className="text-xs text-gray-400 text-center">Biarkan layar menyala selama merekam agar GPS akurat.</p>
+              <p className="text-xs text-gray-400 text-center">Layar dijaga tetap menyala selama merekam.</p>
             </div>
           )}
           {status === "finished" && (
             <div className="space-y-4">
-              <div className={`rounded-2xl px-4 py-3 text-sm flex items-center gap-2 ${qualifies ? "bg-orange-50 text-orange-700 border border-orange-200" : "bg-gray-50 text-gray-600 border border-gray-200"}`}>
-                {qualifies ? <><Flame size={18} /> Mantap! Perjalanan ini <strong>menghitung streak hari ini</strong>.</> : <><AlertTriangle size={18} /> Jarak &lt; 1 km — <strong>belum menghitung streak</strong>, tapi tetap bisa disimpan.</>}
+              <div className="rounded-2xl px-4 py-3 text-sm flex items-center gap-2 bg-orange-50 text-orange-700 border border-orange-200">
+                <Flame size={18} /> Streak dihitung dari total jarakmu hari ini (minimal 1 km). Simpan untuk memperbaruinya.
               </div>
               <div className="flex gap-2">
                 <button onClick={discard} className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2"><Trash2 size={18} /> Buang</button>
@@ -174,7 +224,14 @@ export default function CatatClient({
             <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
               <CheckCircle2 size={44} className="text-green-600 mx-auto mb-2" />
               <h2 className="font-bold text-green-800 text-lg mb-1">Perjalanan Tersimpan!</h2>
-              {savedStreak !== null && savedStreak > 0 && <p className="text-orange-600 font-bold text-2xl flex items-center justify-center gap-1 my-2"><Flame size={24} /> {savedStreak} hari beruntun</p>}
+              {savedQualifies && savedStreak !== null ? (
+                <>
+                  <p className="text-orange-600 font-bold text-2xl flex items-center justify-center gap-1 my-2"><Flame size={24} /> {savedStreak} hari beruntun</p>
+                  <p className="text-sm text-green-700">Total hari ini {savedTodayKm} km. Streak aman!</p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-600 my-2">Total hari ini {savedTodayKm} km. Kurang {Math.max(0, Math.round((1 - savedTodayKm) * 100) / 100)} km lagi untuk streak hari ini.</p>
+              )}
               <div className="flex gap-2 mt-4">
                 <button onClick={discard} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"><Bike size={18} /> Catat Lagi</button>
                 <button onClick={() => setTab("papan")} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5"><Trophy size={16} /> Peringkat</button>
