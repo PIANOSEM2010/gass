@@ -901,7 +901,7 @@ export default function PetaClient({
     <div className="relative h-[calc(100vh-9rem)] w-full">
       {/* Banner navigasi */}
       {navigating && navInfo && (
-        <div className="absolute top-2 left-2 right-2 z-[1100] bg-purple-700 text-white rounded-xl shadow-lg px-4 py-3 flex items-center gap-3">
+        <div className="absolute top-2 left-2 right-2 z-[1100] bg-gradient-to-r from-purple-600 to-violet-700 text-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3">
           <div className="flex-shrink-0">{maneuverIcon(navInfo.type, 32)}</div>
           <div className="flex-1 min-w-0">
             <p className="font-bold leading-tight">{navInfo.instruction}</p>
@@ -1040,7 +1040,7 @@ export default function PetaClient({
 
       {/* Route info card */}
       {routeInfo && !navigating && (
-        <div className="absolute bottom-24 left-2 right-2 z-[1000] bg-white rounded-xl p-4 shadow-lg">
+        <div className="absolute bottom-24 left-2 right-2 z-[1000] bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Navigation size={18} className="text-purple-600" />
@@ -1141,7 +1141,7 @@ export default function PetaClient({
             <>
               <button
                 onClick={startRouting}
-                className="flex-1 bg-purple-600 text-white py-2.5 rounded-lg font-medium shadow text-sm flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
               >
                 <Navigation size={16} />
                 Cari Rute Pesepeda
@@ -1149,7 +1149,7 @@ export default function PetaClient({
               {userId && (
                 <button
                   onClick={() => setMode("report")}
-                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium shadow text-sm flex items-center justify-center gap-2"
+                  className="flex-1 bg-white border border-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
                 >
                   <MapPin size={16} />
                   Lapor Jalur
