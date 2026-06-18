@@ -50,6 +50,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           {authorProfile?.school && <span>• {authorProfile.school}</span>}
           <span>• {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
         </div>
+        {post.image_url && (
+          <img src={post.image_url} alt="Kartu gowes" className="w-full rounded-xl border border-gray-100 mb-4" />
+        )}
         <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{post.body}</p>
       </article>
 

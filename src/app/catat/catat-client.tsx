@@ -27,8 +27,28 @@ function fmtDuration(s: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-// Menggambar kartu rute (jalur + statistik) ke canvas, siap dibagikan sebagai gambar
-function drawRouteCard(canvas: HTMLCanvasElement, path: Pt[], distanceM: number, durationS: number, elevM: number) {
+// Pilihan warna dan template kartu gowes untuk dibagikan
+const PALETTES: Record<string, { name: string; grad: [string, string]; route: string; endDot: string }> = {
+  hijau:   { name: "Hijau",   grad: ["#15803d", "#064e3b"], route: "#fb923c", endDot: "#fde047" },
+  senja:   { name: "Senja",   grad: ["#c2410c", "#7f1d1d"], route: "#fde68a", endDot: "#ffffff" },
+  samudra: { name: "Samudra", grad: ["#0e7490", "#164e63"], route: "#fde047", endDot: "#ffffff" },
+  ungu:    { name: "Ungu",    grad: ["#6d28d9", "#581c87"], route: "#f5d0fe", endDot: "#ffffff" },
+  malam:   { name: "Malam",   grad: ["#1e293b", "#020617"], route: "#fb923c", endDot: "#fde047" },
+};
+const PALETTE_KEYS = ["hijau", "senja", "samudra", "ungu", "malam"];
+const TEMPLATES: { key: string; name: string }[] = [
+  { key: "rute", name: "Rute" },
+  { key: "statistik", name: "Statistik" },
+  { key: "ringkas", name: "Ringkas" },
+];
+
+// Menggambar kartu gowes ke canvas (1080x1080) sesuai template + warna pilihan
+function drawCard(
+  canvas: HTMLCanvasElement,
+  opts: { template: string; palette: string; path: Pt[]; distanceM: number; durationS: number; elevM: number }
+) {
+  const { template, path, distanceM, durationS, elevM } = opts;
+  const pal = PALETTES[opts.palette] || PALETTES.hijau;
   const W = 1080, H = 1080;
   canvas.width = W;
   canvas.height = H;
@@ -36,33 +56,40 @@ function drawRouteCard(canvas: HTMLCanvasElement, path: Pt[], distanceM: number,
   if (!ctx) return;
 
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#15803d");
-  g.addColorStop(1, "#064e3b");
+  g.addColorStop(0, pal.grad[0]);
+  g.addColorStop(1, pal.grad[1]);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255,255,255,0.95)";
-  ctx.font = "bold 64px sans-serif";
-  ctx.fillText("BUG", 90, 140);
-  ctx.font = "400 32px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.fillText("Bulungan untuk Goweser", 90, 185);
+  const brand = (x: number, y: number) => {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.font = "bold 56px sans-serif";
+    ctx.fillText("BUG", x, y);
+    ctx.font = "400 28px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.fillText("Bulungan untuk Goweser", x, y + 38);
+  };
 
-  const top = 250, areaH = 470, pad = 110, areaW = W - 2 * pad;
-  if (path.length > 1) {
+  const drawRoute = (bx: number, by: number, bw: number, bh: number, lw: number) => {
+    if (path.length < 2) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.font = "400 34px sans-serif";
+      ctx.fillText("Rute terlalu pendek", bx + bw / 2, by + bh / 2);
+      return;
+    }
     const lats = path.map((p) => p.lat);
     const lngs = path.map((p) => p.lng);
     const minLat = Math.min(...lats), maxLat = Math.max(...lats);
     const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
     const spanLat = maxLat - minLat || 1e-6;
     const spanLng = maxLng - minLng || 1e-6;
-    const scale = Math.min(areaW / spanLng, areaH / spanLat);
-    const offX = pad + (areaW - spanLng * scale) / 2;
-    const offY = top + (areaH - spanLat * scale) / 2;
-
-    ctx.strokeStyle = "#fb923c";
-    ctx.lineWidth = 12;
+    const scale = Math.min(bw / spanLng, bh / spanLat);
+    const offX = bx + (bw - spanLng * scale) / 2;
+    const offY = by + (bh - spanLat * scale) / 2;
+    ctx.strokeStyle = pal.route;
+    ctx.lineWidth = lw;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -73,39 +100,70 @@ function drawRouteCard(canvas: HTMLCanvasElement, path: Pt[], distanceM: number,
       else ctx.lineTo(x, y);
     });
     ctx.stroke();
-
     const sx = offX + (path[0].lng - minLng) * scale;
     const sy = offY + (maxLat - path[0].lat) * scale;
     const ex = offX + (path[path.length - 1].lng - minLng) * scale;
     const ey = offY + (maxLat - path[path.length - 1].lat) * scale;
     ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(sx, sy, 14, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#fde047";
-    ctx.beginPath(); ctx.arc(ex, ey, 14, 0, Math.PI * 2); ctx.fill();
-  } else {
-    ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "400 36px sans-serif";
-    ctx.fillText("Rute terlalu pendek untuk digambar", W / 2, top + areaH / 2);
-  }
+    ctx.beginPath(); ctx.arc(sx, sy, lw * 1.15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = pal.endDot;
+    ctx.beginPath(); ctx.arc(ex, ey, lw * 1.15, 0, Math.PI * 2); ctx.fill();
+  };
 
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 130px sans-serif";
-  ctx.fillText(`${(distanceM / 1000).toFixed(2)}`, W / 2, 870);
-  ctx.font = "500 40px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.fillText("kilometer", W / 2, 920);
-
+  const km = (distanceM / 1000).toFixed(2);
   const dur = fmtDuration(durationS);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 60px sans-serif";
-  ctx.fillText(dur, W * 0.3, 1015);
-  ctx.fillText(`${Math.round(elevM)} m`, W * 0.7, 1015);
-  ctx.font = "400 30px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
-  ctx.fillText("Waktu", W * 0.3, 1058);
-  ctx.fillText("Elevasi", W * 0.7, 1058);
+  const elev = `${Math.round(elevM)} m`;
+
+  if (template === "statistik") {
+    brand(80, 110);
+    ctx.textAlign = "center";
+    const cx = W / 2;
+    const stat = (label: string, value: string, y: number) => {
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.font = "500 34px sans-serif";
+      ctx.fillText(label, cx, y);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 92px sans-serif";
+      ctx.fillText(value, cx, y + 92);
+    };
+    stat("Jarak", `${km} km`, 250);
+    stat("Waktu", dur, 450);
+    stat("Elevasi", elev, 650);
+    drawRoute(130, 800, W - 260, 180, 8);
+  } else if (template === "ringkas") {
+    brand(80, 110);
+    drawRoute(70, 170, W - 140, 660, 14);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 120px sans-serif";
+    ctx.fillText(km, 80, 960);
+    const kmW = ctx.measureText(km).width;
+    ctx.font = "500 40px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillText("km", 80 + kmW + 16, 960);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.font = "500 34px sans-serif";
+    ctx.fillText(`${dur} · ${elev}`, W - 80, 958);
+  } else {
+    brand(90, 130);
+    drawRoute(110, 240, W - 220, 470, 12);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 130px sans-serif";
+    ctx.fillText(km, W / 2, 870);
+    ctx.font = "500 40px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillText("kilometer", W / 2, 920);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 60px sans-serif";
+    ctx.fillText(dur, W * 0.3, 1015);
+    ctx.fillText(elev, W * 0.7, 1015);
+    ctx.font = "400 30px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.fillText("Waktu", W * 0.3, 1058);
+    ctx.fillText("Elevasi", W * 0.7, 1058);
+  }
 }
 
 export default function CatatClient({
@@ -127,6 +185,8 @@ export default function CatatClient({
   const [savedTodayKm, setSavedTodayKm] = useState(0);
   const [savedElev, setSavedElev] = useState<number | null>(null);
   const [sharingForum, setSharingForum] = useState(false);
+  const [template, setTemplate] = useState("rute");
+  const [palette, setPalette] = useState("hijau");
 
   const watchIdRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -160,12 +220,16 @@ export default function CatatClient({
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [acquireWake]);
 
-  // Gambar kartu rute saat layar tersimpan tampil
+  // Gambar kartu saat layar tersimpan tampil (atau saat template/warna diubah)
   useEffect(() => {
     if (status === "saved" && cardRef.current) {
-      drawRouteCard(cardRef.current, pathRef.current, distRef.current, duration, savedElev ?? elevRef.current);
+      drawCard(cardRef.current, {
+        template, palette,
+        path: pathRef.current, distanceM: distRef.current, durationS: duration,
+        elevM: savedElev ?? elevRef.current,
+      });
     }
-  }, [status, duration, savedElev]);
+  }, [status, duration, savedElev, template, palette]);
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
@@ -404,9 +468,24 @@ export default function CatatClient({
                 )}
               </div>
 
-              {/* Kartu rute untuk dibagikan */}
+              {/* Kartu untuk dibagikan: pilih template + warna */}
               <div>
-                <p className="text-xs text-gray-500 mb-2 font-medium">Kartu perjalananmu</p>
+                <p className="text-xs text-gray-500 mb-2 font-medium">Pilih tampilan kartu</p>
+                <div className="flex gap-2 mb-3">
+                  {TEMPLATES.map((t) => (
+                    <button key={t.key} onClick={() => setTemplate(t.key)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"}`}>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2.5 mb-3">
+                  {PALETTE_KEYS.map((k) => (
+                    <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
+                      className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-gray-800" : "ring-1 ring-gray-200"}`}
+                      style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]}, ${PALETTES[k].grad[1]})` }} />
+                  ))}
+                </div>
                 <canvas ref={cardRef} className="w-full h-auto rounded-2xl shadow border border-gray-200" />
               </div>
 

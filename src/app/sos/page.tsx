@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import SosButton from "./sos-button";
 import PushEnroll from "./push-enroll";
-import { Users, History, Siren, AlertTriangle } from "lucide-react";
+import { Users, History, Siren, AlertTriangle, MapPinned, ChevronRight } from "lucide-react";
 
 export default async function SosPage() {
   const supabase = await createClient();
@@ -67,6 +67,16 @@ export default async function SosPage() {
             <p className="text-xs text-gray-500 mt-0.5">SOS sebelumnya</p>
           </Link>
         </div>
+
+        {/* Teman Pantau */}
+        <Link href="/pantau" className="mt-3 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-4 shadow-sm active:scale-[0.98] transition-transform">
+          <MapPinned size={24} className="flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h2 className="font-bold">Teman Pantau</h2>
+            <p className="text-xs opacity-90">Bagikan lokasi langsung ke keluarga saat berkendara</p>
+          </div>
+          <ChevronRight size={20} className="flex-shrink-0" />
+        </Link>
 
         {/* Cara kerja */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-800">
