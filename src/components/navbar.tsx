@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Siren, BookOpen, User, Bike, type LucideIcon } from "lucide-react";
+import { Home, Map, Siren, BookOpen, User, Bike, MessageSquare, type LucideIcon } from "lucide-react";
 
 const leftTabs = [
   { href: "/", label: "Beranda", icon: Home },
@@ -10,6 +10,7 @@ const leftTabs = [
 ];
 const rightTabs = [
   { href: "/edukasi", label: "Edukasi", icon: BookOpen },
+  { href: "/forum", label: "Forum", icon: MessageSquare },
   { href: "/profil", label: "Profil", icon: User },
 ];
 
