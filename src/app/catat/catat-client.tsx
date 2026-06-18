@@ -45,9 +45,9 @@ const TEMPLATES: { key: string; name: string }[] = [
 // Menggambar kartu gowes ke canvas (1080x1080) sesuai template + warna pilihan
 function drawCard(
   canvas: HTMLCanvasElement,
-  opts: { template: string; palette: string; path: Pt[]; distanceM: number; durationS: number; elevM: number }
+  opts: { template: string; palette: string; path: Pt[]; distanceM: number; durationS: number; elevM: number; place: string }
 ) {
-  const { template, path, distanceM, durationS, elevM } = opts;
+  const { template, path, distanceM, durationS, elevM, place } = opts;
   const pal = PALETTES[opts.palette] || PALETTES.hijau;
   const W = 1080, H = 1080;
   canvas.width = W;
@@ -116,6 +116,10 @@ function drawCard(
 
   if (template === "statistik") {
     brand(80, 110);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.font = "600 32px sans-serif";
+    ctx.fillText(`Gowes di ${place}`, 80, 185);
     ctx.textAlign = "center";
     const cx = W / 2;
     const stat = (label: string, value: string, y: number) => {
@@ -132,7 +136,11 @@ function drawCard(
     drawRoute(130, 800, W - 260, 180, 8);
   } else if (template === "ringkas") {
     brand(80, 110);
-    drawRoute(70, 170, W - 140, 660, 14);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.font = "600 32px sans-serif";
+    ctx.fillText(`Gowes di ${place}`, 80, 190);
+    drawRoute(70, 210, W - 140, 620, 14);
     ctx.textAlign = "left";
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 120px sans-serif";
@@ -147,6 +155,10 @@ function drawCard(
     ctx.fillText(`${dur} · ${elev}`, W - 80, 958);
   } else {
     brand(90, 130);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.font = "600 32px sans-serif";
+    ctx.fillText(`Gowes di ${place}`, 90, 210);
     drawRoute(110, 240, W - 220, 470, 12);
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffffff";
@@ -187,6 +199,7 @@ export default function CatatClient({
   const [sharingForum, setSharingForum] = useState(false);
   const [template, setTemplate] = useState("rute");
   const [palette, setPalette] = useState("hijau");
+  const [placeName, setPlaceName] = useState("Bulungan");
 
   const watchIdRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -220,16 +233,39 @@ export default function CatatClient({
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [acquireWake]);
 
-  // Gambar kartu saat layar tersimpan tampil (atau saat template/warna diubah)
+  // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah)
   useEffect(() => {
     if (status === "saved" && cardRef.current) {
       drawCard(cardRef.current, {
-        template, palette,
+        template, palette, place: placeName,
         path: pathRef.current, distanceM: distRef.current, durationS: duration,
         elevM: savedElev ?? elevRef.current,
       });
     }
-  }, [status, duration, savedElev, template, palette]);
+  }, [status, duration, savedElev, template, palette, placeName]);
+
+  // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk caption
+  useEffect(() => {
+    if (status !== "saved") return;
+    const path = pathRef.current;
+    if (!path || path.length === 0) return;
+    const mid = path[Math.floor(path.length / 2)];
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${mid.lat}&lon=${mid.lng}&zoom=10&addressdetails=1&accept-language=id`,
+          { cache: "no-store" }
+        );
+        const j = await res.json();
+        const a = j.address || {};
+        let name: string = a.city || a.county || a.municipality || a.town || a.city_district || a.village || a.state || "";
+        name = name.replace(/^(Kabupaten|Kota|Kecamatan|Daerah Khusus Ibukota)\s+/i, "").trim();
+        if (!cancelled && name) setPlaceName(name);
+      } catch { /* pertahankan default */ }
+    })();
+    return () => { cancelled = true; };
+  }, [status]);
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
@@ -331,7 +367,7 @@ export default function CatatClient({
     const canvas = cardRef.current;
     if (!canvas) return;
     const km = (distRef.current / 1000).toFixed(2);
-    const text = `Baru saja gowes ${km} km di Bulungan bersama BUG! 🚴 #GoweserAmanBulungan`;
+    const text = `Baru saja gowes ${km} km di ${placeName} bersama BUG! 🚴 #GoweserAman${placeName.replace(/\s+/g, "")}`;
     canvas.toBlob(async (blob) => {
       if (!blob) return;
       const file = new File([blob], "gowes-bug.png", { type: "image/png" });
@@ -358,16 +394,27 @@ export default function CatatClient({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
       const km = (distRef.current / 1000).toFixed(2);
-      const title = `Gowes ${km} km hari ini`;
+
+      // Unggah gambar kartu (sesuai template + warna terpilih) ke Storage
+      let imageUrl: string | null = null;
+      const canvas = cardRef.current;
+      if (canvas) {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+        if (blob) {
+          const path = `${user.id}/${Date.now()}.png`;
+          const { error: upErr } = await supabase.storage.from("gowes-cards").upload(path, blob, { contentType: "image/png", upsert: false });
+          if (upErr) throw new Error("Gagal mengunggah kartu: " + upErr.message);
+          imageUrl = supabase.storage.from("gowes-cards").getPublicUrl(path).data.publicUrl;
+        }
+      }
+
+      const title = `Gowes ${km} km di ${placeName}`;
       const body =
-        `Baru saja menyelesaikan perjalanan bersepeda di Bulungan:\n\n` +
-        `Jarak: ${km} km\n` +
-        `Waktu: ${fmtDuration(duration)}\n` +
-        `Elevasi: ${Math.round(savedElev ?? elevRef.current)} m\n\n` +
+        `Jarak ${km} km, waktu ${fmtDuration(duration)}, elevasi ${Math.round(savedElev ?? elevRef.current)} m. ` +
         `Dicatat lewat fitur Gowes di BUG.`;
       const { data, error: insErr } = await supabase
         .from("forum_posts")
-        .insert({ user_id: user.id, title, body })
+        .insert({ user_id: user.id, title, body, image_url: imageUrl })
         .select()
         .single();
       if (insErr) throw new Error(insErr.message);
