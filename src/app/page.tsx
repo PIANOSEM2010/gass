@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Map, BookOpen, Siren, Megaphone, Users, Bike, Flame, ChevronRight, Trophy, Construction } from "lucide-react";
+import { Map, BookOpen, Siren, Megaphone, Users, Bike, Flame, ChevronRight, Trophy, Construction, BarChart3 } from "lucide-react";
 
 function witaDate(off = 0): string {
   return new Date(Date.now() + 8 * 3600 * 1000 + off * 86400000).toISOString().slice(0, 10);
@@ -114,6 +114,15 @@ export default async function Home() {
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-sm">Papan Peringkat</h2>
             <p className="text-xs opacity-90">Lihat ranking streak pesepeda</p>
+          </div>
+          <ChevronRight size={20} className="flex-shrink-0" />
+        </Link>
+
+        <Link href="/dashboard" className="mt-3 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-slate-700 to-slate-900 text-white p-4 shadow-sm active:scale-[0.98] transition-transform">
+          <BarChart3 size={22} className="flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h2 className="font-bold text-sm">Dashboard Keselamatan</h2>
+            <p className="text-xs opacity-90">Data laporan, zona rawan, dan aktivitas warga</p>
           </div>
           <ChevronRight size={20} className="flex-shrink-0" />
         </Link>
