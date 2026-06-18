@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
   ArrowLeft, ArrowRight, ArrowUp, ArrowUpLeft, ArrowUpRight,
-  RotateCw, RotateCcw, Flag, Play, Square, Volume2,
+  RotateCw, RotateCcw, Flag, Play, Square, Volume2, ShieldCheck,
 } from "lucide-react";
 
 type RoadMarker = {
@@ -167,15 +167,50 @@ function formatDist(m: number): string {
   return `${Math.round(m)} m`;
 }
 
+// Zona yang dihindari rute: hanya kategori serius (kuning "potensi" tidak dihindari)
+const AVOID_CATEGORIES: Zone["category"][] = ["rawan", "berbahaya"];
+
+type AvoidGeometry = { type: "MultiPolygon"; coordinates: number[][][][] };
+
+// Ubah lingkaran zona (lat,lng,radius meter) jadi cincin poligon GeoJSON [lng,lat]
+function circleRing(lat: number, lng: number, radiusM: number, points = 16): number[][] {
+  const ring: number[][] = [];
+  const dLat = radiusM / 111320;
+  const dLng = radiusM / (111320 * Math.cos((lat * Math.PI) / 180));
+  for (let i = 0; i <= points; i++) {
+    const t = (i / points) * 2 * Math.PI;
+    ring.push([lng + dLng * Math.cos(t), lat + dLat * Math.sin(t)]);
+  }
+  return ring;
+}
+
+// Gabungkan zona berbahaya jadi satu MultiPolygon untuk avoid_polygons ORS
+function buildAvoidMultiPolygon(zones: Zone[]): AvoidGeometry | null {
+  const toAvoid = zones.filter((z) => AVOID_CATEGORIES.includes(z.category) && z.radius > 0);
+  if (toAvoid.length === 0) return null;
+  return { type: "MultiPolygon", coordinates: toAvoid.map((z) => [circleRing(z.lat, z.lng, z.radius)]) };
+}
+
 async function fetchRoute(
   a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
+  b: { lat: number; lng: number },
+  avoidPolygons?: AvoidGeometry | null
 ): Promise<{ coords: [number, number][]; info: { distance: number; duration: number }; steps: NavStep[] }> {
   const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
   if (!apiKey) throw new Error("API key OpenRouteService belum di-setup");
 
-  const url = `https://api.openrouteservice.org/v2/directions/cycling-regular?api_key=${apiKey}&start=${a.lng},${a.lat}&end=${b.lng},${b.lat}`;
-  const res = await fetch(url);
+  const reqBody: Record<string, unknown> = { coordinates: [[a.lng, a.lat], [b.lng, b.lat]] };
+  if (avoidPolygons) reqBody.options = { avoid_polygons: avoidPolygons };
+
+  const res = await fetch("https://api.openrouteservice.org/v2/directions/cycling-regular/geojson", {
+    method: "POST",
+    headers: {
+      Authorization: apiKey,
+      "Content-Type": "application/json",
+      Accept: "application/geo+json",
+    },
+    body: JSON.stringify(reqBody),
+  });
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new Error(errData?.error?.message || "Routing gagal");
@@ -645,11 +680,17 @@ export default function PetaClient({
   const [navigating, setNavigating] = useState(false);
   const [navInfo, setNavInfo] = useState<NavInfo | null>(null);
 
+  const [avoidDanger, setAvoidDanger] = useState(true);
+  const [routeNote, setRouteNote] = useState<{ type: "safe" | "fallback"; count: number } | null>(null);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const pointBRef = useRef(pointB);
   pointBRef.current = pointB;
+
+  const avoidDangerRef = useRef(avoidDanger);
+  avoidDangerRef.current = avoidDanger;
 
   const handleLocError = useCallback((msg: string) => {
     setError(msg);
@@ -666,15 +707,25 @@ export default function PetaClient({
   const handleReroute = useCallback(async (origin: { lat: number; lng: number }) => {
     const dest = pointBRef.current;
     if (!dest) return;
+    const avoid = avoidDangerRef.current ? buildAvoidMultiPolygon(zones) : null;
     try {
-      const { coords, info, steps } = await fetchRoute(origin, dest);
+      const { coords, info, steps } = await fetchRoute(origin, dest, avoid);
       setRouteCoords(coords);
       setRouteInfo(info);
       setRouteSteps(steps);
     } catch {
-      /* tetap pakai rute lama jika reroute gagal */
+      if (avoid) {
+        try {
+          const { coords, info, steps } = await fetchRoute(origin, dest, null);
+          setRouteCoords(coords);
+          setRouteInfo(info);
+          setRouteSteps(steps);
+        } catch {
+          /* tetap pakai rute lama jika reroute gagal */
+        }
+      }
     }
-  }, []);
+  }, [zones]);
 
   function toggleTraffic() {
     if (!showTraffic && !tomtomKey) {
@@ -808,20 +859,46 @@ export default function PetaClient({
     if (pointA) calculateRoute(pointA, { lat, lng });
   }
 
-  async function calculateRoute(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  async function calculateRoute(
+    a: { lat: number; lng: number },
+    b: { lat: number; lng: number },
+    avoidEnabled: boolean = avoidDanger
+  ) {
     setRouting(true);
     setError("");
+    setRouteNote(null);
+    const avoid = avoidEnabled ? buildAvoidMultiPolygon(zones) : null;
+    const count = avoid ? avoid.coordinates.length : 0;
     try {
-      const { coords, info, steps } = await fetchRoute(a, b);
+      if (avoid) {
+        try {
+          const { coords, info, steps } = await fetchRoute(a, b, avoid);
+          setRouteCoords(coords);
+          setRouteInfo(info);
+          setRouteSteps(steps);
+          setRouteNote({ type: "safe", count });
+          return;
+        } catch {
+          /* gagal dengan avoidance, lanjut coba rute biasa */
+        }
+      }
+      const { coords, info, steps } = await fetchRoute(a, b, null);
       setRouteCoords(coords);
       setRouteInfo(info);
       setRouteSteps(steps);
+      if (avoid) setRouteNote({ type: "fallback", count });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Routing gagal");
       setTimeout(() => setError(""), 5000);
     } finally {
       setRouting(false);
     }
+  }
+
+  function toggleAvoid() {
+    const next = !avoidDanger;
+    setAvoidDanger(next);
+    if (pointA && pointB) calculateRoute(pointA, pointB, next);
   }
 
   function clearRoute() {
@@ -1065,6 +1142,26 @@ export default function PetaClient({
               <p className="font-semibold">{Math.round(routeInfo.duration / 60)} menit</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={toggleAvoid}
+            className="w-full mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-gray-200"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <ShieldCheck size={16} className={avoidDanger ? "text-green-600" : "text-gray-400"} />
+              Rute Aman (hindari zona rawan)
+            </span>
+            <span className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${avoidDanger ? "bg-green-600" : "bg-gray-300"}`}>
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
+            </span>
+          </button>
+          {routeNote && (
+            <p className={`text-xs mt-2 ${routeNote.type === "safe" ? "text-green-700" : "text-amber-600"}`}>
+              {routeNote.type === "safe"
+                ? `Rute menghindari ${routeNote.count} zona rawan.`
+                : "Rute aman penuh tidak ditemukan, ditampilkan rute terbaik yang tersedia."}
+            </p>
+          )}
           {routeSteps.length > 0 && (
             <button
               onClick={startNavigation}

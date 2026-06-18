@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Map, BookOpen, Siren, Megaphone, Users, Bike, Flame, ChevronRight, Trophy } from "lucide-react";
+import { Map, BookOpen, Siren, Megaphone, Users, Bike, Flame, ChevronRight, Trophy, Construction } from "lucide-react";
 
 function witaDate(off = 0): string {
   return new Date(Date.now() + 8 * 3600 * 1000 + off * 86400000).toISOString().slice(0, 10);
@@ -81,6 +81,16 @@ export default async function Home() {
             </Link>
           ))}
         </div>
+
+        {/* Lapor infrastruktur, untuk semua pengguna jalan */}
+        <Link href="/lapor" className="mt-3 flex items-center gap-3 rounded-2xl bg-white border-2 border-amber-200 p-4 shadow-md active:scale-[0.98] transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-200 flex-shrink-0"><Construction size={24} /></div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-bold text-amber-700">Lapor Jalan Rusak</h2>
+            <p className="text-xs text-gray-500">Foto lubang, lampu mati, atau marka pudar</p>
+          </div>
+          <ChevronRight className="text-amber-400 flex-shrink-0" size={20} />
+        </Link>
 
         {/* Aktivitas Gowes (sekunder, di bawah) */}
         <h3 className="font-bold text-gray-800 mt-6 mb-3 px-1">Aktivitas Gowes</h3>
