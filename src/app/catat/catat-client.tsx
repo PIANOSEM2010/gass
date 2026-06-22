@@ -1,26 +1,16 @@
 "use client";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useGowes, type Pt } from "../gowes-provider";
 import {
   Play, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
 } from "lucide-react";
 
-type Pt = { lat: number; lng: number };
-type Status = "idle" | "tracking" | "finished" | "saving" | "saved";
 type BoardItem = { user_id: string; name: string; org: string; km: number; rides: number; streak: number };
-type WakeLockLike = { release: () => Promise<void> };
 
-function haversine(a: Pt, b: Pt): number {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(x));
-}
 function fmtDuration(s: number): string {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -185,13 +175,10 @@ export default function CatatClient({
   myStreak: number; longest: number; totalKm: number; totalRides: number; board: BoardItem[];
 }) {
   const router = useRouter();
+  // Mesin gowes kini global (provider di root layout) agar tetap jalan saat buka menu lain
+  const { status, setStatus, distance, duration, speed, elev, error, setError, start, finish, discard, getStats, getPath } = useGowes();
+
   const [tab, setTab] = useState<"catat" | "papan">("catat");
-  const [status, setStatus] = useState<Status>("idle");
-  const [distance, setDistance] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [speed, setSpeed] = useState(0);
-  const [elev, setElev] = useState(0);
-  const [error, setError] = useState("");
   const [savedStreak, setSavedStreak] = useState<number | null>(null);
   const [savedQualifies, setSavedQualifies] = useState(false);
   const [savedTodayKm, setSavedTodayKm] = useState(0);
@@ -200,54 +187,26 @@ export default function CatatClient({
   const [template, setTemplate] = useState("rute");
   const [palette, setPalette] = useState("hijau");
   const [placeName, setPlaceName] = useState("Bulungan");
-
-  const watchIdRef = useRef<number | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRef = useRef(0);
-  const endRef = useRef(0);
-  const lastPtRef = useRef<Pt | null>(null);
-  const lastTimeRef = useRef(0);
-  const lastAltRef = useRef<number | null>(null);
-  const distRef = useRef(0);
-  const elevRef = useRef(0);
-  const pathRef = useRef<Pt[]>([]);
-  const wakeRef = useRef<WakeLockLike | null>(null);
   const cardRef = useRef<HTMLCanvasElement>(null);
-
-  const acquireWake = useCallback(async () => {
-    try {
-      const nav = navigator as unknown as { wakeLock?: { request: (t: "screen") => Promise<WakeLockLike> } };
-      if (nav.wakeLock) wakeRef.current = await nav.wakeLock.request("screen");
-    } catch { /* tidak didukung */ }
-  }, []);
-  const releaseWake = useCallback(() => {
-    try { wakeRef.current?.release(); } catch { /* abaikan */ }
-    wakeRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    function onVis() {
-      if (document.visibilityState === "visible" && watchIdRef.current !== null) acquireWake();
-    }
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [acquireWake]);
 
   // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah)
   useEffect(() => {
     if (status === "saved" && cardRef.current) {
+      const st = getStats();
       drawCard(cardRef.current, {
         template, palette, place: placeName,
-        path: pathRef.current, distanceM: distRef.current, durationS: duration,
-        elevM: savedElev ?? elevRef.current,
+        path: getPath(), distanceM: st.distanceM, durationS: duration,
+        elevM: savedElev ?? st.elevM,
       });
     }
+    // getStats/getPath sengaja tidak dimasukkan dep (stabil, dibaca saat efek jalan)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, duration, savedElev, template, palette, placeName]);
 
   // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk caption
   useEffect(() => {
     if (status !== "saved") return;
-    const path = pathRef.current;
+    const path = getPath();
     if (!path || path.length === 0) return;
     const mid = path[Math.floor(path.length / 2)];
     let cancelled = false;
@@ -265,89 +224,26 @@ export default function CatatClient({
       } catch { /* pertahankan default */ }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  const stopTracking = useCallback(() => {
-    if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    releaseWake();
-  }, [releaseWake]);
-
-  function start() {
-    if (typeof navigator === "undefined" || !navigator.geolocation) { setError("Browser tidak mendukung GPS"); return; }
-    setError("");
-    distRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastTimeRef.current = 0;
-    elevRef.current = 0; lastAltRef.current = null;
-    setDistance(0); setDuration(0); setSpeed(0); setElev(0); setSavedStreak(null);
-    startRef.current = Date.now(); setStatus("tracking");
-    acquireWake();
-    timerRef.current = setInterval(() => setDuration(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (p) => {
-        const acc = p.coords.accuracy;
-        const pt = { lat: p.coords.latitude, lng: p.coords.longitude };
-        const now = Date.now();
-        if (acc && acc > 35) return;
-
-        let inst = -1;
-        const devSpeed = p.coords.speed;
-        if (typeof devSpeed === "number" && devSpeed >= 0 && !Number.isNaN(devSpeed)) inst = devSpeed * 3.6;
-
-        const last = lastPtRef.current;
-        if (last) {
-          const d = haversine(last, pt);
-          if (d >= 4 && d < 100) {
-            const segT = lastTimeRef.current ? (now - lastTimeRef.current) / 1000 : 0;
-            if (inst < 0 && segT > 0) inst = (d / segT) * 3.6;
-            distRef.current += d;
-            setDistance(distRef.current);
-            pathRef.current.push(pt);
-            lastPtRef.current = pt;
-            lastTimeRef.current = now;
-          } else if (d >= 100) {
-            lastPtRef.current = pt; lastTimeRef.current = now;
-          }
-        } else {
-          lastPtRef.current = pt; lastTimeRef.current = now; pathRef.current.push(pt);
-        }
-
-        // Elevasi: jumlahkan kenaikan altitude (ambang 2 m untuk kurangi noise GPS)
-        const alt = p.coords.altitude;
-        if (typeof alt === "number" && !Number.isNaN(alt)) {
-          if (lastAltRef.current !== null) {
-            const dAlt = alt - lastAltRef.current;
-            if (dAlt > 2) {
-              elevRef.current += dAlt;
-              setElev(Math.round(elevRef.current));
-            }
-          }
-          lastAltRef.current = alt;
-        }
-
-        if (inst >= 0) setSpeed(inst > 120 ? 0 : inst);
-      },
-      (err) => setError(err.message || "Gagal mengambil lokasi GPS"),
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }
-    );
-  }
-
-  function finish() { endRef.current = Date.now(); stopTracking(); setStatus("finished"); }
-  function discard() {
-    setStatus("idle"); setDistance(0); setDuration(0); setSpeed(0); setElev(0); setSavedStreak(null); setSavedElev(null); setError("");
-    distRef.current = 0; elevRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastAltRef.current = null;
+  function handleDiscard() {
+    discard();
+    setSavedStreak(null); setSavedElev(null); setSavedQualifies(false); setSavedTodayKm(0);
   }
 
   async function save() {
     setStatus("saving"); setError("");
     try {
+      const st = getStats();
       const res = await fetch("/api/activity", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId, fullName, organization,
-          distance_m: Math.round(distRef.current), duration_s: duration,
-          elevation_gain_m: Math.round(elevRef.current), path: pathRef.current,
-          started_at: new Date(startRef.current).toISOString(),
-          ended_at: new Date(endRef.current || Date.now()).toISOString(),
+          distance_m: Math.round(st.distanceM), duration_s: st.durationS,
+          elevation_gain_m: Math.round(st.elevM), path: getPath(),
+          started_at: new Date(st.startedAt).toISOString(),
+          ended_at: new Date(st.endedAt).toISOString(),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -366,7 +262,7 @@ export default function CatatClient({
   function shareCard() {
     const canvas = cardRef.current;
     if (!canvas) return;
-    const km = (distRef.current / 1000).toFixed(2);
+    const km = (getStats().distanceM / 1000).toFixed(2);
     const text = `Baru saja gowes ${km} km di ${placeName} bersama BUG! 🚴 #GoweserAman${placeName.replace(/\s+/g, "")}`;
     canvas.toBlob(async (blob) => {
       if (!blob) return;
@@ -393,7 +289,7 @@ export default function CatatClient({
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
-      const km = (distRef.current / 1000).toFixed(2);
+      const km = (getStats().distanceM / 1000).toFixed(2);
 
       // Unggah gambar kartu (sesuai template + warna terpilih) ke Storage
       let imageUrl: string | null = null;
@@ -410,7 +306,7 @@ export default function CatatClient({
 
       const title = `Gowes ${km} km di ${placeName}`;
       const body =
-        `Jarak ${km} km, waktu ${fmtDuration(duration)}, elevasi ${Math.round(savedElev ?? elevRef.current)} m. ` +
+        `Jarak ${km} km, waktu ${fmtDuration(duration)}, elevasi ${Math.round(savedElev ?? getStats().elevM)} m. ` +
         `Dicatat lewat fitur Gowes di BUG.`;
       const { data, error: insErr } = await supabase
         .from("forum_posts")
@@ -485,7 +381,7 @@ export default function CatatClient({
                 Merekam perjalanan...
               </div>
               <button onClick={finish} className="w-full bg-red-600 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
-              <p className="text-xs text-gray-400 text-center">Layar dijaga tetap menyala selama merekam.</p>
+              <p className="text-xs text-gray-400 text-center">Gowes tetap berjalan walau kamu membuka menu lain. Layar dijaga tetap menyala selama merekam.</p>
             </div>
           )}
           {status === "finished" && (
@@ -494,7 +390,7 @@ export default function CatatClient({
                 <Flame size={18} /> Streak dihitung dari total jarakmu hari ini (minimal 1 km). Simpan untuk memperbaruinya.
               </div>
               <div className="flex gap-2">
-                <button onClick={discard} className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2"><Trash2 size={18} /> Buang</button>
+                <button onClick={handleDiscard} className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2"><Trash2 size={18} /> Buang</button>
                 <button onClick={save} className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><Save size={18} /> Simpan</button>
               </div>
             </div>
@@ -546,7 +442,7 @@ export default function CatatClient({
               </div>
 
               <div className="flex gap-2">
-                <button onClick={discard} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"><Bike size={18} /> Catat Lagi</button>
+                <button onClick={handleDiscard} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"><Bike size={18} /> Catat Lagi</button>
                 <button onClick={() => setTab("papan")} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5"><Trophy size={16} /> Peringkat</button>
               </div>
             </div>

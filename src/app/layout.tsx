@@ -1,3 +1,4 @@
+import GowesProvider from "./gowes-provider";
 import SosAlertProvider from "./sos-alert-provider";
 import InstallPrompt from "./install-prompt";
 import type { Metadata, Viewport } from "next";
@@ -22,11 +23,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id">
       <body className={`${inter.className} bg-gray-50 min-h-screen`}>
-  <SosAlertProvider />
-  <InstallPrompt />
-  <Navbar />
-  <main className="pb-20">{children}</main>
-</body>
+        <GowesProvider>
+          <SosAlertProvider />
+          <InstallPrompt />
+          <Navbar />
+          <main className="pb-20">{children}</main>
+        </GowesProvider>
+      </body>
     </html>
   );
 }
