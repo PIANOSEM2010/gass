@@ -9,7 +9,7 @@ export default async function ForumPage() {
 
   const { data: posts } = await supabase
     .from("forum_posts")
-    .select("id, title, body, created_at, user_id")
+    .select("id, title, body, image_url, created_at, user_id")
     .eq("approved", true)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -73,6 +73,9 @@ export default async function ForumPage() {
                 className="block bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-gray-100"
               >
                 <h2 className="font-bold text-gray-900 mb-1 leading-tight">{post.title}</h2>
+                {post.image_url && (
+                  <img src={post.image_url} alt="Kartu gowes" className="w-full rounded-xl border border-gray-100 mb-2" />
+                )}
                 <p className="text-sm text-gray-600 line-clamp-2 mb-3">{post.body}</p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <div className="flex items-center gap-1.5">
