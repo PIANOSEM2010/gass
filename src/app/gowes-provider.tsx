@@ -1,10 +1,8 @@
 "use client";
 import { type ReactNode, createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { Square, ChevronUp, Bike } from "lucide-react";
 
 export type Pt = { lat: number; lng: number };
-export type GowesStatus = "idle" | "tracking" | "finished" | "saving" | "saved";
+export type GowesStatus = "idle" | "tracking" | "paused" | "finished" | "saving" | "saved";
 export type GowesStats = { distanceM: number; durationS: number; elevM: number; startedAt: number; endedAt: number };
 type WakeLockLike = { release: () => Promise<void> };
 
@@ -16,11 +14,6 @@ function haversine(a: Pt, b: Pt): number {
   const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
-function fmtDuration(s: number): string {
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
-}
 
 interface GowesContextValue {
   status: GowesStatus;
@@ -30,6 +23,8 @@ interface GowesContextValue {
   elev: number;     // meter
   error: string;
   start: () => void;
+  pause: () => void;
+  resume: () => void;
   finish: () => void;
   discard: () => void;
   setStatus: (s: GowesStatus) => void;
@@ -65,6 +60,11 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const elevRef = useRef(0);
   const pathRef = useRef<Pt[]>([]);
   const wakeRef = useRef<WakeLockLike | null>(null);
+  // Dukungan jeda: total durasi jeda + kapan jeda terakhir dimulai
+  const pausedMsRef = useRef(0);
+  const pauseStartRef = useRef(0);
+  const statusRef = useRef<GowesStatus>("idle");
+  statusRef.current = status;
 
   const acquireWake = useCallback(async () => {
     try {
@@ -100,15 +100,16 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     releaseWake();
   }, [releaseWake]);
 
-  const start = useCallback(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) { setError("Browser tidak mendukung GPS"); return; }
-    setError("");
-    distRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastTimeRef.current = 0;
-    elevRef.current = 0; lastAltRef.current = null;
-    setDistance(0); setDuration(0); setSpeed(0); setElev(0);
-    startRef.current = Date.now(); endRef.current = 0; setStatus("tracking");
-    acquireWake();
-    timerRef.current = setInterval(() => setDuration(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
+  // Durasi aktif = waktu berjalan dikurangi total waktu jeda
+  const beginTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(
+      () => setDuration(Math.floor((Date.now() - startRef.current - pausedMsRef.current) / 1000)),
+      1000
+    );
+  }, []);
+
+  const beginWatch = useCallback(() => {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (p) => {
         const acc = p.coords.accuracy;
@@ -153,15 +154,62 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
       (err) => setError(err.message || "Gagal mengambil lokasi GPS"),
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }
     );
-  }, [acquireWake]);
+  }, []);
 
-  const finish = useCallback(() => { endRef.current = Date.now(); stopTracking(); setStatus("finished"); }, [stopTracking]);
+  const start = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) { setError("Browser tidak mendukung GPS"); return; }
+    setError("");
+    distRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastTimeRef.current = 0;
+    elevRef.current = 0; lastAltRef.current = null;
+    pausedMsRef.current = 0; pauseStartRef.current = 0;
+    setDistance(0); setDuration(0); setSpeed(0); setElev(0);
+    startRef.current = Date.now(); endRef.current = 0; setStatus("tracking");
+    acquireWake();
+    beginTimer();
+    beginWatch();
+  }, [acquireWake, beginTimer, beginWatch]);
+
+  // Jeda: hentikan GPS + timer, tapi pertahankan seluruh data perjalanan
+  const pause = useCallback(() => {
+    if (statusRef.current !== "tracking") return;
+    if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    releaseWake();
+    pauseStartRef.current = Date.now();
+    setSpeed(0);
+    setStatus("paused");
+  }, [releaseWake]);
+
+  // Lanjut: hitung total waktu jeda, mulai lagi GPS + timer.
+  // lastPt/lastTime di-reset agar perpindahan selama jeda tidak dihitung sebagai jarak.
+  const resume = useCallback(() => {
+    if (statusRef.current !== "paused") return;
+    if (pauseStartRef.current) { pausedMsRef.current += Date.now() - pauseStartRef.current; pauseStartRef.current = 0; }
+    lastPtRef.current = null;
+    lastTimeRef.current = 0;
+    lastAltRef.current = null;
+    setStatus("tracking");
+    acquireWake();
+    beginTimer();
+    beginWatch();
+  }, [acquireWake, beginTimer, beginWatch]);
+
+  const finish = useCallback(() => {
+    // Bila selesai saat masih jeda, akumulasi jeda dulu agar durasi akurat
+    if (statusRef.current === "paused" && pauseStartRef.current) {
+      pausedMsRef.current += Date.now() - pauseStartRef.current;
+      pauseStartRef.current = 0;
+    }
+    endRef.current = Date.now();
+    stopTracking();
+    setStatus("finished");
+  }, [stopTracking]);
 
   const discard = useCallback(() => {
     stopTracking();
     setStatus("idle"); setDistance(0); setDuration(0); setSpeed(0); setElev(0); setError("");
     distRef.current = 0; elevRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastAltRef.current = null;
-    startRef.current = 0; endRef.current = 0;
+    startRef.current = 0; endRef.current = 0; pausedMsRef.current = 0; pauseStartRef.current = 0;
   }, [stopTracking]);
 
   const getStats = useCallback((): GowesStats => ({
@@ -172,61 +220,12 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
 
   const value: GowesContextValue = {
     status, distance, duration, speed, elev, error,
-    start, finish, discard, setStatus, setError, getStats, getPath,
+    start, pause, resume, finish, discard, setStatus, setError, getStats, getPath,
   };
 
   return (
     <GowesContext.Provider value={value}>
       {children}
-      <GowesMiniWidget />
     </GowesContext.Provider>
-  );
-}
-
-// Mini player melayang: tampil di semua halaman SELAIN /catat saat sesi gowes aktif
-function GowesMiniWidget() {
-  const { status, distance, duration, speed, finish } = useGowes();
-  const pathname = usePathname();
-  const router = useRouter();
-
-  if (status !== "tracking" && status !== "finished") return null;
-  if (pathname === "/catat") return null;
-
-  const tracking = status === "tracking";
-  const km = (distance / 1000).toFixed(2);
-
-  return (
-    <div className="fixed left-3 right-3 z-[2000]" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 84px)" }}>
-      <div
-        onClick={() => router.push("/catat")}
-        className={`mx-auto max-w-md flex items-center gap-3 rounded-2xl shadow-lg px-4 py-3 text-white cursor-pointer active:scale-[0.99] transition-transform ${tracking ? "bg-gradient-to-r from-green-600 to-emerald-700" : "bg-gradient-to-r from-orange-500 to-amber-600"}`}
-      >
-        {tracking ? (
-          <span className="relative flex h-3 w-3 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-          </span>
-        ) : (
-          <Bike size={18} className="shrink-0" />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] opacity-90 leading-tight">{tracking ? "Merekam gowes" : "Gowes belum disimpan"}</p>
-          <p className="font-bold tabular-nums leading-tight truncate">
-            {km} km · {fmtDuration(duration)}{tracking ? ` · ${speed.toFixed(0)} km/j` : ""}
-          </p>
-        </div>
-        {tracking ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); finish(); }}
-            aria-label="Selesai"
-            className="shrink-0 bg-white/20 hover:bg-white/30 rounded-full p-2 active:scale-90 transition-transform"
-          >
-            <Square size={18} />
-          </button>
-        ) : (
-          <ChevronUp size={20} className="shrink-0" />
-        )}
-      </div>
-    </div>
   );
 }

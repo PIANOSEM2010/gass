@@ -9,9 +9,13 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
-  ArrowLeft, ArrowRight, ArrowUp, ArrowUpLeft, ArrowUpRight,
-  RotateCw, RotateCcw, Flag, Play, Square, Volume2, ShieldCheck,
+  Play, Square, Volume2, ShieldCheck,
 } from "lucide-react";
+import { useNav, maneuverIcon } from "../nav-provider";
+import {
+  type NavStep,
+  fetchRoute, buildAvoidMultiPolygon, formatDist,
+} from "@/lib/routing";
 
 type RoadMarker = {
   id: string;
@@ -48,20 +52,6 @@ type SearchResult = {
   lon: string;
 };
 
-type NavStep = {
-  type: number;
-  name: string;
-  distance: number;
-  instruction: string;
-  lat: number;
-  lng: number;
-};
-
-type NavInfo = {
-  instruction: string;
-  distanceToNext: number;
-  type: number;
-};
 
 const TYPE_CONFIG = {
   safe:    { color: "#16a34a", emoji: "✅", label: "Jalan Aman" },
@@ -92,152 +82,6 @@ const TRAFFIC_LEGEND = [
   { color: "#F40000", label: "Gangguan berat" },
   { color: "#C1272D", label: "Penutupan jalan" },
 ];
-
-const MANEUVER_TEXT: Record<number, string> = {
-  0: "Belok kiri", 1: "Belok kanan", 2: "Belok tajam ke kiri", 3: "Belok tajam ke kanan",
-  4: "Serong kiri", 5: "Serong kanan", 6: "Lurus terus", 7: "Masuk bundaran",
-  8: "Keluar bundaran", 9: "Putar balik", 10: "Tiba di tujuan", 11: "Mulai perjalanan",
-  12: "Tetap di kiri", 13: "Tetap di kanan",
-};
-
-function buildInstruction(type: number, name: string): string {
-  if (type === 10) return "Tiba di tujuan";
-  if (type === 11) return "Mulai perjalanan";
-  const hasRoad = name && name !== "-";
-  if (type === 6) return hasRoad ? `Lurus di ${name}` : "Lurus terus";
-  const base = MANEUVER_TEXT[type] || "Lanjutkan";
-  return hasRoad ? `${base} ke ${name}` : base;
-}
-
-function maneuverIcon(type: number, size = 24) {
-  const p = { size };
-  switch (type) {
-    case 0: case 2: return <ArrowLeft {...p} />;
-    case 4: case 12: return <ArrowUpLeft {...p} />;
-    case 1: case 3: return <ArrowRight {...p} />;
-    case 5: case 13: return <ArrowUpRight {...p} />;
-    case 6: return <ArrowUp {...p} />;
-    case 7: case 8: return <RotateCw {...p} />;
-    case 9: return <RotateCcw {...p} />;
-    case 10: return <Flag {...p} />;
-    default: return <Navigation {...p} />;
-  }
-}
-
-function pickIndonesianVoice(): SpeechSynthesisVoice | null {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
-  return (
-    voices.find((v) => /google/i.test(v.name) && /^id/i.test(v.lang)) ||
-    voices.find((v) => v.lang === "id-ID") ||
-    voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("id")) ||
-    voices.find((v) => /indonesia/i.test(v.name)) ||
-    null
-  );
-}
-
-function speak(text: string) {
-  try {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const synth = window.speechSynthesis;
-    const run = () => {
-      const u = new SpeechSynthesisUtterance(text);
-      const v = pickIndonesianVoice();
-      if (v) u.voice = v;
-      u.lang = "id-ID";
-      u.rate = 0.98;
-      u.pitch = 1.0;
-      synth.cancel();
-      synth.speak(u);
-    };
-    if (synth.getVoices().length === 0) {
-      synth.onvoiceschanged = () => { synth.onvoiceschanged = null; run(); };
-      synth.getVoices();
-    } else {
-      run();
-    }
-  } catch {
-    /* ignore */
-  }
-}
-
-function formatDist(m: number): string {
-  if (m >= 1000) return `${(m / 1000).toFixed(1)} km`;
-  if (m > 30) return `${Math.round(m / 10) * 10} m`;
-  return `${Math.round(m)} m`;
-}
-
-// Zona yang dihindari rute: hanya kategori serius (kuning "potensi" tidak dihindari)
-const AVOID_CATEGORIES: Zone["category"][] = ["rawan", "berbahaya"];
-
-type AvoidGeometry = { type: "MultiPolygon"; coordinates: number[][][][] };
-
-// Ubah lingkaran zona (lat,lng,radius meter) jadi cincin poligon GeoJSON [lng,lat]
-function circleRing(lat: number, lng: number, radiusM: number, points = 16): number[][] {
-  const ring: number[][] = [];
-  const dLat = radiusM / 111320;
-  const dLng = radiusM / (111320 * Math.cos((lat * Math.PI) / 180));
-  for (let i = 0; i <= points; i++) {
-    const t = (i / points) * 2 * Math.PI;
-    ring.push([lng + dLng * Math.cos(t), lat + dLat * Math.sin(t)]);
-  }
-  return ring;
-}
-
-// Gabungkan zona berbahaya jadi satu MultiPolygon untuk avoid_polygons ORS
-function buildAvoidMultiPolygon(zones: Zone[]): AvoidGeometry | null {
-  const toAvoid = zones.filter((z) => AVOID_CATEGORIES.includes(z.category) && z.radius > 0);
-  if (toAvoid.length === 0) return null;
-  return { type: "MultiPolygon", coordinates: toAvoid.map((z) => [circleRing(z.lat, z.lng, z.radius)]) };
-}
-
-async function fetchRoute(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
-  avoidPolygons?: AvoidGeometry | null
-): Promise<{ coords: [number, number][]; info: { distance: number; duration: number }; steps: NavStep[] }> {
-  const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
-  if (!apiKey) throw new Error("API key OpenRouteService belum di-setup");
-
-  const reqBody: Record<string, unknown> = { coordinates: [[a.lng, a.lat], [b.lng, b.lat]] };
-  if (avoidPolygons) reqBody.options = { avoid_polygons: avoidPolygons };
-
-  const res = await fetch("https://api.openrouteservice.org/v2/directions/cycling-regular/geojson", {
-    method: "POST",
-    headers: {
-      Authorization: apiKey,
-      "Content-Type": "application/json",
-      Accept: "application/geo+json",
-    },
-    body: JSON.stringify(reqBody),
-  });
-  if (!res.ok) {
-    const errData = await res.json().catch(() => null);
-    throw new Error(errData?.error?.message || "Routing gagal");
-  }
-  const data = await res.json();
-  const raw = data.features[0].geometry.coordinates as [number, number][];
-  const coords: [number, number][] = raw.map(([lng, lat]) => [lat, lng]);
-  const summary = data.features[0].properties.summary;
-
-  const steps: NavStep[] = [];
-  const segments = data.features[0].properties.segments || [];
-  for (const seg of segments) {
-    for (const st of seg.steps || []) {
-      const idx = st.way_points?.[0] ?? 0;
-      const pt = coords[idx] || coords[0];
-      steps.push({
-        type: st.type,
-        name: st.name && st.name !== "-" ? st.name : "",
-        distance: st.distance,
-        instruction: buildInstruction(st.type, st.name),
-        lat: pt[0],
-        lng: pt[1],
-      });
-    }
-  }
-  return { coords, info: { distance: summary.distance, duration: summary.duration }, steps };
-}
 
 function makeIcon(type: keyof typeof TYPE_CONFIG) {
   const { color, emoji } = TYPE_CONFIG[type];
@@ -492,133 +336,21 @@ function LocationLayer({
   return null;
 }
 
-function NavLayer({
-  steps,
-  routeCoords,
-  destination,
-  onPosition,
-  onUpdate,
-  onArrive,
-  onReroute,
-}: {
-  steps: NavStep[];
-  routeCoords: [number, number][];
-  destination: { lat: number; lng: number } | null;
-  onPosition: (pos: { lat: number; lng: number; accuracy: number }) => void;
-  onUpdate: (info: NavInfo) => void;
-  onArrive: () => void;
-  onReroute: (origin: { lat: number; lng: number }) => void;
-}) {
+// Ikuti posisi pengguna di peta saat navigasi aktif.
+// Logika navigasi (GPS, langkah, suara, reroute) kini berjalan global di NavProvider,
+// sehingga tetap hidup walau pengguna membuka fitur lain.
+function NavFollow({ pos }: { pos: { lat: number; lng: number } | null }) {
   const map = useMap();
-  const watchIdRef = useRef<number | null>(null);
-  const firstFixRef = useRef(true);
-  const nextIdxRef = useRef(1);
-  const announcedFarRef = useRef(false);
-  const announcedNearRef = useRef(false);
-  const offRouteRef = useRef(0);
-  const reroutingRef = useRef(false);
-
-  const stepsRef = useRef(steps);
-  stepsRef.current = steps;
-  const routeRef = useRef(routeCoords);
-  routeRef.current = routeCoords;
-  const destRef = useRef(destination);
-  destRef.current = destination;
-
+  const firstRef = useRef(true);
   useEffect(() => {
-    nextIdxRef.current = 1;
-    announcedFarRef.current = false;
-    announcedNearRef.current = false;
-    offRouteRef.current = 0;
-    reroutingRef.current = false;
-  }, [steps]);
-
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
-    firstFixRef.current = true;
-    const id = navigator.geolocation.watchPosition(
-      (p) => {
-        const lat = p.coords.latitude;
-        const lng = p.coords.longitude;
-        const accuracy = p.coords.accuracy;
-        onPosition({ lat, lng, accuracy });
-        const here = L.latLng(lat, lng);
-
-        if (firstFixRef.current) {
-          map.setView([lat, lng], 17, { animate: true });
-          firstFixRef.current = false;
-        } else {
-          map.panTo([lat, lng], { animate: true });
-        }
-
-        const dest = destRef.current;
-        if (dest) {
-          const dDest = here.distanceTo(L.latLng(dest.lat, dest.lng));
-          if (dDest < 25) {
-            speak("Anda telah tiba di tujuan.");
-            onArrive();
-            return;
-          }
-        }
-
-        const route = routeRef.current;
-        if (route && route.length) {
-          let minD = Infinity;
-          for (let i = 0; i < route.length; i++) {
-            const d = here.distanceTo(L.latLng(route[i][0], route[i][1]));
-            if (d < minD) minD = d;
-          }
-          if (minD > 50) {
-            offRouteRef.current++;
-            if (offRouteRef.current >= 3 && !reroutingRef.current) {
-              reroutingRef.current = true;
-              speak("Anda keluar jalur. Menghitung ulang rute.");
-              onReroute({ lat, lng });
-            }
-            onUpdate({ instruction: "Kembali ke rute…", distanceToNext: -1, type: 9 });
-            return;
-          }
-          offRouteRef.current = 0;
-        }
-
-        const st = stepsRef.current;
-        if (!st || st.length === 0) return;
-        let idx = nextIdxRef.current;
-        if (idx > st.length - 1) idx = st.length - 1;
-        const step = st[idx];
-        const dMan = here.distanceTo(L.latLng(step.lat, step.lng));
-        onUpdate({ instruction: step.instruction, distanceToNext: dMan, type: step.type });
-
-        if (!announcedFarRef.current && dMan <= 180 && dMan > 45) {
-          speak(`Dalam ${Math.round(dMan / 10) * 10} meter, ${step.instruction}`);
-          announcedFarRef.current = true;
-        }
-        if (!announcedNearRef.current && dMan <= 45) {
-          speak(step.instruction);
-          announcedNearRef.current = true;
-        }
-        if (dMan < 18 && idx < st.length - 1) {
-          nextIdxRef.current = idx + 1;
-          announcedFarRef.current = false;
-          announcedNearRef.current = false;
-        }
-      },
-      () => {
-        onUpdate({ instruction: "Menunggu sinyal GPS…", distanceToNext: -1, type: 11 });
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
-    );
-    watchIdRef.current = id;
-    return () => {
-      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        /* ignore */
-      }
-    };
-  }, [map, onPosition, onUpdate, onArrive, onReroute]);
-
+    if (!pos) return;
+    if (firstRef.current) {
+      map.setView([pos.lat, pos.lng], 17, { animate: true });
+      firstRef.current = false;
+    } else {
+      map.panTo([pos.lat, pos.lng], { animate: true });
+    }
+  }, [pos, map]);
   return null;
 }
 
@@ -677,8 +409,10 @@ export default function PetaClient({
   const [routing, setRouting] = useState(false);
   const [routeSource, setRouteSource] = useState<"manual" | "search">("manual");
 
-  const [navigating, setNavigating] = useState(false);
-  const [navInfo, setNavInfo] = useState<NavInfo | null>(null);
+  // Navigasi kini global (NavProvider di root layout): tetap jalan saat buka fitur lain
+  const nav = useNav();
+  const navigating = nav.navigating;
+  const navInfo = nav.navInfo;
 
   const [avoidDanger, setAvoidDanger] = useState(true);
   const [routeNote, setRouteNote] = useState<{ type: "safe" | "fallback"; count: number } | null>(null);
@@ -686,46 +420,52 @@ export default function PetaClient({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const pointBRef = useRef(pointB);
-  pointBRef.current = pointB;
-
-  const avoidDangerRef = useRef(avoidDanger);
-  avoidDangerRef.current = avoidDanger;
-
   const handleLocError = useCallback((msg: string) => {
     setError(msg);
     setTimeout(() => setError(""), 5000);
   }, []);
 
-  const handleArrive = useCallback(() => {
-    setNavigating(false);
-    setNavInfo(null);
-    setSuccess("Kamu telah tiba di tujuan 🎉");
-    setTimeout(() => setSuccess(""), 6000);
-  }, []);
-
-  const handleReroute = useCallback(async (origin: { lat: number; lng: number }) => {
-    const dest = pointBRef.current;
-    if (!dest) return;
-    const avoid = avoidDangerRef.current ? buildAvoidMultiPolygon(zones) : null;
-    try {
-      const { coords, info, steps } = await fetchRoute(origin, dest, avoid);
-      setRouteCoords(coords);
-      setRouteInfo(info);
-      setRouteSteps(steps);
-    } catch {
-      if (avoid) {
-        try {
-          const { coords, info, steps } = await fetchRoute(origin, dest, null);
-          setRouteCoords(coords);
-          setRouteInfo(info);
-          setRouteSteps(steps);
-        } catch {
-          /* tetap pakai rute lama jika reroute gagal */
-        }
+  // Saat halaman peta dibuka lagi ketika navigasi masih berjalan:
+  // ambil kembali rute dari provider agar tampilan tersambung
+  useEffect(() => {
+    if (nav.navigating && nav.route && routeCoords.length === 0) {
+      setRouteCoords(nav.route.coords);
+      setRouteSteps(nav.route.steps);
+      setRouteInfo(nav.route.info);
+      setPointB(nav.route.dest);
+      if (nav.route.label) {
+        setSearchLabel(nav.route.label);
+        setRouteSource("search");
       }
     }
-  }, [zones]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav.navigating]);
+
+  // Toast "tiba di tujuan" dari provider
+  const lastArriveRef = useRef(nav.arrivedAt);
+  useEffect(() => {
+    if (nav.arrivedAt && nav.arrivedAt !== lastArriveRef.current) {
+      lastArriveRef.current = nav.arrivedAt;
+      setSuccess("Kamu telah tiba di tujuan 🎉");
+      setTimeout(() => setSuccess(""), 6000);
+    }
+  }, [nav.arrivedAt]);
+
+  // Saat provider melakukan reroute, perbarui juga rute yang tampil di peta
+  useEffect(() => {
+    if (nav.navigating && nav.route) {
+      setRouteCoords(nav.route.coords);
+      setRouteSteps(nav.route.steps);
+      setRouteInfo(nav.route.info);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav.route]);
+
+  // Marker posisi pengguna di peta mengikuti GPS milik provider saat navigasi
+  useEffect(() => {
+    if (nav.navigating && nav.userPos) setUserPos(nav.userPos);
+  }, [nav.navigating, nav.userPos]);
+
 
   function toggleTraffic() {
     if (!showTraffic && !tomtomKey) {
@@ -819,8 +559,7 @@ export default function PetaClient({
       setRouteCoords([]);
       setRouteInfo(null);
       setRouteSteps([]);
-      setNavigating(false);
-      setNavInfo(null);
+      if (nav.navigating) nav.stop();
     }
   }
 
@@ -907,8 +646,7 @@ export default function PetaClient({
     setRouteCoords([]);
     setRouteInfo(null);
     setRouteSteps([]);
-    setNavigating(false);
-    setNavInfo(null);
+    if (nav.navigating) nav.stop();
     setMode("view");
     if (routeSource === "search") {
       setSearchTarget(null);
@@ -924,23 +662,25 @@ export default function PetaClient({
   }
 
   function startNavigation() {
-    if (!pointB || routeSteps.length === 0) return;
+    if (!pointB || routeSteps.length === 0 || !routeInfo) return;
     setTracking(false);
     setFollow(false);
-    const firstIdx = Math.min(1, routeSteps.length - 1);
-    setNavInfo({ instruction: routeSteps[firstIdx].instruction, distanceToNext: -1, type: routeSteps[firstIdx].type });
-    speak("Navigasi dimulai. Ikuti rute dengan aman.");
-    setNavigating(true);
+    // Serahkan rute ke provider global: GPS + suara + reroute jalan terus
+    // walau pengguna membuka fitur lain (pop-up mini akan tampil di sana)
+    nav.begin(
+      {
+        coords: routeCoords,
+        steps: routeSteps,
+        info: routeInfo,
+        dest: pointB,
+        label: routeSource === "search" ? searchLabel : "",
+      },
+      avoidDanger ? buildAvoidMultiPolygon(zones) : null
+    );
   }
 
   function stopNavigation() {
-    setNavigating(false);
-    setNavInfo(null);
-    try {
-      window.speechSynthesis.cancel();
-    } catch {
-      /* ignore */
-    }
+    nav.stop();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1293,17 +1033,7 @@ export default function PetaClient({
             onUserDrag={() => setFollow(false)}
           />
         )}
-        {navigating && (
-          <NavLayer
-            steps={routeSteps}
-            routeCoords={routeCoords}
-            destination={pointB}
-            onPosition={setUserPos}
-            onUpdate={setNavInfo}
-            onArrive={handleArrive}
-            onReroute={handleReroute}
-          />
-        )}
+        {navigating && <NavFollow pos={nav.userPos} />}
         {!navigating && routeCoords.length === 0 && <FlyToSearch target={searchTarget} />}
         {!navigating && <FitRoute coords={routeCoords} />}
 

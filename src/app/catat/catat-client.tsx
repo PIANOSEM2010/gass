@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useGowes, type Pt } from "../gowes-provider";
 import {
-  Play, Square, Loader2, Save, Trash2, CheckCircle2,
+  Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
 } from "lucide-react";
 
@@ -17,13 +17,18 @@ function fmtDuration(s: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-// Pilihan warna dan template kartu gowes untuk dibagikan
-const PALETTES: Record<string, { name: string; grad: [string, string]; route: string; endDot: string }> = {
-  hijau:   { name: "Hijau",   grad: ["#15803d", "#064e3b"], route: "#fb923c", endDot: "#fde047" },
-  senja:   { name: "Senja",   grad: ["#c2410c", "#7f1d1d"], route: "#fde68a", endDot: "#ffffff" },
-  samudra: { name: "Samudra", grad: ["#0e7490", "#164e63"], route: "#fde047", endDot: "#ffffff" },
-  ungu:    { name: "Ungu",    grad: ["#6d28d9", "#581c87"], route: "#f5d0fe", endDot: "#ffffff" },
-  malam:   { name: "Malam",   grad: ["#1e293b", "#020617"], route: "#fb923c", endDot: "#fde047" },
+// ============================================================
+// KARTU GOWES — desain sporty: font condensed italic, garis
+// kecepatan diagonal, panel kaca, rute dengan efek glow.
+// ============================================================
+
+// Pilihan warna kartu: gradasi latar + warna aksen (rute, angka, strip)
+const PALETTES: Record<string, { name: string; grad: [string, string]; accent: string; accent2: string }> = {
+  hijau:   { name: "Hijau",   grad: ["#052e16", "#022c22"], accent: "#a3e635", accent2: "#4ade80" },
+  senja:   { name: "Senja",   grad: ["#7c2d12", "#450a0a"], accent: "#fde047", accent2: "#fb923c" },
+  samudra: { name: "Samudra", grad: ["#083344", "#0c1a2e"], accent: "#22d3ee", accent2: "#67e8f9" },
+  ungu:    { name: "Ungu",    grad: ["#3b0764", "#1e1b4b"], accent: "#e879f9", accent2: "#c4b5fd" },
+  malam:   { name: "Malam",   grad: ["#0f172a", "#020617"], accent: "#fb923c", accent2: "#fde047" },
 };
 const PALETTE_KEYS = ["hijau", "senja", "samudra", "ungu", "malam"];
 const TEMPLATES: { key: string; name: string }[] = [
@@ -31,6 +36,26 @@ const TEMPLATES: { key: string; name: string }[] = [
   { key: "statistik", name: "Statistik" },
   { key: "ringkas", name: "Ringkas" },
 ];
+
+// Nama family font display dari next/font (nama internalnya di-hash,
+// jadi harus dibaca dari CSS variable, bukan ditulis "Barlow Condensed")
+function displayFamily(): string {
+  if (typeof document === "undefined") return "sans-serif";
+  const v =
+    getComputedStyle(document.body).getPropertyValue("--font-display").trim() ||
+    getComputedStyle(document.documentElement).getPropertyValue("--font-display").trim();
+  return v || "sans-serif";
+}
+
+function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
 
 // Menggambar kartu gowes ke canvas (1080x1080) sesuai template + warna pilihan
 function drawCard(
@@ -45,27 +70,108 @@ function drawCard(
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const g = ctx.createLinearGradient(0, 0, 0, H);
+  const fam = displayFamily();
+  const dFont = (size: number, weight = 800, italic = true) =>
+    `${italic ? "italic " : ""}${weight} ${size}px ${fam}`;
+
+  // ---------- Latar: gradasi + vignette + garis kecepatan ----------
+  const g = ctx.createLinearGradient(0, 0, W * 0.4, H);
   g.addColorStop(0, pal.grad[0]);
   g.addColorStop(1, pal.grad[1]);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  const brand = (x: number, y: number) => {
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.95)";
-    ctx.font = "bold 56px sans-serif";
-    ctx.fillText("BUG", x, y);
-    ctx.font = "400 28px sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.fillText("Bulungan untuk Goweser", x, y + 38);
+  // Garis kecepatan diagonal halus
+  ctx.save();
+  ctx.rotate((-55 * Math.PI) / 180);
+  ctx.fillStyle = "rgba(255,255,255,0.035)";
+  for (let x = -W * 1.6; x < W * 1.2; x += 68) ctx.fillRect(x, -H, 22, H * 3);
+  ctx.restore();
+
+  // Strip aksen miring di tepi kanan (khas jersey balap)
+  ctx.save();
+  ctx.transform(1, 0, -0.28, 1, 0, 0);
+  const stripeG = ctx.createLinearGradient(0, 0, 0, H);
+  stripeG.addColorStop(0, pal.accent);
+  stripeG.addColorStop(1, pal.accent2);
+  ctx.fillStyle = stripeG;
+  ctx.globalAlpha = 0.9;
+  ctx.fillRect(W + 210, -60, 46, H + 120);
+  ctx.globalAlpha = 0.45;
+  ctx.fillRect(W + 172, -60, 12, H + 120);
+  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  // Vignette bawah agar teks kontras
+  const vg = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  vg.addColorStop(0, "rgba(0,0,0,0)");
+  vg.addColorStop(1, "rgba(0,0,0,0.35)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ---------- Elemen bersama ----------
+  const setSpacing = (px: number) => {
+    try { (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${px}px`; } catch { /* browser lama */ }
   };
 
+  // Header: badge BUG + subjudul + tanggal
+  const header = (x: number, y: number) => {
+    // Badge BUG (kotak aksen miring dengan teks gelap)
+    ctx.save();
+    ctx.transform(1, 0, -0.18, 1, 0, 0);
+    roundRectPath(ctx, x + y * 0.18, y - 52, 128, 68, 16);
+    const bg = ctx.createLinearGradient(x, y - 52, x, y + 16);
+    bg.addColorStop(0, pal.accent);
+    bg.addColorStop(1, pal.accent2);
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.restore();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#0b1220";
+    ctx.font = dFont(48, 800);
+    ctx.fillText("BUG", x + 22, y);
+
+    setSpacing(5);
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.font = dFont(25, 600, false);
+    ctx.fillText("BULUNGAN UNTUK GOWESER", x + 156, y - 6);
+    setSpacing(0);
+  };
+
+  const datePill = (rightX: number, y: number) => {
+    const label = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    setSpacing(2);
+    ctx.font = dFont(26, 600, false);
+    const w = ctx.measureText(label.toUpperCase()).width + 44;
+    roundRectPath(ctx, rightX - w, y - 36, w, 50, 25);
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.textAlign = "left";
+    ctx.fillText(label.toUpperCase(), rightX - w + 22, y);
+    setSpacing(0);
+  };
+
+  // Panel kaca (latar rute / statistik)
+  const glassPanel = (x: number, y: number, w: number, h: number, r = 36) => {
+    roundRectPath(ctx, x, y, w, h, r);
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+
+  // Rute dengan glow + titik start/finish bercincin
   const drawRoute = (bx: number, by: number, bw: number, bh: number, lw: number) => {
     if (path.length < 2) {
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.font = "400 34px sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = dFont(34, 600, false);
       ctx.fillText("Rute terlalu pendek", bx + bw / 2, by + bh / 2);
       return;
     }
@@ -78,93 +184,208 @@ function drawCard(
     const scale = Math.min(bw / spanLng, bh / spanLat);
     const offX = bx + (bw - spanLng * scale) / 2;
     const offY = by + (bh - spanLat * scale) / 2;
-    ctx.strokeStyle = pal.route;
+    const toXY = (p: Pt): [number, number] => [offX + (p.lng - minLng) * scale, offY + (maxLat - p.lat) * scale];
+
+    // Bayangan garis (kedalaman)
+    ctx.save();
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = lw + 6;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    path.forEach((p, i) => {
+      const [x, y] = toXY(p);
+      if (i === 0) ctx.moveTo(x, y + 5); else ctx.lineTo(x, y + 5);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    // Garis utama dengan glow aksen
+    ctx.save();
+    ctx.shadowColor = pal.accent;
+    ctx.shadowBlur = 26;
+    ctx.strokeStyle = pal.accent;
     ctx.lineWidth = lw;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.beginPath();
     path.forEach((p, i) => {
-      const x = offX + (p.lng - minLng) * scale;
-      const y = offY + (maxLat - p.lat) * scale;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      const [x, y] = toXY(p);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
-    const sx = offX + (path[0].lng - minLng) * scale;
-    const sy = offY + (maxLat - path[0].lat) * scale;
-    const ex = offX + (path[path.length - 1].lng - minLng) * scale;
-    const ey = offY + (maxLat - path[path.length - 1].lat) * scale;
+    ctx.restore();
+
+    // Titik start (putih) & finish (aksen) bercincin
+    const [sx, sy] = toXY(path[0]);
+    const [ex, ey] = toXY(path[path.length - 1]);
+    const dot = (x: number, y: number, fill: string) => {
+      ctx.beginPath(); ctx.arc(x, y, lw * 1.6, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, lw * 1.05, 0, Math.PI * 2);
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "#0b1220"; ctx.stroke();
+    };
+    dot(sx, sy, "#ffffff");
+    dot(ex, ey, pal.accent);
+  };
+
+  // Chip statistik (label kecil di atas, angka display di bawah)
+  const statChip = (x: number, y: number, w: number, label: string, value: string, unit?: string) => {
+    const h = 128;
+    glassPanel(x, y, w, h, 26);
+    setSpacing(4);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = dFont(23, 600, false);
+    ctx.fillText(label.toUpperCase(), x + 24, y + 42);
+    setSpacing(0);
     ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(sx, sy, lw * 1.15, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = pal.endDot;
-    ctx.beginPath(); ctx.arc(ex, ey, lw * 1.15, 0, Math.PI * 2); ctx.fill();
+    ctx.font = dFont(56, 700);
+    ctx.fillText(value, x + 24, y + 102);
+    if (unit) {
+      const vw = ctx.measureText(value).width;
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.font = dFont(28, 600, false);
+      ctx.fillText(unit, x + 24 + vw + 10, y + 100);
+    }
+  };
+
+  const footer = (y: number) => {
+    ctx.textAlign = "center";
+    setSpacing(3);
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = dFont(24, 600, false);
+    ctx.fillText(`#GOWESERAMAN${place.replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`, W / 2, y);
+    setSpacing(0);
   };
 
   const km = (distanceM / 1000).toFixed(2);
   const dur = fmtDuration(durationS);
-  const elev = `${Math.round(elevM)} m`;
+  const elevStr = `${Math.round(elevM)}`;
+  const avg = durationS > 0 ? ((distanceM / 1000) / (durationS / 3600)).toFixed(1) : "0.0";
 
+  // ---------- Template ----------
   if (template === "statistik") {
-    brand(80, 110);
+    header(80, 122);
+    datePill(W - 100, 118);
+
+    setSpacing(3);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.font = "600 32px sans-serif";
-    ctx.fillText(`Gowes di ${place}`, 80, 185);
-    ctx.textAlign = "center";
-    const cx = W / 2;
-    const stat = (label: string, value: string, y: number) => {
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
-      ctx.font = "500 34px sans-serif";
-      ctx.fillText(label, cx, y);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = dFont(40, 600);
+    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
+    setSpacing(0);
+
+    // Statistik besar bertumpuk dengan bilah aksen
+    const rows: [string, string, string][] = [
+      ["JARAK", km, "km"],
+      ["WAKTU", dur, ""],
+      ["KEC. RATA-RATA", avg, "km/j"],
+      ["ELEVASI", elevStr, "m"],
+    ];
+    let y = 300;
+    for (const [label, value, unit] of rows) {
+      // Bilah aksen miring
+      ctx.save();
+      ctx.transform(1, 0, -0.22, 1, 0, 0);
+      ctx.fillStyle = pal.accent;
+      ctx.fillRect(84 + y * 0.22, y - 24, 14, 108);
+      ctx.restore();
+
+      ctx.textAlign = "left";
+      setSpacing(4);
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = dFont(27, 600, false);
+      ctx.fillText(label, 130, y + 6);
+      setSpacing(0);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 92px sans-serif";
-      ctx.fillText(value, cx, y + 92);
-    };
-    stat("Jarak", `${km} km`, 250);
-    stat("Waktu", dur, 450);
-    stat("Elevasi", elev, 650);
-    drawRoute(130, 800, W - 260, 180, 8);
+      ctx.font = dFont(96, 800);
+      ctx.fillText(value, 126, y + 92);
+      if (unit) {
+        const vw = ctx.measureText(value).width;
+        ctx.fillStyle = pal.accent;
+        ctx.font = dFont(40, 700);
+        ctx.fillText(unit, 126 + vw + 14, y + 88);
+      }
+      y += 158;
+    }
+
+    // Strip rute di bawah dalam panel kaca
+    glassPanel(84, 918, W - 168, 130, 30);
+    drawRoute(120, 936, W - 240, 94, 8);
   } else if (template === "ringkas") {
-    brand(80, 110);
+    header(80, 116);
+
+    // Rute besar hampir penuh
+    drawRoute(90, 210, W - 180, 600, 15);
+
+    // Nama tempat kecil di atas angka
+    setSpacing(4);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.font = "600 32px sans-serif";
-    ctx.fillText(`Gowes di ${place}`, 80, 190);
-    drawRoute(70, 210, W - 140, 620, 14);
-    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = dFont(28, 600, false);
+    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 866);
+    setSpacing(0);
+
+    // Angka km raksasa dengan garis aksen miring di bawahnya
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 120px sans-serif";
-    ctx.fillText(km, 80, 960);
+    ctx.font = dFont(168, 800);
+    ctx.fillText(km, 78, 1006);
     const kmW = ctx.measureText(km).width;
-    ctx.font = "500 40px sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.8)";
-    ctx.fillText("km", 80 + kmW + 16, 960);
+    ctx.fillStyle = pal.accent;
+    ctx.font = dFont(54, 700);
+    ctx.fillText("km", 78 + kmW + 18, 1000);
+    ctx.save();
+    ctx.transform(1, 0, -0.3, 1, 0, 0);
+    ctx.fillStyle = pal.accent;
+    ctx.fillRect(78 + 1030 * 0.3, 1030, kmW * 0.55, 12);
+    ctx.restore();
+
+    // Waktu & elevasi di kanan
     ctx.textAlign = "right";
     ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.font = "500 34px sans-serif";
-    ctx.fillText(`${dur} · ${elev}`, W - 80, 958);
+    ctx.font = dFont(44, 700);
+    ctx.fillText(dur, W - 84, 952);
+    setSpacing(3);
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = dFont(25, 600, false);
+    ctx.fillText(`ELEVASI ${elevStr} M`, W - 84, 998);
+    setSpacing(0);
   } else {
-    brand(90, 130);
+    // Template default: "rute"
+    header(80, 122);
+    datePill(W - 100, 118);
+
+    setSpacing(3);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.font = "600 32px sans-serif";
-    ctx.fillText(`Gowes di ${place}`, 90, 210);
-    drawRoute(110, 240, W - 220, 470, 12);
-    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = dFont(40, 600);
+    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
+    setSpacing(0);
+
+    // Panel kaca berisi rute
+    glassPanel(84, 246, W - 168, 452, 40);
+    drawRoute(140, 296, W - 280, 352, 13);
+
+    // Angka km besar
+    ctx.textAlign = "left";
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 130px sans-serif";
-    ctx.fillText(km, W / 2, 870);
-    ctx.font = "500 40px sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.8)";
-    ctx.fillText("kilometer", W / 2, 920);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 60px sans-serif";
-    ctx.fillText(dur, W * 0.3, 1015);
-    ctx.fillText(elev, W * 0.7, 1015);
-    ctx.font = "400 30px sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.fillText("Waktu", W * 0.3, 1058);
-    ctx.fillText("Elevasi", W * 0.7, 1058);
+    ctx.font = dFont(150, 800);
+    ctx.fillText(km, 80, 866);
+    const kmW = ctx.measureText(km).width;
+    ctx.fillStyle = pal.accent;
+    ctx.font = dFont(52, 700);
+    ctx.fillText("km", 80 + kmW + 16, 860);
+
+    // Tiga chip statistik
+    const gap = 18;
+    const cw = (W - 168 - gap * 2) / 3;
+    statChip(84, 900, cw, "Waktu", dur);
+    statChip(84 + cw + gap, 900, cw, "Kec. rata", avg, "km/j");
+    statChip(84 + (cw + gap) * 2, 900, cw, "Elevasi", elevStr, "m");
+
+    footer(1058);
   }
 }
 
@@ -175,8 +396,8 @@ export default function CatatClient({
   myStreak: number; longest: number; totalKm: number; totalRides: number; board: BoardItem[];
 }) {
   const router = useRouter();
-  // Mesin gowes kini global (provider di root layout) agar tetap jalan saat buka menu lain
-  const { status, setStatus, distance, duration, speed, elev, error, setError, start, finish, discard, getStats, getPath } = useGowes();
+  // Mesin gowes global (provider di root layout) agar tetap jalan saat buka menu lain
+  const { status, setStatus, distance, duration, speed, elev, error, setError, start, pause, resume, finish, discard, getStats, getPath } = useGowes();
 
   const [tab, setTab] = useState<"catat" | "papan">("catat");
   const [savedStreak, setSavedStreak] = useState<number | null>(null);
@@ -189,15 +410,23 @@ export default function CatatClient({
   const [placeName, setPlaceName] = useState("Bulungan");
   const cardRef = useRef<HTMLCanvasElement>(null);
 
-  // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah)
+  // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah).
+  // Digambar lagi setelah font display selesai dimuat agar tipografinya benar.
   useEffect(() => {
     if (status === "saved" && cardRef.current) {
       const st = getStats();
-      drawCard(cardRef.current, {
-        template, palette, place: placeName,
-        path: getPath(), distanceM: st.distanceM, durationS: duration,
-        elevM: savedElev ?? st.elevM,
-      });
+      const doDraw = () => {
+        if (!cardRef.current) return;
+        drawCard(cardRef.current, {
+          template, palette, place: placeName,
+          path: getPath(), distanceM: st.distanceM, durationS: duration,
+          elevM: savedElev ?? st.elevM,
+        });
+      };
+      doDraw();
+      if (typeof document !== "undefined" && document.fonts?.ready) {
+        document.fonts.ready.then(doDraw).catch(() => { /* abaikan */ });
+      }
     }
     // getStats/getPath sengaja tidak dimasukkan dep (stabil, dibaca saat efek jalan)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -329,18 +558,18 @@ export default function CatatClient({
   return (
     <div className="px-4 pt-6 max-w-md mx-auto pb-8">
       {/* Hero streak */}
-      <div className="rounded-3xl p-5 bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-lg mb-4">
-        <div className="flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-orange-500 via-red-500 to-red-700 text-white shadow-lg mb-4 speed-lines">
+        <div className="flex items-center justify-between relative">
           <div>
-            <p className="text-sm opacity-90 flex items-center gap-1"><Flame size={16} /> Streak kamu</p>
-            <p className="text-5xl font-extrabold leading-none mt-1">{myStreak}<span className="text-lg font-bold ml-1">hari</span></p>
+            <p className="eyebrow !text-[10px] text-white/85 flex items-center gap-1"><Flame size={14} /> Streak kamu</p>
+            <p className="display-num text-6xl leading-none mt-1">{myStreak}<span className="display-title text-xl ml-1.5">hari</span></p>
           </div>
-          <Flame size={60} className="opacity-25" />
+          <Flame size={64} className="opacity-25" />
         </div>
-        <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-          <div className="bg-white/15 rounded-xl py-2"><p className="text-[10px] opacity-80">Rekor</p><p className="font-bold">{longest} hari</p></div>
-          <div className="bg-white/15 rounded-xl py-2"><p className="text-[10px] opacity-80">Total</p><p className="font-bold">{totalKm.toFixed(1)} km</p></div>
-          <div className="bg-white/15 rounded-xl py-2"><p className="text-[10px] opacity-80">Ride</p><p className="font-bold">{totalRides}x</p></div>
+        <div className="grid grid-cols-3 gap-2 mt-4 text-center relative">
+          <div className="bg-white/15 rounded-xl py-2"><p className="eyebrow !text-[9px] text-white/75">Rekor</p><p className="display-num text-lg leading-tight">{longest} hari</p></div>
+          <div className="bg-white/15 rounded-xl py-2"><p className="eyebrow !text-[9px] text-white/75">Total</p><p className="display-num text-lg leading-tight">{totalKm.toFixed(1)} km</p></div>
+          <div className="bg-white/15 rounded-xl py-2"><p className="eyebrow !text-[9px] text-white/75">Ride</p><p className="display-num text-lg leading-tight">{totalRides}x</p></div>
         </div>
       </div>
 
@@ -349,30 +578,36 @@ export default function CatatClient({
       </Link>
 
       {/* Toggle */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+      <div className="flex bg-slate-200/70 rounded-xl p-1 mb-4">
         <button onClick={() => setTab("catat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "catat" ? "bg-white shadow text-green-700" : "text-gray-500"}`}><Bike size={16} /> Catat</button>
         <button onClick={() => setTab("papan")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "papan" ? "bg-white shadow text-green-700" : "text-gray-500"}`}><Trophy size={16} /> Peringkat</button>
       </div>
 
       {tab === "catat" ? (
         <>
-          <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-3xl p-6 text-white shadow-lg mb-4">
-            <div className="text-center">
-              <p className="text-sm opacity-80 mb-1">Jarak</p>
-              <p className="text-6xl font-extrabold tabular-nums leading-none">{km}</p>
-              <p className="text-sm opacity-80 mt-1">kilometer</p>
+          <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-green-900 rounded-3xl p-6 text-white shadow-lg mb-4 speed-lines">
+            <div className="absolute right-4 top-0 h-full w-5 bg-gradient-to-b from-lime-400 to-green-500 opacity-70" style={{ transform: "skewX(-16deg)" }} />
+            <div className="text-center relative">
+              <p className="eyebrow !text-[10px] text-lime-300/90 mb-1">Jarak</p>
+              <p className="display-num text-7xl tabular-nums leading-none">{km}</p>
+              <p className="eyebrow !text-[10px] text-white/60 mt-2">kilometer</p>
+              {status === "paused" && (
+                <span className="inline-flex items-center gap-1.5 mt-3 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-amber-300">
+                  <Pause size={12} /> Dijeda
+                </span>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-6">
-              <div className="bg-white/15 rounded-2xl py-3 text-center"><p className="text-xs opacity-80">Waktu</p><p className="text-xl font-bold tabular-nums">{fmtDuration(duration)}</p></div>
-              <div className="bg-white/15 rounded-2xl py-3 text-center"><p className="text-xs opacity-80">{status === "tracking" ? "Kec." : "Rata2"}</p><p className="text-xl font-bold tabular-nums">{displaySpeed}</p></div>
-              <div className="bg-white/15 rounded-2xl py-3 text-center"><p className="text-xs opacity-80">Elevasi</p><p className="text-xl font-bold tabular-nums">{elev}m</p></div>
+            <div className="grid grid-cols-3 gap-2 mt-6 relative">
+              <div className="bg-white/10 border border-white/10 rounded-2xl py-3 text-center"><p className="eyebrow !text-[9px] text-white/60">Waktu</p><p className="display-num text-2xl tabular-nums leading-tight">{fmtDuration(duration)}</p></div>
+              <div className="bg-white/10 border border-white/10 rounded-2xl py-3 text-center"><p className="eyebrow !text-[9px] text-white/60">{status === "tracking" ? "Kec." : "Rata2"}</p><p className="display-num text-2xl tabular-nums leading-tight">{displaySpeed}</p></div>
+              <div className="bg-white/10 border border-white/10 rounded-2xl py-3 text-center"><p className="eyebrow !text-[9px] text-white/60">Elevasi</p><p className="display-num text-2xl tabular-nums leading-tight">{elev}m</p></div>
             </div>
           </div>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 mb-4 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
           {status === "idle" && (
-            <button onClick={start} className="w-full bg-green-600 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={22} /> Mulai Bersepeda</button>
+            <button onClick={start} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={22} /> Mulai Bersepeda</button>
           )}
           {status === "tracking" && (
             <div className="space-y-3">
@@ -380,8 +615,23 @@ export default function CatatClient({
                 <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-600"></span></span>
                 Merekam perjalanan...
               </div>
-              <button onClick={finish} className="w-full bg-red-600 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
+              <div className="flex gap-2">
+                <button onClick={pause} className="flex-1 bg-slate-700 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Pause size={20} /> Jeda</button>
+                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
+              </div>
               <p className="text-xs text-gray-400 text-center">Gowes tetap berjalan walau kamu membuka menu lain. Layar dijaga tetap menyala selama merekam.</p>
+            </div>
+          )}
+          {status === "paused" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-2 text-slate-600 text-sm font-medium">
+                <Pause size={14} /> Perekaman dijeda. Waktu & jarak berhenti dihitung.
+              </div>
+              <div className="flex gap-2">
+                <button onClick={resume} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={20} /> Lanjut</button>
+                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
+              </div>
+              <p className="text-xs text-gray-400 text-center">Perpindahan selama jeda tidak dihitung sebagai jarak gowes.</p>
             </div>
           )}
           {status === "finished" && (
@@ -400,10 +650,10 @@ export default function CatatClient({
             <div className="space-y-4">
               <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
                 <CheckCircle2 size={40} className="text-green-600 mx-auto mb-2" />
-                <h2 className="font-bold text-green-800 text-lg">Perjalanan Tersimpan!</h2>
+                <h2 className="display-title text-xl text-green-800">Perjalanan Tersimpan!</h2>
                 {savedQualifies && savedStreak !== null ? (
                   <>
-                    <p className="text-orange-600 font-bold text-2xl flex items-center justify-center gap-1 my-1"><Flame size={24} /> {savedStreak} hari beruntun</p>
+                    <p className="text-orange-600 display-num text-3xl flex items-center justify-center gap-1 my-1"><Flame size={24} /> {savedStreak} hari beruntun</p>
                     <p className="text-sm text-green-700">Total hari ini {savedTodayKm} km. Streak aman!</p>
                   </>
                 ) : (
@@ -426,7 +676,7 @@ export default function CatatClient({
                   {PALETTE_KEYS.map((k) => (
                     <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
                       className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-gray-800" : "ring-1 ring-gray-200"}`}
-                      style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]}, ${PALETTES[k].grad[1]})` }} />
+                      style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
                   ))}
                 </div>
                 <canvas ref={cardRef} className="w-full h-auto rounded-2xl shadow border border-gray-200" />
@@ -456,12 +706,12 @@ export default function CatatClient({
             const me = r.user_id === userId;
             return (
               <div key={r.user_id} className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-green-50 border border-green-300" : "bg-white border border-gray-100"}`}>
-                <div className="w-7 text-center font-bold text-gray-500">{i < 3 ? medal[i] : i + 1}</div>
+                <div className="w-7 text-center display-num text-lg text-gray-500">{i < 3 ? medal[i] : i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{r.name}{me ? " (kamu)" : ""}</p>
                   <p className="text-xs text-gray-500 truncate">{r.org} · {r.km.toFixed(1)} km · {r.rides}x</p>
                 </div>
-                <div className="flex items-center gap-1 text-orange-600 font-bold"><Flame size={18} /> {r.streak}</div>
+                <div className="flex items-center gap-1 text-orange-600 display-num text-xl"><Flame size={18} /> {r.streak}</div>
               </div>
             );
           })}

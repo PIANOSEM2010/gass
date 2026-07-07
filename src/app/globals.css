@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f6f5;
+  --foreground: #0f172a;
+  /* Palet sporty: hijau balap + aksen lime "hi-vis" khas jersey pesepeda */
+  --brand: #16a34a;
+  --brand-dark: #052e16;
+  --accent: #a3e635; /* lime */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-body);
+  --font-body: var(--font-body);
+  --font-display: var(--font-display);
+  --color-brand: var(--brand);
+  --color-accent: var(--accent);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
 }
+
+/* Tipografi display: condensed, miring, uppercase = nuansa jersey/racing */
+.font-display {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+}
+.display-title {
+  font-family: var(--font-display), sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.display-num {
+  font-family: var(--font-display), sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.eyebrow {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+}
+
+/* Garis-garis kecepatan diagonal (dekorasi).
+   Dipasang sebagai overlay pseudo-element agar TIDAK menimpa gradien latar
+   (kelas gradien Tailwind & .speed-lines sama-sama memakai background-image). */
+.speed-lines { position: relative; }
+.speed-lines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    -55deg,
+    rgba(255, 255, 255, 0.06) 0px,
+    rgba(255, 255, 255, 0.06) 10px,
+    transparent 10px,
+    transparent 34px
+  );
+}
+.speed-lines-dark { position: relative; }
+.speed-lines-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    -55deg,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 10px,
+    transparent 10px,
+    transparent 34px
+  );
+}
+
+/* Strip aksen miring, seperti garis finis / strip jersey */
+.race-stripe {
+  position: relative;
+}
+.race-stripe::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: -30%;
+  height: 160%;
+  width: 46px;
+  background: linear-gradient(180deg, var(--accent), #4ade80);
+  transform: skewX(-18deg);
+  opacity: 0.9;
+}
+
+/* Denyut halus untuk tombol SOS */
+@keyframes sos-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+}
+.sos-pulse { animation: sos-pulse 2s ease-in-out infinite; }
