@@ -400,6 +400,14 @@ export default function CatatClient({
   const { status, setStatus, distance, duration, speed, elev, error, setError, start, pause, resume, finish, discard, getStats, getPath } = useGowes();
 
   const [tab, setTab] = useState<"catat" | "papan">("catat");
+  // Deteksi bila aplikasi/layar sempat tidak aktif saat merekam (GPS terjeda oleh sistem)
+  const [wasHidden, setWasHidden] = useState(false);
+  useEffect(() => {
+    if (status !== "tracking") { setWasHidden(false); return; }
+    const onVis = () => { if (document.visibilityState === "hidden") setWasHidden(true); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [status]);
   const [savedStreak, setSavedStreak] = useState<number | null>(null);
   const [savedQualifies, setSavedQualifies] = useState(false);
   const [savedTodayKm, setSavedTodayKm] = useState(0);
@@ -447,7 +455,9 @@ export default function CatatClient({
         );
         const j = await res.json();
         const a = j.address || {};
-        let name: string = a.city || a.county || a.municipality || a.town || a.city_district || a.village || a.state || "";
+        // Prioritas: kabupaten (county) / kota (city) dulu, agar hashtag cocok
+        // dengan kampanye (mis. #GoweserAmanBulungan), baru turun ke tingkat bawah
+        let name: string = a.county || a.city || a.municipality || a.state || a.town || a.city_district || a.village || "";
         name = name.replace(/^(Kabupaten|Kota|Kecamatan|Daerah Khusus Ibukota)\s+/i, "").trim();
         if (!cancelled && name) setPlaceName(name);
       } catch { /* pertahankan default */ }
@@ -615,11 +625,17 @@ export default function CatatClient({
                 <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-600"></span></span>
                 Merekam perjalanan...
               </div>
+              {wasHidden && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl px-3 py-2 flex items-start gap-2">
+                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                  Layar sempat mati / aplikasi di latar belakang — sistem HP menjeda GPS selama itu, jadi sebagian jarak mungkin tidak terekam. Biarkan aplikasi tetap terbuka di layar selama gowes.
+                </div>
+              )}
               <div className="flex gap-2">
                 <button onClick={pause} className="flex-1 bg-slate-700 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Pause size={20} /> Jeda</button>
                 <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
               </div>
-              <p className="text-xs text-gray-400 text-center">Gowes tetap berjalan walau kamu membuka menu lain. Layar dijaga tetap menyala selama merekam.</p>
+              <p className="text-xs text-gray-400 text-center">Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis — jangan kunci layar selama merekam.</p>
             </div>
           )}
           {status === "paused" && (

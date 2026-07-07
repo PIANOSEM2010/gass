@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { MapPin, MessageSquare, Siren, Users, BookOpen, AlertCircle } from "lucide-react";
+import { MapPin, MessageSquare, Siren, Users, BookOpen, AlertCircle, Construction } from "lucide-react";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -31,9 +31,15 @@ export default async function AdminDashboard() {
     .from("modules")
     .select("*", { count: "exact", head: true });
 
+  const { count: newInfraReports } = await supabase
+    .from("infra_reports")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "dilaporkan");
+
   const stats = [
     { label: "Total Pengguna", value: totalUsers || 0, icon: Users, color: "bg-blue-100 text-blue-700" },
     { label: "Laporan Pending", value: pendingMarkers || 0, icon: AlertCircle, color: "bg-yellow-100 text-yellow-700", href: "/admin/peta" },
+    { label: "Laporan Jalan Baru", value: newInfraReports || 0, icon: Construction, color: "bg-orange-100 text-orange-700", href: "/admin/infra" },
     { label: "Marker Aktif", value: totalApprovedMarkers || 0, icon: MapPin, color: "bg-green-100 text-green-700" },
     { label: "Post Forum", value: totalPosts || 0, icon: MessageSquare, color: "bg-purple-100 text-purple-700", href: "/admin/forum" },
     { label: "Total SOS", value: totalSos || 0, icon: Siren, color: "bg-red-100 text-red-700", href: "/admin/sos" },
@@ -68,6 +74,18 @@ export default async function AdminDashboard() {
           );
         })}
       </div>
+
+      {(newInfraReports || 0) > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 mb-3">
+          <Construction size={20} className="text-orange-700 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-orange-900 text-sm">Ada {newInfraReports} laporan jalan rusak baru dari warga</p>
+            <Link href="/admin/infra" className="text-xs text-orange-700 underline">
+              Tinjau sekarang →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {(pendingMarkers || 0) > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">

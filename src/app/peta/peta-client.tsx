@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { useNav, maneuverIcon } from "../nav-provider";
 import {
-  type NavStep,
-  fetchRoute, buildAvoidMultiPolygon, formatDist,
+  type NavStep, type AvoidGeometry,
+  fetchRoute, buildAvoidNearRoute, formatDist,
 } from "@/lib/routing";
 
 type RoadMarker = {
@@ -415,6 +415,7 @@ export default function PetaClient({
   const navInfo = nav.navInfo;
 
   const [avoidDanger, setAvoidDanger] = useState(true);
+  const [avoidGeom, setAvoidGeom] = useState<AvoidGeometry | null>(null);
   const [routeNote, setRouteNote] = useState<{ type: "safe" | "fallback"; count: number } | null>(null);
 
   const [error, setError] = useState("");
@@ -606,8 +607,12 @@ export default function PetaClient({
     setRouting(true);
     setError("");
     setRouteNote(null);
-    const avoid = avoidEnabled ? buildAvoidMultiPolygon(zones) : null;
-    const count = avoid ? avoid.coordinates.length : 0;
+    // Hanya zona rawan/berbahaya & marker "Jalan Berbahaya" DI SEKITAR jalur A->B
+    // yang dihindari — jadi jumlah yang ditampilkan sesuai kenyataan di lapangan
+    const { geometry: avoid, count } = avoidEnabled
+      ? buildAvoidNearRoute(zones, markers, a, b)
+      : { geometry: null, count: 0 };
+    setAvoidGeom(avoid);
     try {
       if (avoid) {
         try {
@@ -626,6 +631,7 @@ export default function PetaClient({
       setRouteInfo(info);
       setRouteSteps(steps);
       if (avoid) setRouteNote({ type: "fallback", count });
+      else if (avoidEnabled) setRouteNote({ type: "safe", count: 0 });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Routing gagal");
       setTimeout(() => setError(""), 5000);
@@ -675,7 +681,7 @@ export default function PetaClient({
         dest: pointB,
         label: routeSource === "search" ? searchLabel : "",
       },
-      avoidDanger ? buildAvoidMultiPolygon(zones) : null
+      avoidDanger ? avoidGeom : null
     );
   }
 
@@ -889,7 +895,7 @@ export default function PetaClient({
           >
             <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <ShieldCheck size={16} className={avoidDanger ? "text-green-600" : "text-gray-400"} />
-              Rute Aman (hindari zona rawan)
+              Rute Aman (hindari titik & zona rawan)
             </span>
             <span className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${avoidDanger ? "bg-green-600" : "bg-gray-300"}`}>
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
@@ -898,8 +904,10 @@ export default function PetaClient({
           {routeNote && (
             <p className={`text-xs mt-2 ${routeNote.type === "safe" ? "text-green-700" : "text-amber-600"}`}>
               {routeNote.type === "safe"
-                ? `Rute menghindari ${routeNote.count} zona rawan.`
-                : "Rute aman penuh tidak ditemukan, ditampilkan rute terbaik yang tersedia."}
+                ? routeNote.count > 0
+                  ? `Rute menghindari ${routeNote.count} titik & zona berbahaya di sekitar jalur.`
+                  : "Tidak ada titik atau zona berbahaya di sekitar jalur ini."
+                : `Rute aman penuh tidak ditemukan (${routeNote.count} titik/zona di sekitar jalur), ditampilkan rute terbaik yang tersedia.`}
             </p>
           )}
           {routeSteps.length > 0 && (

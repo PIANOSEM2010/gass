@@ -79,6 +79,59 @@ export function buildAvoidMultiPolygon(zones: ZoneLike[]): AvoidGeometry | null 
   return { type: "MultiPolygon", coordinates: toAvoid.map((z) => [circleRing(z.lat, z.lng, z.radius)]) };
 }
 
+export type MarkerLike = { type: string; lat: number; lng: number };
+
+// Jarak titik P ke ruas garis A-B dalam meter (proyeksi equirectangular,
+// cukup akurat untuk skala kabupaten)
+function distToSegmentM(p: Pt, a: Pt, b: Pt): number {
+  const latRef = ((a.lat + b.lat) / 2) * (Math.PI / 180);
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos(latRef);
+  const px = (p.lng - a.lng) * mPerLng, py = (p.lat - a.lat) * mPerLat;
+  const bx = (b.lng - a.lng) * mPerLng, by = (b.lat - a.lat) * mPerLat;
+  const len2 = bx * bx + by * by;
+  let t = len2 === 0 ? 0 : (px * bx + py * by) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const dx = px - t * bx, dy = py - t * by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Radius hindar untuk marker "Jalan Berbahaya" (titik, bukan zona) dalam meter
+const DANGER_MARKER_RADIUS = 40;
+// Lebar koridor kiri-kanan garis A-B yang dianggap relevan dengan perjalanan
+const ROUTE_CORRIDOR_M = 700;
+
+// Versi pintar dari avoid: hanya zona rawan/berbahaya DAN marker "danger"
+// yang berada di sekitar jalur A->B yang dihindari & dihitung.
+// Jadi angkanya jujur ("menghindari 5 titik"), bukan total seluruh database.
+export function buildAvoidNearRoute(
+  zones: ZoneLike[],
+  markers: MarkerLike[],
+  a: Pt,
+  b: Pt
+): { geometry: AvoidGeometry | null; count: number } {
+  const rings: number[][][][] = [];
+  let count = 0;
+
+  for (const z of zones) {
+    if (!AVOID_CATEGORIES.includes(z.category) || z.radius <= 0) continue;
+    if (distToSegmentM({ lat: z.lat, lng: z.lng }, a, b) <= z.radius + ROUTE_CORRIDOR_M) {
+      rings.push([circleRing(z.lat, z.lng, z.radius)]);
+      count++;
+    }
+  }
+  for (const m of markers) {
+    if (m.type !== "danger") continue;
+    if (distToSegmentM({ lat: m.lat, lng: m.lng }, a, b) <= DANGER_MARKER_RADIUS + ROUTE_CORRIDOR_M) {
+      rings.push([circleRing(m.lat, m.lng, DANGER_MARKER_RADIUS)]);
+      count++;
+    }
+  }
+
+  if (rings.length === 0) return { geometry: null, count: 0 };
+  return { geometry: { type: "MultiPolygon", coordinates: rings }, count };
+}
+
 async function requestORS(
   profile: string,
   preference: string,

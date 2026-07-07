@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, MapPin, MessageSquare, Siren, Users, TriangleAlert, Landmark } from "lucide-react";
+import { LayoutDashboard, MapPin, MessageSquare, Siren, Users, TriangleAlert, Landmark, Construction } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/peta", label: "Laporan Peta", icon: MapPin },
     { href: "/admin/zona", label: "Zona Rawan", icon: TriangleAlert },
+    { href: "/admin/infra", label: "Laporan Jalan", icon: Construction },
     { href: "/admin/landmark", label: "Landmark", icon: Landmark },
     { href: "/admin/forum", label: "Forum", icon: MessageSquare },
     { href: "/admin/sos", label: "SOS Logs", icon: Siren },
