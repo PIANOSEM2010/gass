@@ -17,7 +17,7 @@ const InfraMap = dynamic(() => import("./infra-map"), {
 type Report = {
   id: string; category: string; description: string;
   lat: number; lng: number; photo_url: string | null; status: string;
-  created_at: string | null; mine: boolean;
+  admin_note: string | null; created_at: string | null; mine: boolean;
 };
 
 const CATEGORIES = [
@@ -243,6 +243,12 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
                       </div>
                       {r.description ? <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{r.description}</p> : null}
                       <span className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${sm.cls}`}>{sm.label}</span>
+                      {r.admin_note && (
+                        <div className="mt-1.5 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5">
+                          <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wide">Catatan petugas</p>
+                          <p className="text-xs text-blue-900 whitespace-pre-wrap">{r.admin_note}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

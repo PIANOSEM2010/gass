@@ -12,7 +12,7 @@ export default async function AdminInfraPage() {
 
   const { data } = await supabase
     .from("infra_reports")
-    .select("id,category,description,lat,lng,photo_url,status,created_at")
+    .select("id,category,description,lat,lng,photo_url,status,admin_note,created_at")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -24,6 +24,7 @@ export default async function AdminInfraPage() {
     lng: Number(r.lng),
     photo_url: (r.photo_url as string) || null,
     status: String(r.status),
+    admin_note: (r.admin_note as string) || null,
     created_at: (r.created_at as string) || null,
   }));
 
