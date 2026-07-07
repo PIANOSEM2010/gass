@@ -132,6 +132,8 @@ export function buildAvoidNearRoute(
   return { geometry: { type: "MultiPolygon", coordinates: rings }, count };
 }
 
+const ORS_TIMEOUT_MS = 15000;
+
 async function requestORS(
   profile: string,
   preference: string,
@@ -148,15 +150,28 @@ async function requestORS(
   };
   if (avoidPolygons) reqBody.options = { avoid_polygons: avoidPolygons };
 
-  const res = await fetch(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
-    method: "POST",
-    headers: {
-      Authorization: apiKey,
-      "Content-Type": "application/json",
-      Accept: "application/geo+json",
-    },
-    body: JSON.stringify(reqBody),
-  });
+  // Batas waktu: jangan biarkan satu permintaan menggantung bermenit-menit
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ORS_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
+      method: "POST",
+      headers: {
+        Authorization: apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/geo+json",
+      },
+      body: JSON.stringify(reqBody),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    throw e instanceof DOMException && e.name === "AbortError"
+      ? new Error("Server rute lambat merespons, coba lagi")
+      : e;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new Error(errData?.error?.message || "Routing gagal");
@@ -185,14 +200,19 @@ async function requestORS(
   return { coords, info: { distance: summary.distance, duration: summary.duration }, steps, profile };
 }
 
-// Rute pesepeda: coba profil jalan raya (cepat & mengikuti jalan utama beraspal) dulu,
-// baru jatuh ke profil sepeda biasa bila gagal (mis. titik jauh dari jaringan jalan raya).
+// Rute pesepeda: DUA profil diminta BERSAMAAN (bukan berurutan) dengan batas
+// waktu, lalu diambil yang berhasil — prioritas cycling-road (jalan utama, cepat).
+// Sebelumnya berurutan tanpa timeout, sehingga satu permintaan yang menggantung
+// membuat pengguna menunggu bermenit-menit.
 export async function fetchRoute(a: Pt, b: Pt, avoidPolygons?: AvoidGeometry | null): Promise<RouteResult> {
-  try {
-    return await requestORS("cycling-road", "fastest", a, b, avoidPolygons);
-  } catch {
-    return await requestORS("cycling-regular", "recommended", a, b, avoidPolygons);
-  }
+  const [road, regular] = await Promise.allSettled([
+    requestORS("cycling-road", "fastest", a, b, avoidPolygons),
+    requestORS("cycling-regular", "recommended", a, b, avoidPolygons),
+  ]);
+  if (road.status === "fulfilled") return road.value;
+  if (regular.status === "fulfilled") return regular.value;
+  const reason = road.reason;
+  throw reason instanceof Error ? reason : new Error("Routing gagal");
 }
 
 function pickIndonesianVoice(): SpeechSynthesisVoice | null {

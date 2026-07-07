@@ -417,6 +417,14 @@ export default function PetaClient({
   const [avoidDanger, setAvoidDanger] = useState(true);
   const [avoidGeom, setAvoidGeom] = useState<AvoidGeometry | null>(null);
   const [routeNote, setRouteNote] = useState<{ type: "safe" | "fallback"; count: number } | null>(null);
+  // Cache hasil rute per (asal, tujuan, mode aman) — bikin toggle Rute Aman instan
+  const routeCacheRef = useRef<Map<string, {
+    coords: [number, number][];
+    info: { distance: number; duration: number };
+    steps: NavStep[];
+    note: { type: "safe" | "fallback"; count: number } | null;
+    avoid: AvoidGeometry | null;
+  }>>(new Map());
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -604,6 +612,19 @@ export default function PetaClient({
     b: { lat: number; lng: number },
     avoidEnabled: boolean = avoidDanger
   ) {
+    // Cek cache dulu: kalau pasangan titik + mode ini pernah dihitung, pakai langsung
+    const cacheKey = `${a.lat.toFixed(6)},${a.lng.toFixed(6)}|${b.lat.toFixed(6)},${b.lng.toFixed(6)}|${avoidEnabled ? 1 : 0}`;
+    const cached = routeCacheRef.current.get(cacheKey);
+    if (cached) {
+      setRouteCoords(cached.coords);
+      setRouteInfo(cached.info);
+      setRouteSteps(cached.steps);
+      setRouteNote(cached.note);
+      setAvoidGeom(cached.avoid);
+      setError("");
+      return;
+    }
+
     setRouting(true);
     setError("");
     setRouteNote(null);
@@ -620,7 +641,9 @@ export default function PetaClient({
           setRouteCoords(coords);
           setRouteInfo(info);
           setRouteSteps(steps);
-          setRouteNote({ type: "safe", count });
+          const note = { type: "safe" as const, count };
+          setRouteNote(note);
+          routeCacheRef.current.set(cacheKey, { coords, info, steps, note, avoid });
           return;
         } catch {
           /* gagal dengan avoidance, lanjut coba rute biasa */
@@ -630,8 +653,11 @@ export default function PetaClient({
       setRouteCoords(coords);
       setRouteInfo(info);
       setRouteSteps(steps);
-      if (avoid) setRouteNote({ type: "fallback", count });
-      else if (avoidEnabled) setRouteNote({ type: "safe", count: 0 });
+      let note: { type: "safe" | "fallback"; count: number } | null = null;
+      if (avoid) note = { type: "fallback", count };
+      else if (avoidEnabled) note = { type: "safe", count: 0 };
+      setRouteNote(note);
+      routeCacheRef.current.set(cacheKey, { coords, info, steps, note, avoid });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Routing gagal");
       setTimeout(() => setError(""), 5000);
@@ -643,7 +669,14 @@ export default function PetaClient({
   function toggleAvoid() {
     const next = !avoidDanger;
     setAvoidDanger(next);
-    if (pointA && pointB) calculateRoute(pointA, pointB, next);
+    if (!pointA || !pointB) return;
+    // Kalau mode aman DIMATIKAN padahal tidak ada apa pun yang dihindari,
+    // rutenya pasti sama — tidak perlu memanggil server lagi
+    if (!next && !avoidGeom) {
+      setRouteNote(null);
+      return;
+    }
+    calculateRoute(pointA, pointB, next);
   }
 
   function clearRoute() {
