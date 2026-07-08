@@ -70,6 +70,11 @@ export default function LoginPage() {
           Daftar di sini
         </Link>
       </p>
+      <p className="text-center text-sm text-gray-600 mt-2">
+        <Link href="/auth/lupa-password" className="text-green-700 font-medium">
+          Lupa password?
+        </Link>
+      </p>
     </div>
   );
 }
