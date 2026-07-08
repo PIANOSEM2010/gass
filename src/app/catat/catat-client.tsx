@@ -628,7 +628,7 @@ export default function CatatClient({
               {wasHidden && (
                 <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl px-3 py-2 flex items-start gap-2">
                   <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-                  Layar sempat mati / aplikasi di latar belakang — sistem HP menjeda GPS selama itu, jadi sebagian jarak mungkin tidak terekam. Biarkan aplikasi tetap terbuka di layar selama gowes.
+                  Layar sempat mati / aplikasi di latar belakang - sistem HP menjeda GPS selama itu, jadi sebagian jarak mungkin tidak terekam. Biarkan aplikasi tetap terbuka di layar selama gowes.
                 </div>
               )}
               <div className="flex gap-2">
