@@ -50,7 +50,7 @@ export default async function Home() {
           <img
             src="/logo-banner.png"
             alt="BUG — Bulungan untuk Goweser"
-            className="h-16 w-auto"
+            className="h-24 sm:h-32 w-auto max-w-full"
           />
           <p className="mt-6 display-title text-2xl text-white/95">
             {user ? `Gas terus, ${firstName || "Goweser"}!` : "Selamat datang, Goweser!"}
