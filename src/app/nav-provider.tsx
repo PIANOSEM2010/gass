@@ -11,6 +11,7 @@ import {
   type NavStep, type AvoidGeometry, type Pt,
   fetchRoute, haversineM, speak,
 } from "@/lib/routing";
+import { type GeoPos, type WatchHandle, startWatch, isNativeApp } from "@/lib/native-geo";
 
 export type NavInfo = { instruction: string; distanceToNext: number; type: number };
 
@@ -64,7 +65,7 @@ export default function NavProvider({ children }: { children: ReactNode }) {
   const [userPos, setUserPos] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [arrivedAt, setArrivedAt] = useState(0);
 
-  const watchIdRef = useRef<number | null>(null);
+  const watchRef = useRef<WatchHandle | null>(null);
   const wakeRef = useRef<WakeLockLike | null>(null);
   const nextIdxRef = useRef(1);
   const announcedFarRef = useRef(false);
@@ -87,7 +88,7 @@ export default function NavProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearWatch = useCallback(() => {
-    if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+    watchRef.current?.stop(); watchRef.current = null;
   }, []);
 
   const stop = useCallback(() => {
@@ -100,7 +101,7 @@ export default function NavProvider({ children }: { children: ReactNode }) {
     try { window.speechSynthesis.cancel(); } catch { /* abaikan */ }
   }, [clearWatch, releaseWake]);
 
-  const handlePosition = useCallback((p: GeolocationPosition) => {
+  const handlePosition = useCallback((p: GeoPos) => {
     const lat = p.coords.latitude, lng = p.coords.longitude, accuracy = p.coords.accuracy;
     setUserPos({ lat, lng, accuracy });
     const here = { lat, lng };
@@ -180,7 +181,6 @@ export default function NavProvider({ children }: { children: ReactNode }) {
   }, [stop]);
 
   const begin = useCallback((r: NavRoute, avoid: AvoidGeometry | null) => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
     clearWatch();
     avoidRef.current = avoid;
     nextIdxRef.current = Math.min(1, r.steps.length - 1);
@@ -195,17 +195,18 @@ export default function NavProvider({ children }: { children: ReactNode }) {
     setNavigating(true);
     acquireWake();
     speak("Navigasi dimulai. Ikuti rute dengan aman.");
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    // Di aplikasi Android: navigasi + suara tetap berjalan walau layar mati
+    watchRef.current = startWatch(
       handlePosition,
       () => setNavInfo({ instruction: "Menunggu sinyal GPS…", distanceToNext: -1, type: 11 }),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+      { title: "BUG — Navigasi", message: "Panduan rute sedang berjalan…", distanceFilter: 3 }
     );
   }, [acquireWake, clearWatch, handlePosition]);
 
   // Ambil ulang wake lock saat layar aktif lagi
   useEffect(() => {
     function onVis() {
-      if (document.visibilityState === "visible" && watchIdRef.current !== null) acquireWake();
+      if (document.visibilityState === "visible" && watchRef.current !== null && !isNativeApp()) acquireWake();
     }
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -222,4 +223,3 @@ export default function NavProvider({ children }: { children: ReactNode }) {
     </NavContext.Provider>
   );
 }
-

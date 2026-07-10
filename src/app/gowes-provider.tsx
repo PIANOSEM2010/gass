@@ -1,5 +1,6 @@
 "use client";
 import { type ReactNode, createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
+import { type GeoPos, type WatchHandle, startWatch, isNativeApp } from "@/lib/native-geo";
 
 export type Pt = { lat: number; lng: number };
 export type GowesStatus = "idle" | "tracking" | "paused" | "finished" | "saving" | "saved";
@@ -49,7 +50,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const [elev, setElev] = useState(0);
   const [error, setError] = useState("");
 
-  const watchIdRef = useRef<number | null>(null);
+  const watchRef = useRef<WatchHandle | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef(0);
   const endRef = useRef(0);
@@ -80,7 +81,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   // Saat layar aktif lagi, ambil ulang wake lock (browser melepasnya saat tab disembunyikan)
   useEffect(() => {
     function onVis() {
-      if (document.visibilityState === "visible" && watchIdRef.current !== null) acquireWake();
+      if (document.visibilityState === "visible" && watchRef.current !== null && !isNativeApp()) acquireWake();
     }
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -89,13 +90,13 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   // Bersihkan saat provider benar-benar dilepas (praktis: aplikasi ditutup)
   useEffect(() => {
     return () => {
-      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+      watchRef.current?.stop();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
   const stopTracking = useCallback(() => {
-    if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+    watchRef.current?.stop(); watchRef.current = null;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     releaseWake();
   }, [releaseWake]);
@@ -110,8 +111,10 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const beginWatch = useCallback(() => {
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (p) => {
+    // Di aplikasi Android: GPS native + notifikasi permanen (jalan walau layar mati).
+    // Di browser: navigator.geolocation biasa.
+    watchRef.current = startWatch(
+      (p: GeoPos) => {
         const acc = p.coords.accuracy;
         const pt = { lat: p.coords.latitude, lng: p.coords.longitude };
         const now = Date.now();
@@ -151,13 +154,12 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
 
         if (inst >= 0) setSpeed(inst > 120 ? 0 : inst);
       },
-      (err) => setError(err.message || "Gagal mengambil lokasi GPS"),
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }
+      (msg) => setError(msg),
+      { title: "BUG — Catat Gowes", message: "Merekam perjalanan gowesmu…", distanceFilter: 4 }
     );
   }, []);
 
   const start = useCallback(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) { setError("Browser tidak mendukung GPS"); return; }
     setError("");
     distRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastTimeRef.current = 0;
     elevRef.current = 0; lastAltRef.current = null;
@@ -172,7 +174,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   // Jeda: hentikan GPS + timer, tapi pertahankan seluruh data perjalanan
   const pause = useCallback(() => {
     if (statusRef.current !== "tracking") return;
-    if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+    watchRef.current?.stop(); watchRef.current = null;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     releaseWake();
     pauseStartRef.current = Date.now();

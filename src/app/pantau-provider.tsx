@@ -5,6 +5,7 @@
 // saat pengguna membuka Catat Gowes, Peta, atau fitur lain.
 import { type ReactNode, createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { type GeoPos, type WatchHandle, startWatch, toGeoPos, isNativeApp } from "@/lib/native-geo";
 
 type WakeLockLike = { release: () => Promise<void> };
 
@@ -38,7 +39,7 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [hidden, setHidden] = useState(false);
 
-  const watchRef = useRef<number | null>(null);
+  const watchRef = useRef<WatchHandle | null>(null);
   const lastSentRef = useRef(0);
   const wakeRef = useRef<WakeLockLike | null>(null);
   const sessionRef = useRef<string | null>(null);
@@ -55,7 +56,7 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   const releaseWake = useCallback(() => { try { wakeRef.current?.release(); } catch { /* abaikan */ } wakeRef.current = null; }, []);
 
   // Kirim satu posisi ke server (dengan throttle, kecuali force)
-  const sendPosition = useCallback((p: GeolocationPosition, force: boolean) => {
+  const sendPosition = useCallback((p: GeoPos, force: boolean) => {
     const id = sessionRef.current;
     if (!id) return;
     const c = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
@@ -101,10 +102,10 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
     const onVis = () => {
       const isHidden = document.visibilityState === "hidden";
       setHidden(isHidden);
-      if (!isHidden && sharingRef.current && sessionRef.current && navigator.geolocation) {
+      if (!isHidden && sharingRef.current && sessionRef.current && !isNativeApp() && navigator.geolocation) {
         acquireWake();
         navigator.geolocation.getCurrentPosition(
-          (p) => sendPosition(p, true),
+          (p) => sendPosition(toGeoPos(p), true),
           () => { /* abaikan */ },
           { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
         );
@@ -118,7 +119,7 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   // Pindah halaman di dalam aplikasi TIDAK melepas provider ini, jadi berbagi terus jalan.
   useEffect(() => {
     return () => {
-      if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
+      watchRef.current?.stop();
       try { wakeRef.current?.release(); } catch { /* abaikan */ }
       const id = sessionRef.current;
       if (id) {
@@ -129,7 +130,6 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const start = useCallback(async (userId: string, fullName: string) => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) { setError("Browser tidak mendukung GPS"); return; }
     setStarting(true); setError("");
     try {
       const supabase = createClient();
@@ -145,18 +145,21 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
       acquireWake();
       lastSentRef.current = 0;
 
-      // Ambil posisi pertama secepatnya (jangan menunggu watchPosition)
-      navigator.geolocation.getCurrentPosition(
-        (p) => sendPosition(p, true),
-        (err) => setError(err.message || "Gagal mengambil lokasi GPS. Pastikan izin lokasi aktif."),
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
-      );
+      // Ambil posisi pertama secepatnya (hanya perlu di browser; di aplikasi
+      // watcher native langsung memberi posisi)
+      if (!isNativeApp() && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (p) => sendPosition(toGeoPos(p), true),
+          (err) => setError(err.message || "Gagal mengambil lokasi GPS. Pastikan izin lokasi aktif."),
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+        );
+      }
 
-      // Pantau terus selama aplikasi terbuka (lintas halaman)
-      watchRef.current = navigator.geolocation.watchPosition(
+      // Pantau terus. Di aplikasi Android: tetap berjalan walau layar mati.
+      watchRef.current = startWatch(
         (p) => sendPosition(p, false),
-        (err) => setError(err.message || "Gagal mengambil lokasi GPS. Pastikan izin lokasi aktif."),
-        { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }
+        (msg) => setError(msg),
+        { title: "BUG — Teman Pantau", message: "Membagikan lokasimu ke keluarga…", distanceFilter: 5 }
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memulai");
@@ -166,7 +169,7 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   }, [acquireWake, sendPosition]);
 
   const stop = useCallback(async () => {
-    if (watchRef.current !== null) { navigator.geolocation.clearWatch(watchRef.current); watchRef.current = null; }
+    watchRef.current?.stop(); watchRef.current = null;
     releaseWake();
     const id = sessionRef.current;
     setSharing(false); sharingRef.current = false;
@@ -185,4 +188,3 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
     </PantauContext.Provider>
   );
 }
-

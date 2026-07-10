@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Download, X, Share } from "lucide-react";
+import { isNativeApp } from "@/lib/native-geo";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -14,6 +15,9 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Sedang berjalan di dalam aplikasi Android (Capacitor)? jangan tawarkan pemasangan
+    if (isNativeApp()) return;
 
     // Sudah terpasang (mode standalone)? jangan tampilkan
     const nav = navigator as Navigator & { standalone?: boolean };
