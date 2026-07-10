@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useGowes, type Pt } from "../gowes-provider";
 import { isNativeApp } from "@/lib/native-geo";
+import { shareImageDataUrl } from "@/lib/native-share";
 import {
   Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
@@ -507,22 +508,10 @@ export default function CatatClient({
     if (!canvas) return;
     const km = (getStats().distanceM / 1000).toFixed(2);
     const text = `Baru saja gowes ${km} km di ${placeName} bersama BUG! 🚴 #GoweserAman${placeName.replace(/\s+/g, "")}`;
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      const file = new File([blob], "gowes-bug.png", { type: "image/png" });
-      try {
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: "Aktivitas Gowes BUG", text });
-          return;
-        }
-      } catch { /* batal share, lanjut unduh */ }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "gowes-bug.png";
-      a.click();
-      URL.revokeObjectURL(url);
-    }, "image/png");
+    // Di aplikasi Android: file ditulis ke cache lalu share sheet native.
+    // Di browser: Web Share API; kalau tak ada → unduh otomatis.
+    const dataUrl = canvas.toDataURL("image/png");
+    void shareImageDataUrl(dataUrl, "gowes-bug.png", text);
   }
 
   async function shareToForum() {

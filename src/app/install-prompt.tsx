@@ -12,6 +12,7 @@ export default function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [iosHint, setIosHint] = useState(false);
+  const [androidApk, setAndroidApk] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -54,6 +55,13 @@ export default function InstallPrompt() {
       setVisible(true);
     }
 
+    // Android (browser): tawarkan APLIKASI NATIVE (unduh APK), bukan PWA.
+    // APK punya GPS latar belakang (jalan walau layar mati) — jauh lebih baik.
+    if (/android/i.test(ua)) {
+      setAndroidApk(true);
+      setVisible(true);
+    }
+
     return () => {
       window.removeEventListener("beforeinstallprompt", onBIP);
       window.removeEventListener("appinstalled", onInstalled);
@@ -89,11 +97,22 @@ export default function InstallPrompt() {
             <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
               Ketuk <Share size={12} className="inline" /> Bagikan → "Tambahkan ke Layar Utama"
             </p>
+          ) : androidApk ? (
+            <p className="text-xs text-gray-500 mt-0.5">Catat gowes & Teman Pantau tetap jalan walau layar mati</p>
           ) : (
             <p className="text-xs text-gray-500 mt-0.5">Akses lebih cepat, langsung dari layar HP</p>
           )}
         </div>
-        {!iosHint && (
+        {androidApk ? (
+          <a
+            href="/bug.apk"
+            download
+            onClick={close}
+            className="bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 flex-shrink-0"
+          >
+            <Download size={16} /> Unduh
+          </a>
+        ) : !iosHint && (
           <button
             onClick={install}
             className="bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 flex-shrink-0"

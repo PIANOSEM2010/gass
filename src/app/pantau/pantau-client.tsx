@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePantau } from "../pantau-provider";
+import { shareText } from "@/lib/native-share";
 import {
   ArrowLeft, Radio, Share2, Square, Loader2, Copy, Check, MapPin, AlertTriangle, ShieldCheck, EyeOff, Bike,
 } from "lucide-react";
@@ -17,10 +18,11 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
   async function share() {
     if (!shareUrl) return;
     const text = `Pantau perjalanan ${fullName} secara langsung lewat BUG:`;
-    try {
-      if (navigator.share) { await navigator.share({ title: "Teman Pantau BUG", text, url: shareUrl }); return; }
-    } catch { return; }
-    copy();
+    // Di aplikasi Android: share sheet native; di browser: navigator.share;
+    // kalau keduanya gagal: otomatis tersalin ke clipboard.
+    const result = await shareText({ title: "Teman Pantau BUG", text, url: shareUrl });
+    if (result === "copied") { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    else if (result === "failed") copy();
   }
   async function copy() {
     if (!shareUrl) return;

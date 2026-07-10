@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "956028297915",
+    "project_id": "bug-bulungan",
+    "storage_bucket": "bug-bulungan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:956028297915:android:77231eb824a0128da0ff9e",
+        "android_client_info": {
+          "package_name": "id.bulungan.bug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6D3IY8Q-KhtYQWUk6Hj5H9zPpZH5FFyc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

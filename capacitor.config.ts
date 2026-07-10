@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   appName: "BUG",
   webDir: "cap-www",
   server: {
-    url: "https://gass-bulungan.netlify.app",
+    url: "https://gass-bulungann.netlify.app",
     cleartext: false,
   },
 };

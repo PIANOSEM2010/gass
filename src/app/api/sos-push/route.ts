@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { sendFcmToTokens } from "@/lib/fcm";
 
 export const runtime = "nodejs";
 
@@ -89,7 +90,38 @@ export async function POST(req: Request) {
       await admin.from("push_subscriptions").delete().in("endpoint", toDelete);
     }
 
-    return NextResponse.json({ sent, cleaned: toDelete.length });
+    // 8. Jalur kedua: FCM untuk APLIKASI ANDROID (notifikasi tetap masuk
+    //    walau aplikasi tertutup & layar mati). Web-push di atas tidak
+    //    menjangkau WebView aplikasi, jadi keduanya saling melengkapi.
+    let fcmSent = 0;
+    try {
+      const { data: tokenRows } = await admin
+        .from("push_tokens")
+        .select("token")
+        .neq("user_id", user.id);
+      const tokens = (tokenRows ?? []).map((r) => String(r.token));
+      if (tokens.length > 0) {
+        const result = await sendFcmToTokens(tokens, {
+          title: "🚨 SOS Darurat",
+          body: `${author_name || "Pengguna"} membutuhkan bantuan`,
+          url: "/",
+          data: {
+            sos_id: String(id || ""),
+            author_name: String(author_name || "Pengguna"),
+            lat: String(lat ?? ""),
+            lng: String(lng ?? ""),
+          },
+        });
+        fcmSent = result.sent;
+        if (result.deadTokens.length > 0) {
+          await admin.from("push_tokens").delete().in("token", result.deadTokens);
+        }
+      }
+    } catch {
+      /* FCM belum dikonfigurasi atau gagal — web-push tetap terkirim */
+    }
+
+    return NextResponse.json({ sent, fcmSent, cleaned: toDelete.length });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Gagal mengirim push" },

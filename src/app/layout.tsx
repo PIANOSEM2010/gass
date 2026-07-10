@@ -2,6 +2,7 @@ import GowesProvider from "./gowes-provider";
 import PantauProvider from "./pantau-provider";
 import NavProvider from "./nav-provider";
 import ActivityDock from "./activity-dock";
+import PushRegistrar from "./push-registrar";
 import SosAlertProvider from "./sos-alert-provider";
 import InstallPrompt from "./install-prompt";
 import type { Metadata, Viewport } from "next";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PantauProvider>
             <NavProvider>
               <SosAlertProvider />
+              <PushRegistrar />
               <InstallPrompt />
               <Navbar />
               <ActivityDock />
