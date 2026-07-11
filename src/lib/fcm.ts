@@ -97,7 +97,7 @@ export async function sendFcmToTokens(
               android: {
                 priority: "HIGH",
                 notification: {
-                  channel_id: "sos",
+                  channel_id: "sos-alert",
                   sound: "default",
                   default_vibrate_timings: true,
                 },

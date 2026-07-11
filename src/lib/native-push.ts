@@ -96,7 +96,10 @@ export async function initNativePush(userId: string): Promise<void> {
       // belum ada akan DIBUANG diam-diam oleh Android 8+.
       try {
         await push.createChannel({
-          id: "sos",
+          // ID baru yang segar: importance channel TERKUNCI sejak pertama dibuat,
+          // jadi kalau channel lama terlanjur tercipta dengan tingkat rendah,
+          // channel baru inilah yang menjamin notifikasi tampil MELAYANG (heads-up)
+          id: "sos-alert",
           name: "SOS Darurat",
           description: "Peringatan darurat dari sesama goweser",
           importance: 5,
