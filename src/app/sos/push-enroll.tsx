@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
+import { isNativeApp } from "@/lib/native-geo";
 
-type State = "loading" | "unsupported" | "default" | "granted" | "denied" | "subscribing";
+type State = "loading" | "unsupported" | "native" | "default" | "granted" | "denied" | "subscribing";
 
 function urlBase64ToUint8Array(base64String: string): BufferSource {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -21,6 +22,12 @@ export default function PushEnroll() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Di APLIKASI Android, notifikasi memakai FCM native (otomatis terdaftar
+    // saat login) — bukan web-push. Tampilkan status yang sesuai.
+    if (isNativeApp()) {
+      setState("native");
+      return;
+    }
     if (
       typeof window === "undefined" ||
       !("serviceWorker" in navigator) ||
@@ -110,6 +117,14 @@ export default function PushEnroll() {
   }
 
   if (state === "loading") return null;
+
+  if (state === "native") {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700 text-center flex items-center justify-center gap-2">
+        <BellRing size={14} /> Notifikasi aplikasi aktif — peringatan SOS akan muncul walau aplikasi ditutup.
+      </div>
+    );
+  }
 
   if (state === "unsupported") {
     return (

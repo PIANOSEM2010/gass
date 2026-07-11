@@ -45,13 +45,15 @@ export default async function Home() {
         <div className="absolute right-16 top-0 h-full w-2.5 bg-lime-300 opacity-50" style={{ transform: "skewX(-16deg)" }} />
 
         <div className="relative max-w-md mx-auto">
-          {/* Logo resmi BUG (roda + wordmark) */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-banner.png"
-            alt="BUG — Bulungan untuk Goweser"
-            className="h-24 sm:h-32 w-auto max-w-full"
-          />
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-lime-400 text-slate-950 flex items-center justify-center shadow-lg shadow-lime-500/20">
+              <Bike size={26} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="display-title text-4xl leading-none tracking-tight">BUG</h1>
+              <p className="eyebrow text-lime-300/90">Bulungan untuk Goweser</p>
+            </div>
+          </div>
           <p className="mt-6 display-title text-2xl text-white/95">
             {user ? `Gas terus, ${firstName || "Goweser"}!` : "Selamat datang, Goweser!"}
           </p>

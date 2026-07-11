@@ -159,7 +159,14 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
       watchRef.current = startWatch(
         (p) => sendPosition(p, false),
         (msg) => setError(msg),
-        { title: "BUG — Teman Pantau", message: "Membagikan lokasimu ke keluarga…", distanceFilter: 5 }
+        {
+          title: "BUG — Teman Pantau",
+          message: "Membagikan lokasimu ke keluarga…",
+          // 0 = laporkan SETIAP fix GPS (~1 detik) walau diam, supaya keluarga
+          // melihat pembaruan rutin saat layar mati; pengiriman tetap dihemat
+          // oleh throttle 4 detik di sendPosition.
+          distanceFilter: 0,
+        }
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memulai");

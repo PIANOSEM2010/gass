@@ -17,6 +17,11 @@ type PushListenerHandle = { remove: () => Promise<void> };
 interface PushPlugin {
   requestPermissions(): Promise<PermissionStatus>;
   register(): Promise<void>;
+  createChannel(channel: {
+    id: string; name: string; description?: string;
+    importance?: 1 | 2 | 3 | 4 | 5; visibility?: 0 | 1 | -1;
+    sound?: string; vibration?: boolean; lights?: boolean;
+  }): Promise<void>;
   addListener(event: "registration", cb: (token: Token) => void): Promise<PushListenerHandle>;
   addListener(event: "registrationError", cb: (err: unknown) => void): Promise<PushListenerHandle>;
   addListener(event: "pushNotificationActionPerformed", cb: (action: { notification: { data?: Record<string, string> } }) => void): Promise<PushListenerHandle>;
@@ -65,6 +70,19 @@ export async function initNativePush(userId: string): Promise<void> {
 
     const perm = await push.requestPermissions();
     if (perm.receive === "granted") {
+      // WAJIB: buat channel "sos" — notifikasi FCM yang menyebut channel yang
+      // belum ada akan DIBUANG diam-diam oleh Android 8+.
+      try {
+        await push.createChannel({
+          id: "sos",
+          name: "SOS Darurat",
+          description: "Peringatan darurat dari sesama goweser",
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+          lights: true,
+        });
+      } catch { /* channel mungkin sudah ada */ }
       await push.register();
     }
   } catch {
