@@ -63,22 +63,38 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return data.access_token;
 }
 
-export type FcmSendResult = { sent: number; deadTokens: string[] };
+export type FcmSendResult = { sent: number; deadTokens: string[]; errors: string[] };
 
 // Kirim notifikasi ke banyak token FCM. Token mati (UNREGISTERED) dikembalikan
-// agar pemanggil bisa menghapusnya dari database.
+// agar pemanggil bisa menghapusnya dari database. SEMUA kegagalan dilaporkan
+// lewat `errors` — tidak ada yang ditelan diam-diam.
 export async function sendFcmToTokens(
   tokens: string[],
   notif: { title: string; body: string; url?: string; data?: Record<string, string> }
 ): Promise<FcmSendResult> {
   const sa = getServiceAccount();
-  if (!sa || tokens.length === 0) return { sent: 0, deadTokens: [] };
+  if (!sa) {
+    return {
+      sent: 0, deadTokens: [],
+      errors: ["FIREBASE_SERVICE_ACCOUNT tidak ada / bukan JSON valid di environment server"],
+    };
+  }
+  if (tokens.length === 0) return { sent: 0, deadTokens: [], errors: [] };
 
-  const accessToken = await getAccessToken(sa);
+  let accessToken: string;
+  try {
+    accessToken = await getAccessToken(sa);
+  } catch (e) {
+    return {
+      sent: 0, deadTokens: [],
+      errors: [`OAuth gagal: ${e instanceof Error ? e.message : String(e)}`],
+    };
+  }
   const endpoint = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
 
   let sent = 0;
   const deadTokens: string[] = [];
+  const errors: string[] = [];
 
   await Promise.all(
     tokens.map(async (token) => {
@@ -116,12 +132,13 @@ export async function sendFcmToTokens(
           if (res.status === 404 || text.includes("UNREGISTERED") || text.includes("INVALID_ARGUMENT")) {
             deadTokens.push(token);
           }
+          if (errors.length < 3) errors.push(`FCM ${res.status}: ${text.slice(0, 300)}`);
         }
-      } catch {
-        /* biarkan; token lain tetap dikirim */
+      } catch (e) {
+        if (errors.length < 3) errors.push(`fetch gagal: ${e instanceof Error ? e.message : String(e)}`);
       }
     })
   );
 
-  return { sent, deadTokens };
+  return { sent, deadTokens, errors };
 }

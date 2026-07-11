@@ -94,6 +94,7 @@ export async function POST(req: Request) {
     //    walau aplikasi tertutup & layar mati). Web-push di atas tidak
     //    menjangkau WebView aplikasi, jadi keduanya saling melengkapi.
     let fcmSent = 0;
+    let fcmErrors: string[] = [];
     try {
       const { data: tokenRows } = await admin
         .from("push_tokens")
@@ -113,15 +114,18 @@ export async function POST(req: Request) {
           },
         });
         fcmSent = result.sent;
+        fcmErrors = result.errors;
+        if (fcmErrors.length > 0) console.error("[sos-push] FCM errors:", fcmErrors);
         if (result.deadTokens.length > 0) {
           await admin.from("push_tokens").delete().in("token", result.deadTokens);
         }
       }
-    } catch {
-      /* FCM belum dikonfigurasi atau gagal — web-push tetap terkirim */
+    } catch (e) {
+      fcmErrors = [e instanceof Error ? e.message : String(e)];
+      console.error("[sos-push] FCM exception:", e);
     }
 
-    return NextResponse.json({ sent, fcmSent, cleaned: toDelete.length });
+    return NextResponse.json({ sent, fcmSent, fcmErrors, cleaned: toDelete.length });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Gagal mengirim push" },
