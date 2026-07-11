@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
 import { isNativeApp } from "@/lib/native-geo";
+import { onPushStatus } from "@/lib/native-push";
 
 type State = "loading" | "unsupported" | "native" | "default" | "granted" | "denied" | "subscribing";
 
@@ -20,13 +21,16 @@ function urlBase64ToUint8Array(base64String: string): BufferSource {
 export default function PushEnroll() {
   const [state, setState] = useState<State>("loading");
   const [error, setError] = useState("");
+  const [nativeStatus, setNativeStatus] = useState("");
 
   useEffect(() => {
     // Di APLIKASI Android, notifikasi memakai FCM native (otomatis terdaftar
     // saat login) — bukan web-push. Tampilkan status yang sesuai.
     if (isNativeApp()) {
       setState("native");
-      return;
+      // Tampilkan status registrasi FCM langsung di layar (memudahkan diagnosa)
+      const off = onPushStatus((st) => setNativeStatus(st));
+      return off;
     }
     if (
       typeof window === "undefined" ||
@@ -119,9 +123,16 @@ export default function PushEnroll() {
   if (state === "loading") return null;
 
   if (state === "native") {
+    const ok = nativeStatus === "terdaftar";
+    const failed = nativeStatus.startsWith("gagal") || nativeStatus.startsWith("error") || nativeStatus.startsWith("izin:");
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700 text-center flex items-center justify-center gap-2">
-        <BellRing size={14} /> Notifikasi aplikasi aktif — peringatan SOS akan muncul walau aplikasi ditutup.
+      <div className={`${ok ? "bg-green-50 border-green-200 text-green-700" : failed ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-gray-50 border-gray-200 text-gray-600"} border rounded-xl p-3 text-xs text-center flex items-center justify-center gap-2`}>
+        <BellRing size={14} className="flex-shrink-0" />
+        <span>
+          {ok
+            ? "Notifikasi aplikasi aktif — peringatan SOS akan muncul walau aplikasi ditutup."
+            : `Status notifikasi: ${nativeStatus || "menunggu login…"}`}
+        </span>
       </div>
     );
   }

@@ -35,29 +35,49 @@ function getPush(): PushPlugin {
 
 let initialized = false;
 
+// ---- Status registrasi (untuk ditampilkan di halaman SOS agar mudah didiagnosa) ----
+let pushStatus = "belum-mulai";
+const statusListeners: ((s: string) => void)[] = [];
+function setStatus(s: string) {
+  pushStatus = s;
+  statusListeners.forEach((cb) => { try { cb(s); } catch { /* abaikan */ } });
+}
+export function getPushStatus(): string { return pushStatus; }
+export function onPushStatus(cb: (s: string) => void): () => void {
+  statusListeners.push(cb);
+  cb(pushStatus);
+  return () => {
+    const i = statusListeners.indexOf(cb);
+    if (i >= 0) statusListeners.splice(i, 1);
+  };
+}
+
 // Panggil sekali setelah tahu user login. Aman dipanggil berulang.
 export async function initNativePush(userId: string): Promise<void> {
   if (!isNativeApp() || initialized || !userId) return;
   initialized = true;
+  setStatus("memulai");
 
   try {
     const push = getPush();
 
     // Saat token diterima → simpan ke Supabase (upsert per token)
     await push.addListener("registration", async (token) => {
+      setStatus("token-diterima");
       try {
         const supabase = createClient();
-        await supabase.from("push_tokens").upsert(
+        const { error } = await supabase.from("push_tokens").upsert(
           { user_id: userId, token: token.value, platform: "android" },
           { onConflict: "token" }
         );
-      } catch {
-        /* jangan ganggu aplikasi bila gagal */
+        setStatus(error ? `gagal-simpan: ${error.message}` : "terdaftar");
+      } catch (e) {
+        setStatus(`gagal-simpan: ${e instanceof Error ? e.message : "unknown"}`);
       }
     });
 
-    await push.addListener("registrationError", () => {
-      /* abaikan; user bisa coba lagi nanti */
+    await push.addListener("registrationError", (err) => {
+      setStatus(`gagal-registrasi: ${typeof err === "object" ? JSON.stringify(err) : String(err)}`);
     });
 
     // Saat notifikasi DIKETUK (app tertutup/latar belakang) → buka halaman terkait
@@ -69,7 +89,9 @@ export async function initNativePush(userId: string): Promise<void> {
     });
 
     const perm = await push.requestPermissions();
+    if (perm.receive !== "granted") setStatus(`izin: ${perm.receive}`);
     if (perm.receive === "granted") {
+      setStatus("izin-ok, mendaftar…");
       // WAJIB: buat channel "sos" — notifikasi FCM yang menyebut channel yang
       // belum ada akan DIBUANG diam-diam oleh Android 8+.
       try {
@@ -85,7 +107,8 @@ export async function initNativePush(userId: string): Promise<void> {
       } catch { /* channel mungkin sudah ada */ }
       await push.register();
     }
-  } catch {
+  } catch (e) {
     initialized = false; // izinkan percobaan ulang
+    setStatus(`error: ${e instanceof Error ? e.message : "plugin tidak tersedia"}`);
   }
 }
