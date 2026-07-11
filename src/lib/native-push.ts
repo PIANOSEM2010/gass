@@ -99,15 +99,18 @@ export async function initNativePush(userId: string): Promise<void> {
           // ID baru yang segar: importance channel TERKUNCI sejak pertama dibuat,
           // jadi kalau channel lama terlanjur tercipta dengan tingkat rendah,
           // channel baru inilah yang menjamin notifikasi tampil MELAYANG (heads-up)
-          id: "sos-alert",
-          name: "SOS Darurat",
+          id: "sos-popup",
+          name: "SOS Darurat Pop-up",
           description: "Peringatan darurat dari sesama goweser",
           importance: 5,
           visibility: 1,
           vibration: true,
           lights: true,
         });
-      } catch { /* channel mungkin sudah ada */ }
+      } catch (e) {
+        setStatus(`channel-gagal: ${e instanceof Error ? e.message : "unknown"}`);
+      }
+      setStatus("channel-ok, mendaftar…");
       await push.register();
     }
   } catch (e) {
