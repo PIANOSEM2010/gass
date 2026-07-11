@@ -26,14 +26,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { id, author_name, lat, lng } = body || {};
 
-    // 3. Konfigurasi VAPID
+    // 3. Konfigurasi VAPID — OPSIONAL. Kalau tidak ada, web-push dilewati
+    //    tapi FCM (aplikasi Android) TETAP dikirim.
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
     const subject = process.env.VAPID_SUBJECT;
-    if (!publicKey || !privateKey || !subject) {
-      return NextResponse.json({ error: "VAPID belum di-setup" }, { status: 500 });
-    }
-    webpush.setVapidDetails(subject, publicKey, privateKey);
+    const webPushReady = Boolean(publicKey && privateKey && subject);
+    if (webPushReady) webpush.setVapidDetails(subject!, publicKey!, privateKey!);
 
     // 4. Client admin (service role) untuk baca semua langganan
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,17 +42,17 @@ export async function POST(req: Request) {
     }
     const admin = createAdminClient(supabaseUrl, serviceKey);
 
-    // 5. Ambil semua langganan KECUALI milik si pengirim
-    const { data, error } = await admin
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth, user_id")
-      .neq("user_id", user.id);
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    const subs = (data ?? []) as PushSub[];
-    if (subs.length === 0) {
-      return NextResponse.json({ sent: 0, cleaned: 0 });
+    // 5. Web-push (browser/PWA) — best effort. Kalau tidak ada VAPID atau
+    //    tidak ada langganan, bagian ini dilewati dan lanjut ke FCM.
+    let sent = 0;
+    const toDelete: string[] = [];
+    let subs: PushSub[] = [];
+    if (webPushReady) {
+      const { data, error } = await admin
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth, user_id")
+        .neq("user_id", user.id);
+      if (!error) subs = (data ?? []) as PushSub[];
     }
 
     // 6. Isi notifikasi (cocok dengan public/sw.js)
@@ -65,9 +64,7 @@ export async function POST(req: Request) {
       payload: { id: id || null, author_name: author_name || "Pengguna", lat, lng },
     });
 
-    // 7. Kirim ke semua; bersihkan langganan mati (404/410)
-    let sent = 0;
-    const toDelete: string[] = [];
+    // 7. Kirim ke semua langganan web (bila ada); bersihkan yang mati (404/410)
     await Promise.all(
       subs.map(async (s) => {
         try {

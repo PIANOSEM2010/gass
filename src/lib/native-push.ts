@@ -7,7 +7,6 @@
 // - Server (route /api/sos-push) mengirim ke token-token itu lewat FCM,
 //   sehingga notifikasi tetap muncul walau APLIKASI TERTUTUP & LAYAR MATI.
 import { registerPlugin } from "@capacitor/core";
-import { createClient } from "@/lib/supabase/client";
 import { isNativeApp } from "@/lib/native-geo";
 
 type PermissionStatus = { receive: "prompt" | "prompt-with-rationale" | "granted" | "denied" };
@@ -65,12 +64,15 @@ export async function initNativePush(userId: string): Promise<void> {
     await push.addListener("registration", async (token) => {
       setStatus("token-diterima");
       try {
-        const supabase = createClient();
-        const { error } = await supabase.from("push_tokens").upsert(
-          { user_id: userId, token: token.value, platform: "android" },
-          { onConflict: "token" }
-        );
-        setStatus(error ? `gagal-simpan: ${error.message}` : "terdaftar");
+        // Simpan lewat SERVER supaya perpindahan akun di HP yang sama sah
+        // (kepemilikan token pindah ke akun yang sedang login).
+        const res = await fetch("/api/push-register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: token.value, platform: "android" }),
+        });
+        const data = await res.json().catch(() => null);
+        setStatus(res.ok && data?.ok ? "terdaftar" : `gagal-simpan: ${data?.pesan || res.status}`);
       } catch (e) {
         setStatus(`gagal-simpan: ${e instanceof Error ? e.message : "unknown"}`);
       }
