@@ -86,6 +86,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     const name = transparent ? "gowes-bug-transparan.png" : "gowes-bug.png";
     const r = await downloadCanvasPng(canvas, name);
     if (r.status === "failed") alert(`Gagal mengunduh: ${r.error || "tidak diketahui"}`);
+    else if (r.savedTo) alert(`Kartu tersimpan di ${r.savedTo}`);
   }
 
   return (
@@ -98,7 +99,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[2000] bg-black/60 flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-bold text-gray-900">Kartu Perjalanan</p>

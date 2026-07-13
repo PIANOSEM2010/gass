@@ -153,6 +153,7 @@ export default function CatatClient({
     const name = cardTransparent ? "gowes-bug-transparan.png" : "gowes-bug.png";
     const r = await downloadCanvasPng(canvas, name);
     if (r.status === "failed") alert(`Gagal mengunduh: ${r.error || "tidak diketahui"}`);
+    else if (r.savedTo) alert(`Kartu tersimpan di ${r.savedTo}`);
   }
 
   function shareCard() {

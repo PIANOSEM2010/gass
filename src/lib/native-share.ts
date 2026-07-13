@@ -11,7 +11,8 @@ interface SharePlugin {
   share(options: { title?: string; text?: string; url?: string; files?: string[]; dialogTitle?: string }): Promise<unknown>;
 }
 interface FilesystemPlugin {
-  writeFile(options: { path: string; data: string; directory: string }): Promise<{ uri: string }>;
+  writeFile(options: { path: string; data: string; directory: string; recursive?: boolean }): Promise<{ uri: string }>;
+  requestPermissions?(): Promise<{ publicStorage: string }>;
 }
 
 let shareCache: SharePlugin | null = null;
@@ -63,7 +64,34 @@ export async function shareText(opts: { title?: string; text?: string; url?: str
   return "failed";
 }
 
-export type ImageShareResult = { status: "shared" | "downloaded" | "failed"; error?: string };
+export type ImageShareResult = {
+  status: "shared" | "downloaded" | "failed";
+  error?: string;
+  /** Lokasi simpan yang bisa dibacakan ke user (hanya saat tersimpan di perangkat via aplikasi) */
+  savedTo?: string;
+};
+
+// Simpan gambar ke penyimpanan HP (aplikasi Android). Dicoba berurutan:
+// Galeri (Pictures/BUG) → Documents/BUG → fallback share sheet.
+async function saveImageToDevice(dataUrl: string, filename: string): Promise<ImageShareResult> {
+  const base64 = dataUrl.split(",")[1] || "";
+  if (!base64) return { status: "failed", error: "gambar kosong" };
+  // Nama unik supaya unduhan berulang tidak saling menimpa
+  const uniq = filename.replace(/\.png$/i, "") + "-" + Date.now() + ".png";
+  try { await getFs().requestPermissions?.(); } catch { /* lanjut saja */ }
+  const attempts = [
+    { directory: "EXTERNAL_STORAGE", path: `Pictures/BUG/${uniq}`, label: "Galeri (folder Pictures/BUG)" },
+    { directory: "DOCUMENTS", path: `BUG/${uniq}`, label: "Documents/BUG" },
+  ];
+  for (const a of attempts) {
+    try {
+      await getFs().writeFile({ path: a.path, data: base64, directory: a.directory, recursive: true });
+      return { status: "downloaded", savedTo: a.label };
+    } catch { /* coba lokasi berikutnya */ }
+  }
+  // Izin ditolak / Android versi baru membatasi → share sheet (pilih Simpan)
+  return shareImageDataUrl(dataUrl, filename);
+}
 
 // Bagikan gambar dari data URL (kartu share catat gowes / riwayat).
 export async function shareImageDataUrl(
@@ -136,7 +164,7 @@ export async function downloadCanvasPng(
   filename: string
 ): Promise<ImageShareResult> {
   if (isNativeApp()) {
-    return shareImageDataUrl(canvas.toDataURL("image/png"), filename);
+    return saveImageToDevice(canvas.toDataURL("image/png"), filename);
   }
   try {
     const blob = await new Promise<Blob>((resolve, reject) =>
