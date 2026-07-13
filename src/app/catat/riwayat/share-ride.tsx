@@ -1,13 +1,12 @@
 "use client";
 // Tombol + dialog "Bagikan Kartu" untuk SETIAP perjalanan di riwayat.
 // Memakai mesin kartu yang sama dengan halaman Catat (lib/gowes-card),
-// lengkap: 4 template (termasuk Strava), 5 warna, foto latar, dan
+// lengkap: 4 template (termasuk Momen), 5 warna, foto latar, dan
 // mode latar transparan. Tanggal di kartu memakai tanggal perjalanan asli.
 import { useEffect, useRef, useState } from "react";
 import { Share2, Download, ImagePlus, X, Loader2 } from "lucide-react";
 import { drawCard, loadImage, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
-import { shareImageDataUrl } from "@/lib/native-share";
-import { isNativeApp } from "@/lib/native-geo";
+import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 
 type Pt = { lat: number; lng: number };
 type Ride = {
@@ -74,27 +73,19 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     try {
       const km = (ride.distance_m / 1000).toFixed(2);
       const text = `Gowes ${km} km bersama BUG! 🚴 #GoweserAmanBulungan`;
-      await shareImageDataUrl(canvas.toDataURL("image/png"), "gowes-bug.png", text);
+      const r = await shareImageDataUrl(canvas.toDataURL("image/png"), "gowes-bug.png", text);
+      if (r.status === "failed") alert(`Gagal membagikan: ${r.error || "tidak diketahui"}`);
     } finally {
       setBusy(false);
     }
   }
 
-  function download() {
+  async function download() {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
     const name = transparent ? "gowes-bug-transparan.png" : "gowes-bug.png";
-    if (isNativeApp()) {
-      void shareImageDataUrl(dataUrl, name);
-      return;
-    }
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const r = await downloadCanvasPng(canvas, name);
+    if (r.status === "failed") alert(`Gagal mengunduh: ${r.error || "tidak diketahui"}`);
   }
 
   return (

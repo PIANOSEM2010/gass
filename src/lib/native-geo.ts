@@ -2,7 +2,7 @@
 //
 // - Di APLIKASI ANDROID (Capacitor): memakai plugin background-geolocation yang
 //   menjalankan foreground service dengan notifikasi permanen, sehingga GPS
-//   TETAP HIDUP walau layar mati / aplikasi di latar belakang (seperti Strava).
+//   TETAP HIDUP walau layar mati / aplikasi di latar belakang.
 // - Di BROWSER biasa: memakai navigator.geolocation seperti sebelumnya.
 //
 // Semua provider (gowes, pantau, navigasi) memakai startWatch() dari sini,

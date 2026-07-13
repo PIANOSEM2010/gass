@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useGowes, type Pt } from "../gowes-provider";
 import { isNativeApp } from "@/lib/native-geo";
-import { shareImageDataUrl } from "@/lib/native-share";
+import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import {
   Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
@@ -147,22 +147,12 @@ export default function CatatClient({
   }
 
   // Unduh kartu sebagai PNG (mode transparan menghasilkan PNG ber-alpha)
-  function downloadCard() {
+  async function downloadCard() {
     const canvas = cardRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
     const name = cardTransparent ? "gowes-bug-transparan.png" : "gowes-bug.png";
-    if (nativeApp) {
-      // Di aplikasi: share sheet native (bisa pilih "Simpan ke Galeri")
-      void shareImageDataUrl(dataUrl, name);
-      return;
-    }
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const r = await downloadCanvasPng(canvas, name);
+    if (r.status === "failed") alert(`Gagal mengunduh: ${r.error || "tidak diketahui"}`);
   }
 
   function shareCard() {
@@ -173,7 +163,9 @@ export default function CatatClient({
     // Di aplikasi Android: file ditulis ke cache lalu share sheet native.
     // Di browser: Web Share API; kalau tak ada → unduh otomatis.
     const dataUrl = canvas.toDataURL("image/png");
-    void shareImageDataUrl(dataUrl, "gowes-bug.png", text);
+    void shareImageDataUrl(dataUrl, "gowes-bug.png", text).then((r) => {
+      if (r.status === "failed") alert(`Gagal membagikan: ${r.error || "tidak diketahui"}`);
+    });
   }
 
   async function shareToForum() {

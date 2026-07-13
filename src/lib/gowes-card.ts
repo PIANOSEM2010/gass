@@ -2,7 +2,7 @@
 // KARTU GOWES BUG — modul bersama (dipakai halaman Catat & Riwayat)
 // Desain sporty: font condensed italic, garis kecepatan diagonal,
 // panel kaca, rute dengan efek glow.
-// Fitur: 4 template (Rute, Statistik, Ringkas, Strava), 5 palet warna,
+// Fitur: 4 template (Rute, Momen, Statistik, Ringkas), 5 palet warna,
 // foto perjalanan sebagai latar, dan mode LATAR TRANSPARAN (PNG alpha)
 // untuk ditempel di story Instagram/WhatsApp.
 // ============================================================
@@ -25,7 +25,7 @@ export const PALETTES: Record<string, { name: string; grad: [string, string]; ac
 export const PALETTE_KEYS = ["hijau", "senja", "samudra", "ungu", "malam"];
 export const TEMPLATES: { key: string; name: string }[] = [
   { key: "rute", name: "Rute" },
-  { key: "strava", name: "Strava" },
+  { key: "momen", name: "Momen" },
   { key: "statistik", name: "Statistik" },
   { key: "ringkas", name: "Ringkas" },
 ];
@@ -82,6 +82,8 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
   const pal = PALETTES[opts.palette] || PALETTES.hijau;
   const transparent = Boolean(opts.transparent);
   const photo = !transparent ? opts.photo || null : null;
+  // Teks putih dinaikkan opasitasnya di mode transparan/foto agar tetap terbaca
+  const wText = (a: number) => `rgba(255,255,255,${transparent || photo ? Math.min(1, a + 0.28) : a})`;
   const W = 1080, H = 1080;
   canvas.width = W;
   canvas.height = H;
@@ -120,7 +122,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     // Garis kecepatan diagonal halus
     ctx.save();
     ctx.rotate((-55 * Math.PI) / 180);
-    ctx.fillStyle = "rgba(255,255,255,0.035)";
+    ctx.fillStyle = wText(0.035);
     for (let x = -W * 1.6; x < W * 1.2; x += 68) ctx.fillRect(x, -H, 22, H * 3);
     ctx.restore();
 
@@ -175,7 +177,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.fillText("BUG", x + 22, y);
 
     setSpacing(5);
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.fillStyle = wText(0.75);
     ctx.font = dFont(25, 600, false);
     ctx.fillText("BULUNGAN UNTUK GOWESER", x + 156, y - 6);
     setSpacing(0);
@@ -192,7 +194,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.strokeStyle = "rgba(255,255,255,0.22)";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillStyle = wText(0.85);
     ctx.textAlign = "left";
     ctx.fillText(label.toUpperCase(), rightX - w + 22, y);
     setSpacing(0);
@@ -212,7 +214,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
   const drawRoute = (bx: number, by: number, bw: number, bh: number, lw: number) => {
     if (path.length < 2) {
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillStyle = wText(0.55);
       ctx.font = dFont(34, 600, false);
       ctx.fillText("Rute terlalu pendek", bx + bw / 2, by + bh / 2);
       return;
@@ -263,7 +265,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     const [ex, ey] = toXY(path[path.length - 1]);
     const dot = (x: number, y: number, fill: string) => {
       ctx.beginPath(); ctx.arc(x, y, lw * 1.6, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill();
+      ctx.fillStyle = wText(0.25); ctx.fill();
       ctx.beginPath(); ctx.arc(x, y, lw * 1.05, 0, Math.PI * 2);
       ctx.fillStyle = fill; ctx.fill();
       ctx.lineWidth = 3; ctx.strokeStyle = "#0b1220"; ctx.stroke();
@@ -278,7 +280,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     glassPanel(x, y, w, h, 26);
     setSpacing(4);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillStyle = wText(0.6);
     ctx.font = dFont(23, 600, false);
     ctx.fillText(label.toUpperCase(), x + 24, y + 42);
     setSpacing(0);
@@ -287,7 +289,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.fillText(value, x + 24, y + 102);
     if (unit) {
       const vw = ctx.measureText(value).width;
-      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.fillStyle = wText(0.65);
       ctx.font = dFont(28, 600, false);
       ctx.fillText(unit, x + 24 + vw + 10, y + 100);
     }
@@ -296,7 +298,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
   const footer = (y: number) => {
     ctx.textAlign = "center";
     setSpacing(3);
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillStyle = wText(0.5);
     ctx.font = dFont(24, 600, false);
     ctx.fillText(`#GOWESERAMAN${place.replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`, W / 2, y);
     setSpacing(0);
@@ -308,8 +310,8 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
   const avg = durationS > 0 ? ((distanceM / 1000) / (durationS / 3600)).toFixed(1) : "0.0";
 
   // ---------- Template ----------
-  if (template === "strava") {
-    // Gaya Strava: minimalis — rute besar di tengah tanpa panel,
+  if (template === "momen") {
+    // Gaya Momen: minimalis — rute besar di tengah tanpa panel,
     // statistik raksasa berjajar di bawah, cocok dengan foto latar.
     header(80, 122);
     datePill(W - 100, 118);
@@ -326,12 +328,12 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     // Nama tempat
     setSpacing(5);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.fillStyle = wText(0.75);
     ctx.font = dFont(30, 600, false);
     ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 776);
     setSpacing(0);
 
-    // Tiga statistik raksasa berjajar (tanpa panel — khas Strava)
+    // Tiga statistik raksasa berjajar (tanpa panel — bergaya story)
     const cols: [string, string, string][] = [
       ["JARAK", km, "km"],
       ["WAKTU", dur, ""],
@@ -342,7 +344,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
       const x = 84 + i * colW;
       setSpacing(4);
       ctx.textAlign = "left";
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillStyle = wText(0.55);
       ctx.font = dFont(26, 600, false);
       ctx.fillText(label, x, 846);
       setSpacing(0);
@@ -365,7 +367,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.restore();
     setSpacing(3);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fillStyle = wText(0.55);
     ctx.font = dFont(25, 600, false);
     ctx.fillText(`ELEVASI ${elevStr} M`, 84, 1014);
     setSpacing(0);
@@ -377,7 +379,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
 
     setSpacing(3);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillStyle = wText(0.85);
     ctx.font = dFont(40, 600);
     ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
     setSpacing(0);
@@ -399,7 +401,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
 
       ctx.textAlign = "left";
       setSpacing(4);
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillStyle = wText(0.55);
       ctx.font = dFont(27, 600, false);
       ctx.fillText(label, 130, y + 6);
       setSpacing(0);
@@ -427,7 +429,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     // Nama tempat kecil di atas angka
     setSpacing(4);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillStyle = wText(0.6);
     ctx.font = dFont(28, 600, false);
     ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 866);
     setSpacing(0);
@@ -448,11 +450,11 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
 
     // Waktu & elevasi di kanan
     ctx.textAlign = "right";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fillStyle = wText(0.9);
     ctx.font = dFont(44, 700);
     ctx.fillText(dur, W - 84, 952);
     setSpacing(3);
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fillStyle = wText(0.55);
     ctx.font = dFont(25, 600, false);
     ctx.fillText(`ELEVASI ${elevStr} M`, W - 84, 998);
     setSpacing(0);
@@ -463,7 +465,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
 
     setSpacing(3);
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillStyle = wText(0.85);
     ctx.font = dFont(40, 600);
     ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
     setSpacing(0);

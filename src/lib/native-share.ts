@@ -63,17 +63,19 @@ export async function shareText(opts: { title?: string; text?: string; url?: str
   return "failed";
 }
 
-// Bagikan gambar dari data URL (kartu share catat gowes).
-// Return: "shared" | "downloaded" | "failed"
+export type ImageShareResult = { status: "shared" | "downloaded" | "failed"; error?: string };
+
+// Bagikan gambar dari data URL (kartu share catat gowes / riwayat).
 export async function shareImageDataUrl(
   dataUrl: string,
   filename: string,
   text?: string
-): Promise<"shared" | "downloaded" | "failed"> {
+): Promise<ImageShareResult> {
   // Aplikasi Android → tulis file sementara lalu share sheet native
   if (isNativeApp()) {
     try {
       const base64 = dataUrl.split(",")[1] || "";
+      if (!base64) return { status: "failed", error: "gambar kosong" };
       const { uri } = await getFs().writeFile({
         path: filename,
         data: base64,
@@ -85,9 +87,12 @@ export async function shareImageDataUrl(
         files: [uri],
         dialogTitle: "Bagikan kartu gowes",
       });
-      return "shared";
-    } catch {
-      return "failed";
+      return { status: "shared" };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Menutup share sheet tanpa memilih juga masuk sini — itu bukan kegagalan
+      if (/cancel/i.test(msg)) return { status: "shared" };
+      return { status: "failed", error: msg };
     }
   }
 
@@ -97,22 +102,49 @@ export async function shareImageDataUrl(
     const file = new File([blob], filename, { type: blob.type || "image/png" });
     if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file], text });
-      return "shared";
+      return { status: "shared" };
     }
   } catch {
     /* dibatalkan / gagal → fallback unduh */
   }
 
-  // Fallback: unduh file
+  // Fallback: unduh file (via Blob — data URL besar bisa gagal diam-diam)
   try {
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    return "downloaded";
-  } catch {
-    return "failed";
+    const blob = await (await fetch(dataUrl)).blob();
+    triggerBlobDownload(blob, filename);
+    return { status: "downloaded" };
+  } catch (e) {
+    return { status: "failed", error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// Unduh isi canvas sebagai PNG. Di aplikasi: lewat share sheet (pilih
+// "Simpan"); di browser: unduhan Blob yang andal untuk file besar.
+export async function downloadCanvasPng(
+  canvas: HTMLCanvasElement,
+  filename: string
+): Promise<ImageShareResult> {
+  if (isNativeApp()) {
+    return shareImageDataUrl(canvas.toDataURL("image/png"), filename);
+  }
+  try {
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas kosong"))), "image/png")
+    );
+    triggerBlobDownload(blob, filename);
+    return { status: "downloaded" };
+  } catch (e) {
+    return { status: "failed", error: e instanceof Error ? e.message : String(e) };
   }
 }
