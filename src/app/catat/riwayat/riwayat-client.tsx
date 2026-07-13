@@ -3,6 +3,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, Clock, Mountain, ChevronDown, Bike } from "lucide-react";
+import ShareRide from "./share-ride";
 
 const RouteMap = dynamic(() => import("../route-map"), {
   ssr: false,
@@ -84,13 +85,18 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
                     </div>
                   </button>
                   {open && (
-                    <div className="h-56 border-t border-gray-100">
-                      {r.path && r.path.length > 1 ? (
-                        <RouteMap path={r.path} />
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-gray-400 text-sm">Rute tidak tersedia</div>
-                      )}
-                    </div>
+                    <>
+                      <div className="h-56 border-t border-gray-100">
+                        {r.path && r.path.length > 1 ? (
+                          <RouteMap path={r.path} />
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-gray-400 text-sm">Rute tidak tersedia</div>
+                        )}
+                      </div>
+                      <div className="p-3 border-t border-gray-100">
+                        <ShareRide ride={r} />
+                      </div>
+                    </>
                   )}
                 </div>
               );

@@ -6,390 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { useGowes, type Pt } from "../gowes-provider";
 import { isNativeApp } from "@/lib/native-geo";
 import { shareImageDataUrl } from "@/lib/native-share";
+import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import {
   Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
+  ImagePlus, X, Download,
 } from "lucide-react";
 
 type BoardItem = { user_id: string; name: string; org: string; km: number; rides: number; streak: number };
-
-function fmtDuration(s: number): string {
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
-}
-
-// ============================================================
-// KARTU GOWES — desain sporty: font condensed italic, garis
-// kecepatan diagonal, panel kaca, rute dengan efek glow.
-// ============================================================
-
-// Pilihan warna kartu: gradasi latar + warna aksen (rute, angka, strip)
-const PALETTES: Record<string, { name: string; grad: [string, string]; accent: string; accent2: string }> = {
-  hijau:   { name: "Hijau",   grad: ["#052e16", "#022c22"], accent: "#a3e635", accent2: "#4ade80" },
-  senja:   { name: "Senja",   grad: ["#7c2d12", "#450a0a"], accent: "#fde047", accent2: "#fb923c" },
-  samudra: { name: "Samudra", grad: ["#083344", "#0c1a2e"], accent: "#22d3ee", accent2: "#67e8f9" },
-  ungu:    { name: "Ungu",    grad: ["#3b0764", "#1e1b4b"], accent: "#e879f9", accent2: "#c4b5fd" },
-  malam:   { name: "Malam",   grad: ["#0f172a", "#020617"], accent: "#fb923c", accent2: "#fde047" },
-};
-const PALETTE_KEYS = ["hijau", "senja", "samudra", "ungu", "malam"];
-const TEMPLATES: { key: string; name: string }[] = [
-  { key: "rute", name: "Rute" },
-  { key: "statistik", name: "Statistik" },
-  { key: "ringkas", name: "Ringkas" },
-];
-
-// Nama family font display dari next/font (nama internalnya di-hash,
-// jadi harus dibaca dari CSS variable, bukan ditulis "Barlow Condensed")
-function displayFamily(): string {
-  if (typeof document === "undefined") return "sans-serif";
-  const v =
-    getComputedStyle(document.body).getPropertyValue("--font-display").trim() ||
-    getComputedStyle(document.documentElement).getPropertyValue("--font-display").trim();
-  return v || "sans-serif";
-}
-
-function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-// Menggambar kartu gowes ke canvas (1080x1080) sesuai template + warna pilihan
-function drawCard(
-  canvas: HTMLCanvasElement,
-  opts: { template: string; palette: string; path: Pt[]; distanceM: number; durationS: number; elevM: number; place: string }
-) {
-  const { template, path, distanceM, durationS, elevM, place } = opts;
-  const pal = PALETTES[opts.palette] || PALETTES.hijau;
-  const W = 1080, H = 1080;
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const fam = displayFamily();
-  const dFont = (size: number, weight = 800, italic = true) =>
-    `${italic ? "italic " : ""}${weight} ${size}px ${fam}`;
-
-  // ---------- Latar: gradasi + vignette + garis kecepatan ----------
-  const g = ctx.createLinearGradient(0, 0, W * 0.4, H);
-  g.addColorStop(0, pal.grad[0]);
-  g.addColorStop(1, pal.grad[1]);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-
-  // Garis kecepatan diagonal halus
-  ctx.save();
-  ctx.rotate((-55 * Math.PI) / 180);
-  ctx.fillStyle = "rgba(255,255,255,0.035)";
-  for (let x = -W * 1.6; x < W * 1.2; x += 68) ctx.fillRect(x, -H, 22, H * 3);
-  ctx.restore();
-
-  // Strip aksen miring di tepi kanan (khas jersey balap)
-  ctx.save();
-  ctx.transform(1, 0, -0.28, 1, 0, 0);
-  const stripeG = ctx.createLinearGradient(0, 0, 0, H);
-  stripeG.addColorStop(0, pal.accent);
-  stripeG.addColorStop(1, pal.accent2);
-  ctx.fillStyle = stripeG;
-  ctx.globalAlpha = 0.9;
-  ctx.fillRect(W + 210, -60, 46, H + 120);
-  ctx.globalAlpha = 0.45;
-  ctx.fillRect(W + 172, -60, 12, H + 120);
-  ctx.restore();
-  ctx.globalAlpha = 1;
-
-  // Vignette bawah agar teks kontras
-  const vg = ctx.createLinearGradient(0, H * 0.55, 0, H);
-  vg.addColorStop(0, "rgba(0,0,0,0)");
-  vg.addColorStop(1, "rgba(0,0,0,0.35)");
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, W, H);
-
-  // ---------- Elemen bersama ----------
-  const setSpacing = (px: number) => {
-    try { (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${px}px`; } catch { /* browser lama */ }
-  };
-
-  // Header: badge BUG + subjudul + tanggal
-  const header = (x: number, y: number) => {
-    // Badge BUG (kotak aksen miring dengan teks gelap)
-    ctx.save();
-    ctx.transform(1, 0, -0.18, 1, 0, 0);
-    roundRectPath(ctx, x + y * 0.18, y - 52, 128, 68, 16);
-    const bg = ctx.createLinearGradient(x, y - 52, x, y + 16);
-    bg.addColorStop(0, pal.accent);
-    bg.addColorStop(1, pal.accent2);
-    ctx.fillStyle = bg;
-    ctx.fill();
-    ctx.restore();
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = "#0b1220";
-    ctx.font = dFont(48, 800);
-    ctx.fillText("BUG", x + 22, y);
-
-    setSpacing(5);
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
-    ctx.font = dFont(25, 600, false);
-    ctx.fillText("BULUNGAN UNTUK GOWESER", x + 156, y - 6);
-    setSpacing(0);
-  };
-
-  const datePill = (rightX: number, y: number) => {
-    const label = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-    setSpacing(2);
-    ctx.font = dFont(26, 600, false);
-    const w = ctx.measureText(label.toUpperCase()).width + 44;
-    roundRectPath(ctx, rightX - w, y - 36, w, 50, 25);
-    ctx.fillStyle = "rgba(255,255,255,0.10)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.textAlign = "left";
-    ctx.fillText(label.toUpperCase(), rightX - w + 22, y);
-    setSpacing(0);
-  };
-
-  // Panel kaca (latar rute / statistik)
-  const glassPanel = (x: number, y: number, w: number, h: number, r = 36) => {
-    roundRectPath(ctx, x, y, w, h, r);
-    ctx.fillStyle = "rgba(255,255,255,0.06)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.14)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  };
-
-  // Rute dengan glow + titik start/finish bercincin
-  const drawRoute = (bx: number, by: number, bw: number, bh: number, lw: number) => {
-    if (path.length < 2) {
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = dFont(34, 600, false);
-      ctx.fillText("Rute terlalu pendek", bx + bw / 2, by + bh / 2);
-      return;
-    }
-    const lats = path.map((p) => p.lat);
-    const lngs = path.map((p) => p.lng);
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-    const spanLat = maxLat - minLat || 1e-6;
-    const spanLng = maxLng - minLng || 1e-6;
-    const scale = Math.min(bw / spanLng, bh / spanLat);
-    const offX = bx + (bw - spanLng * scale) / 2;
-    const offY = by + (bh - spanLat * scale) / 2;
-    const toXY = (p: Pt): [number, number] => [offX + (p.lng - minLng) * scale, offY + (maxLat - p.lat) * scale];
-
-    // Bayangan garis (kedalaman)
-    ctx.save();
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    ctx.lineWidth = lw + 6;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    path.forEach((p, i) => {
-      const [x, y] = toXY(p);
-      if (i === 0) ctx.moveTo(x, y + 5); else ctx.lineTo(x, y + 5);
-    });
-    ctx.stroke();
-    ctx.restore();
-
-    // Garis utama dengan glow aksen
-    ctx.save();
-    ctx.shadowColor = pal.accent;
-    ctx.shadowBlur = 26;
-    ctx.strokeStyle = pal.accent;
-    ctx.lineWidth = lw;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    path.forEach((p, i) => {
-      const [x, y] = toXY(p);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.restore();
-
-    // Titik start (putih) & finish (aksen) bercincin
-    const [sx, sy] = toXY(path[0]);
-    const [ex, ey] = toXY(path[path.length - 1]);
-    const dot = (x: number, y: number, fill: string) => {
-      ctx.beginPath(); ctx.arc(x, y, lw * 1.6, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill();
-      ctx.beginPath(); ctx.arc(x, y, lw * 1.05, 0, Math.PI * 2);
-      ctx.fillStyle = fill; ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = "#0b1220"; ctx.stroke();
-    };
-    dot(sx, sy, "#ffffff");
-    dot(ex, ey, pal.accent);
-  };
-
-  // Chip statistik (label kecil di atas, angka display di bawah)
-  const statChip = (x: number, y: number, w: number, label: string, value: string, unit?: string) => {
-    const h = 128;
-    glassPanel(x, y, w, h, 26);
-    setSpacing(4);
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = dFont(23, 600, false);
-    ctx.fillText(label.toUpperCase(), x + 24, y + 42);
-    setSpacing(0);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = dFont(56, 700);
-    ctx.fillText(value, x + 24, y + 102);
-    if (unit) {
-      const vw = ctx.measureText(value).width;
-      ctx.fillStyle = "rgba(255,255,255,0.65)";
-      ctx.font = dFont(28, 600, false);
-      ctx.fillText(unit, x + 24 + vw + 10, y + 100);
-    }
-  };
-
-  const footer = (y: number) => {
-    ctx.textAlign = "center";
-    setSpacing(3);
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = dFont(24, 600, false);
-    ctx.fillText(`#GOWESERAMAN${place.replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`, W / 2, y);
-    setSpacing(0);
-  };
-
-  const km = (distanceM / 1000).toFixed(2);
-  const dur = fmtDuration(durationS);
-  const elevStr = `${Math.round(elevM)}`;
-  const avg = durationS > 0 ? ((distanceM / 1000) / (durationS / 3600)).toFixed(1) : "0.0";
-
-  // ---------- Template ----------
-  if (template === "statistik") {
-    header(80, 122);
-    datePill(W - 100, 118);
-
-    setSpacing(3);
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.font = dFont(40, 600);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
-    setSpacing(0);
-
-    // Statistik besar bertumpuk dengan bilah aksen
-    const rows: [string, string, string][] = [
-      ["JARAK", km, "km"],
-      ["WAKTU", dur, ""],
-      ["KEC. RATA-RATA", avg, "km/j"],
-      ["ELEVASI", elevStr, "m"],
-    ];
-    let y = 300;
-    for (const [label, value, unit] of rows) {
-      // Bilah aksen miring
-      ctx.save();
-      ctx.transform(1, 0, -0.22, 1, 0, 0);
-      ctx.fillStyle = pal.accent;
-      ctx.fillRect(84 + y * 0.22, y - 24, 14, 108);
-      ctx.restore();
-
-      ctx.textAlign = "left";
-      setSpacing(4);
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = dFont(27, 600, false);
-      ctx.fillText(label, 130, y + 6);
-      setSpacing(0);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = dFont(96, 800);
-      ctx.fillText(value, 126, y + 92);
-      if (unit) {
-        const vw = ctx.measureText(value).width;
-        ctx.fillStyle = pal.accent;
-        ctx.font = dFont(40, 700);
-        ctx.fillText(unit, 126 + vw + 14, y + 88);
-      }
-      y += 158;
-    }
-
-    // Strip rute di bawah dalam panel kaca
-    glassPanel(84, 918, W - 168, 130, 30);
-    drawRoute(120, 936, W - 240, 94, 8);
-  } else if (template === "ringkas") {
-    header(80, 116);
-
-    // Rute besar hampir penuh
-    drawRoute(90, 210, W - 180, 600, 15);
-
-    // Nama tempat kecil di atas angka
-    setSpacing(4);
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = dFont(28, 600, false);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 866);
-    setSpacing(0);
-
-    // Angka km raksasa dengan garis aksen miring di bawahnya
-    ctx.fillStyle = "#ffffff";
-    ctx.font = dFont(168, 800);
-    ctx.fillText(km, 78, 1006);
-    const kmW = ctx.measureText(km).width;
-    ctx.fillStyle = pal.accent;
-    ctx.font = dFont(54, 700);
-    ctx.fillText("km", 78 + kmW + 18, 1000);
-    ctx.save();
-    ctx.transform(1, 0, -0.3, 1, 0, 0);
-    ctx.fillStyle = pal.accent;
-    ctx.fillRect(78 + 1030 * 0.3, 1030, kmW * 0.55, 12);
-    ctx.restore();
-
-    // Waktu & elevasi di kanan
-    ctx.textAlign = "right";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.font = dFont(44, 700);
-    ctx.fillText(dur, W - 84, 952);
-    setSpacing(3);
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.font = dFont(25, 600, false);
-    ctx.fillText(`ELEVASI ${elevStr} M`, W - 84, 998);
-    setSpacing(0);
-  } else {
-    // Template default: "rute"
-    header(80, 122);
-    datePill(W - 100, 118);
-
-    setSpacing(3);
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.font = dFont(40, 600);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
-    setSpacing(0);
-
-    // Panel kaca berisi rute
-    glassPanel(84, 246, W - 168, 452, 40);
-    drawRoute(140, 296, W - 280, 352, 13);
-
-    // Angka km besar
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#ffffff";
-    ctx.font = dFont(150, 800);
-    ctx.fillText(km, 80, 866);
-    const kmW = ctx.measureText(km).width;
-    ctx.fillStyle = pal.accent;
-    ctx.font = dFont(52, 700);
-    ctx.fillText("km", 80 + kmW + 16, 860);
-
-    // Tiga chip statistik
-    const gap = 18;
-    const cw = (W - 168 - gap * 2) / 3;
-    statChip(84, 900, cw, "Waktu", dur);
-    statChip(84 + cw + gap, 900, cw, "Kec. rata", avg, "km/j");
-    statChip(84 + (cw + gap) * 2, 900, cw, "Elevasi", elevStr, "m");
-
-    footer(1058);
-  }
-}
 
 export default function CatatClient({
   userId, fullName, organization, myStreak, longest, totalKm, totalRides, board,
@@ -421,6 +45,8 @@ export default function CatatClient({
   const [template, setTemplate] = useState("rute");
   const [palette, setPalette] = useState("hijau");
   const [placeName, setPlaceName] = useState("Bulungan");
+  const [cardPhoto, setCardPhoto] = useState<HTMLImageElement | null>(null);
+  const [cardTransparent, setCardTransparent] = useState(false);
   const cardRef = useRef<HTMLCanvasElement>(null);
 
   // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah).
@@ -434,6 +60,7 @@ export default function CatatClient({
           template, palette, place: placeName,
           path: getPath(), distanceM: st.distanceM, durationS: duration,
           elevM: savedElev ?? st.elevM,
+          photo: cardPhoto, transparent: cardTransparent,
         });
       };
       doDraw();
@@ -443,7 +70,7 @@ export default function CatatClient({
     }
     // getStats/getPath sengaja tidak dimasukkan dep (stabil, dibaca saat efek jalan)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, duration, savedElev, template, palette, placeName]);
+  }, [status, duration, savedElev, template, palette, placeName, cardPhoto, cardTransparent]);
 
   // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk caption
   useEffect(() => {
@@ -501,6 +128,41 @@ export default function CatatClient({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal menyimpan perjalanan"); setStatus("finished");
     }
+  }
+
+  // Foto perjalanan sebagai latar kartu
+  async function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(new Error("gagal baca file"));
+        r.readAsDataURL(file);
+      });
+      setCardPhoto(await loadImage(dataUrl));
+    } catch { /* abaikan */ }
+  }
+
+  // Unduh kartu sebagai PNG (mode transparan menghasilkan PNG ber-alpha)
+  function downloadCard() {
+    const canvas = cardRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    const name = cardTransparent ? "gowes-bug-transparan.png" : "gowes-bug.png";
+    if (nativeApp) {
+      // Di aplikasi: share sheet native (bisa pilih "Simpan ke Galeri")
+      void shareImageDataUrl(dataUrl, name);
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   function shareCard() {
@@ -688,15 +350,33 @@ export default function CatatClient({
                       style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
                   ))}
                 </div>
-                <canvas ref={cardRef} className="w-full h-auto rounded-2xl shadow border border-gray-200" />
+                <div className="flex gap-2 mb-3">
+                  <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
+                    <ImagePlus size={15} /> {cardPhoto ? "Ganti Foto" : "Tambah Foto"}
+                    <input type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
+                  </label>
+                  {cardPhoto && (
+                    <button onClick={() => setCardPhoto(null)} className="px-3 rounded-xl border-2 border-gray-200 text-gray-500 active:scale-95 transition-transform" aria-label="Hapus foto">
+                      <X size={16} />
+                    </button>
+                  )}
+                  <button onClick={() => setCardTransparent((v) => !v)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${cardTransparent ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"}`}>
+                    Latar transparan
+                  </button>
+                </div>
+                <canvas ref={cardRef} className={`w-full h-auto rounded-2xl shadow border border-gray-200 ${cardTransparent ? "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:22px_22px]" : ""}`} />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={shareCard} className="bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                  <Share2 size={18} /> Bagikan
+              <div className="grid grid-cols-3 gap-2">
+                <button onClick={shareCard} className="bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
+                  <Share2 size={16} /> Bagikan
                 </button>
-                <button onClick={shareToForum} disabled={sharingForum} className="bg-violet-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:bg-gray-400 active:scale-95 transition-transform">
-                  {sharingForum ? <Loader2 size={18} className="animate-spin" /> : <MessageSquarePlus size={18} />} Ke Forum
+                <button onClick={downloadCard} className="bg-gray-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
+                  <Download size={16} /> Unduh
+                </button>
+                <button onClick={shareToForum} disabled={sharingForum} className="bg-violet-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:bg-gray-400 active:scale-95 transition-transform">
+                  {sharingForum ? <Loader2 size={16} className="animate-spin" /> : <MessageSquarePlus size={16} />} Ke Forum
                 </button>
               </div>
 
