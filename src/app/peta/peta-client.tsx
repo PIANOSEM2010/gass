@@ -9,12 +9,13 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
+  Sparkles, RefreshCw, Route as RouteIcon,
   Play, Square, Volume2, ShieldCheck,
 } from "lucide-react";
 import { useNav, maneuverIcon } from "../nav-provider";
 import {
-  type NavStep, type AvoidGeometry,
-  fetchRoute, buildAvoidNearRoute, formatDist,
+  type NavStep, type AvoidGeometry, type LoopRoute,
+  fetchRoute, fetchLoopRoute, buildAvoidNearRoute, formatDist,
 } from "@/lib/routing";
 
 type RoadMarker = {
@@ -409,6 +410,14 @@ export default function PetaClient({
   const [routing, setRouting] = useState(false);
   const [routeSource, setRouteSource] = useState<"manual" | "search">("manual");
 
+  // --- Fitur Rekomendasi Rute Gowes (round trip) ---
+  const [showRecommend, setShowRecommend] = useState(false);
+  const [recoTargetKm, setRecoTargetKm] = useState(10);
+  const [recoLoading, setRecoLoading] = useState(false);
+  const [recoRoute, setRecoRoute] = useState<LoopRoute | null>(null);
+  const [recoError, setRecoError] = useState("");
+  const recoSeedRef = useRef(0);
+
   // Navigasi kini global (NavProvider di root layout): tetap jalan saat buka fitur lain
   const nav = useNav();
   const navigating = nav.navigating;
@@ -475,6 +484,52 @@ export default function PetaClient({
     if (nav.navigating && nav.userPos) setUserPos(nav.userPos);
   }, [nav.navigating, nav.userPos]);
 
+
+  // Buat rute rekomendasi melingkar dari lokasi pengguna
+  async function generateRecommendation(newSeed: boolean) {
+    setRecoError("");
+    let origin = userPos ? { lat: userPos.lat, lng: userPos.lng } : null;
+    if (!origin) {
+      setRecoLoading(true);
+      try {
+        const fix = await getCurrentLocationOnce();
+        setUserPos(fix);
+        origin = { lat: fix.lat, lng: fix.lng };
+      } catch {
+        setRecoLoading(false);
+        setRecoError("Aktifkan GPS dulu untuk membuat rute dari lokasimu.");
+        return;
+      }
+    }
+    if (newSeed || recoSeedRef.current === 0) {
+      recoSeedRef.current = Math.floor(Math.random() * 100000);
+    }
+    setRecoLoading(true);
+    try {
+      // Hormati zona berbahaya seperti rute biasa (mode aman)
+      const avoid = avoidDanger
+        ? buildAvoidNearRoute(zones, markers, origin, origin).geometry
+        : null;
+      const loop = await fetchLoopRoute(origin, recoTargetKm, recoSeedRef.current, avoid);
+      setRecoRoute(loop);
+    } catch (e) {
+      setRecoRoute(null);
+      setRecoError(e instanceof Error ? e.message : "Gagal membuat rute");
+    } finally {
+      setRecoLoading(false);
+    }
+  }
+
+  // Mulai navigasi mengikuti rute rekomendasi (loop kembali ke titik awal)
+  function navigateRecommendation() {
+    if (!recoRoute || !userPos) return;
+    const dest = { lat: userPos.lat, lng: userPos.lng };
+    nav.begin(
+      { coords: recoRoute.coords, info: { distance: recoRoute.distance, duration: recoRoute.duration }, steps: [], dest, label: `Rute Gowes ${(recoRoute.distance / 1000).toFixed(1)} km` },
+      avoidDanger ? buildAvoidNearRoute(zones, markers, dest, dest).geometry : null
+    );
+    setShowRecommend(false);
+  }
 
   function toggleTraffic() {
     if (!showTraffic && !tomtomKey) {
@@ -957,9 +1012,113 @@ export default function PetaClient({
         </div>
       )}
 
+      {/* Panel Rekomendasi Rute Gowes */}
+      {showRecommend && !navigating && (
+        <div className="absolute inset-0 z-[1400] flex items-end" onClick={() => setShowRecommend(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative w-full bg-white rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center">
+                  <Sparkles size={18} />
+                </span>
+                <div>
+                  <p className="font-bold text-gray-900 leading-tight">Rekomendasi Rute Gowes</p>
+                  <p className="text-xs text-gray-500 leading-tight">Rute melingkar, kembali ke titik awalmu</p>
+                </div>
+              </div>
+              <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-gray-400 active:bg-gray-100" aria-label="Tutup">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Slider jarak */}
+            <div className="mt-4">
+              <div className="flex items-baseline justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-600">Target jarak</span>
+                <span className="display-title text-3xl text-emerald-600 leading-none">{recoTargetKm} <span className="text-lg">km</span></span>
+              </div>
+              <input
+                type="range" min={2} max={50} step={1} value={recoTargetKm}
+                onChange={(e) => setRecoTargetKm(Number(e.target.value))}
+                className="w-full accent-emerald-600"
+              />
+              <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                <span>2 km</span><span>25 km</span><span>50 km</span>
+              </div>
+              {/* Preset cepat */}
+              <div className="flex gap-2 mt-3">
+                {[5, 10, 20, 30].map((v) => (
+                  <button key={v} onClick={() => setRecoTargetKm(v)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border-2 transition-colors ${recoTargetKm === v ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600"}`}>
+                    {v} km
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hasil */}
+            <div className="mt-4">
+              {recoLoading ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-gray-500 text-sm">
+                  <Loader2 size={18} className="animate-spin" /> Merancang rute {recoTargetKm} km…
+                </div>
+              ) : recoError ? (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 text-center">{recoError}</div>
+              ) : recoRoute ? (
+                <div className="bg-gradient-to-br from-emerald-50 to-lime-50 border border-emerald-100 rounded-2xl p-4">
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-emerald-700/70 font-semibold">Jarak rute</p>
+                      <p className="display-title text-3xl text-emerald-700 leading-tight">{(recoRoute.distance / 1000).toFixed(1)}<span className="text-base"> km</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-emerald-700/70 font-semibold">Estimasi waktu</p>
+                      <p className="display-title text-3xl text-emerald-700 leading-tight">{Math.round(recoRoute.duration / 60)}<span className="text-base"> mnt</span></p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-sm text-gray-400 py-6">Atur jarak lalu buat rute</div>
+              )}
+            </div>
+
+            {/* Aksi */}
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => generateRecommendation(true)}
+                disabled={recoLoading}
+                className="flex-1 bg-white border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition"
+              >
+                <RefreshCw size={16} /> {recoRoute ? "Cari Lagi" : "Buat Rute"}
+              </button>
+              {recoRoute && (
+                <button
+                  onClick={navigateRecommendation}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-lime-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
+                >
+                  <Navigation size={16} /> Mulai
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-400 text-center mt-3">
+              Rute mengikuti jalan pesepeda dan menghindari zona rawan bila mode aman aktif.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tombol kanan bawah */}
       {!navigating && !routeInfo && (
         <div className="absolute bottom-16 right-3 z-[1000] flex flex-col gap-2">
+          <button
+            onClick={() => { setShowRecommend(true); if (!recoRoute) generateRecommendation(false); }}
+            className="w-11 h-11 rounded-full shadow-lg flex items-center justify-center bg-gradient-to-br from-lime-500 to-emerald-600 text-white active:scale-90 transition"
+            aria-label="Rekomendasi rute gowes"
+            title="Rekomendasi rute gowes"
+          >
+            <Sparkles size={20} />
+          </button>
           <button
             onClick={toggleTraffic}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
@@ -1073,6 +1232,12 @@ export default function PetaClient({
             onError={handleLocError}
             onUserDrag={() => setFollow(false)}
           />
+        )}
+        {showRecommend && recoRoute && recoRoute.coords.length > 1 && (
+          <>
+            <Polyline positions={recoRoute.coords} pathOptions={{ color: "#65a30d", weight: 6, opacity: 0.9 }} />
+            <FitRoute coords={recoRoute.coords} />
+          </>
         )}
         {navigating && <NavFollow pos={nav.userPos} />}
         {!navigating && routeCoords.length === 0 && <FlyToSearch target={searchTarget} />}

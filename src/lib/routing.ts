@@ -250,3 +250,68 @@ export function speak(text: string) {
     /* ignore */
   }
 }
+
+// ============================================================
+// REKOMENDASI RUTE GOWES (perjalanan melingkar / round trip)
+// Memakai fitur round_trip OpenRouteService: dari satu titik awal,
+// ORS merancang lingkaran kembali ke titik yang sama dengan panjang
+// mendekati target. `seed` mengubah bentuk lingkaran (arah berbeda),
+// sehingga tombol "Cari lagi" memberi variasi rute.
+// ============================================================
+export type LoopRoute = {
+  coords: [number, number][];
+  distance: number; // meter
+  duration: number; // detik
+  seed: number;
+};
+
+export async function fetchLoopRoute(
+  start: Pt,
+  targetKm: number,
+  seed: number,
+  avoidPolygons?: AvoidGeometry | null
+): Promise<LoopRoute> {
+  const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
+  if (!apiKey) throw new Error("API key OpenRouteService belum di-setup");
+
+  const reqBody: Record<string, unknown> = {
+    coordinates: [[start.lng, start.lat]],
+    options: {
+      round_trip: { length: Math.round(targetKm * 1000), points: 5, seed },
+      ...(avoidPolygons ? { avoid_polygons: avoidPolygons } : {}),
+    },
+  };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ORS_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch("https://api.openrouteservice.org/v2/directions/cycling-regular/geojson", {
+      method: "POST",
+      headers: {
+        Authorization: apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/geo+json",
+      },
+      body: JSON.stringify(reqBody),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    throw e instanceof DOMException && e.name === "AbortError"
+      ? new Error("Server rute lambat merespons, coba lagi")
+      : e;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    throw new Error(errData?.error?.message || "Gagal membuat rute rekomendasi");
+  }
+  const data = await res.json();
+  const feat = data.features?.[0];
+  if (!feat) throw new Error("Rute tidak ditemukan, coba jarak lain");
+  const raw = feat.geometry.coordinates as [number, number][];
+  const coords: [number, number][] = raw.map(([lng, lat]) => [lat, lng]);
+  const summary = feat.properties.summary;
+  return { coords, distance: summary.distance, duration: summary.duration, seed };
+}
