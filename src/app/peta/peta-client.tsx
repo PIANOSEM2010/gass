@@ -9,7 +9,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
-  Sparkles, RefreshCw, Route as RouteIcon,
+  Sparkles, RefreshCw,
   Play, Square, Volume2, ShieldCheck,
 } from "lucide-react";
 import { useNav, maneuverIcon } from "../nav-provider";
@@ -657,9 +657,10 @@ export default function PetaClient({
   }
 
   function handlePickRouteB(lat: number, lng: number) {
-    setPointB({ lat, lng });
     setMode("view");
-    if (pointA) calculateRoute(pointA, { lat, lng });
+    // Selalu rutекan dari LOKASI TERKINI ke titik tujuan yang dipilih,
+    // dengan mode aman (menghindari zona & titik rawan) sesuai toggle.
+    routeFromCurrentLocation({ lat, lng });
   }
 
   async function calculateRoute(
@@ -747,12 +748,6 @@ export default function PetaClient({
       setSearchLabel("");
       setSearchQuery("");
     }
-  }
-
-  function startRouting() {
-    clearRoute();
-    setRouteSource("manual");
-    setMode("route-a");
   }
 
   function startNavigation() {
@@ -904,7 +899,7 @@ export default function PetaClient({
       )}
       {mode === "route-b" && (
         <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-sky-600 text-white px-3 py-2 rounded-lg shadow text-sm font-medium flex items-center justify-between">
-          <span>📍 Tap titik <strong>TUJUAN</strong> di peta</span>
+          <span>🚴 Dari <strong>lokasimu</strong> — tap titik <strong>TUJUAN</strong> di peta</span>
           <button onClick={() => setMode("view")}><X size={16} /></button>
         </div>
       )}
@@ -1111,15 +1106,7 @@ export default function PetaClient({
       {/* Tombol kanan bawah */}
       {!navigating && !routeInfo && (
         <div className="absolute bottom-16 right-3 z-[1000] flex flex-col gap-2">
-          <button
-            onClick={() => { setShowRecommend(true); if (!recoRoute) generateRecommendation(false); }}
-            className="w-11 h-11 rounded-full shadow-lg flex items-center justify-center bg-gradient-to-br from-lime-500 to-emerald-600 text-white active:scale-90 transition"
-            aria-label="Rekomendasi rute gowes"
-            title="Rekomendasi rute gowes"
-          >
-            <Sparkles size={20} />
-          </button>
-          <button
+<button
             onClick={toggleTraffic}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
               showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-white text-gray-700"
@@ -1177,11 +1164,11 @@ export default function PetaClient({
           {mode === "view" && !routeInfo && (
             <>
               <button
-                onClick={startRouting}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
+                onClick={() => { setShowRecommend(true); if (!recoRoute) generateRecommendation(false); }}
+                className="flex-1 bg-gradient-to-r from-lime-500 to-emerald-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
               >
-                <Navigation size={16} />
-                Cari Rute Pesepeda
+                <Sparkles size={16} />
+                Rekomendasi Rute Sepeda
               </button>
               {userId && (
                 <button
