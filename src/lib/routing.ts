@@ -263,6 +263,7 @@ export type LoopRoute = {
   distance: number; // meter
   duration: number; // detik
   seed: number;
+  steps: NavStep[]; // panduan belok (untuk navigasi suara)
 };
 
 export async function fetchLoopRoute(
@@ -313,5 +314,51 @@ export async function fetchLoopRoute(
   const raw = feat.geometry.coordinates as [number, number][];
   const coords: [number, number][] = raw.map(([lng, lat]) => [lat, lng]);
   const summary = feat.properties.summary;
-  return { coords, distance: summary.distance, duration: summary.duration, seed };
+
+  // Ambil panduan belok (steps) agar navigasi bisa memberi arahan suara
+  const steps: NavStep[] = [];
+  const segments = feat.properties.segments || [];
+  for (const seg of segments) {
+    for (const st of seg.steps || []) {
+      const wpIdx = st.way_points?.[0] ?? 0;
+      const pt = coords[wpIdx] || coords[0];
+      steps.push({
+        type: st.type,
+        name: st.name && st.name !== "-" ? st.name : "",
+        distance: st.distance,
+        instruction: buildInstruction(st.type, st.name),
+        lat: pt[0],
+        lng: pt[1],
+      });
+    }
+  }
+
+  return { coords, distance: summary.distance, duration: summary.duration, seed, steps };
+}
+
+// Coba beberapa variasi rute melingkar, lalu pilih yang jaraknya PALING DEKAT
+// dengan target. round_trip ORS bersifat aproksimasi (sering meleset dari target),
+// jadi mencoba beberapa seed lalu memilih terbaik membuat hasilnya jauh lebih pas.
+export async function fetchBestLoopRoute(
+  start: Pt,
+  targetKm: number,
+  baseSeed: number,
+  avoidPolygons?: AvoidGeometry | null,
+  tries = 4
+): Promise<LoopRoute> {
+  const targetM = targetKm * 1000;
+  const seeds = Array.from({ length: tries }, (_, i) => baseSeed + i * 7919);
+  const results = await Promise.allSettled(
+    seeds.map((sd) => fetchLoopRoute(start, targetKm, sd, avoidPolygons))
+  );
+  const ok = results
+    .filter((r): r is PromiseFulfilledResult<LoopRoute> => r.status === "fulfilled")
+    .map((r) => r.value);
+  if (ok.length === 0) {
+    const firstErr = results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined;
+    throw firstErr?.reason instanceof Error ? firstErr.reason : new Error("Gagal membuat rute rekomendasi");
+  }
+  // Pilih jarak dengan selisih terkecil terhadap target
+  ok.sort((a, b) => Math.abs(a.distance - targetM) - Math.abs(b.distance - targetM));
+  return ok[0];
 }

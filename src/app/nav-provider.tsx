@@ -21,6 +21,9 @@ export type NavRoute = {
   info: { distance: number; duration: number };
   dest: Pt;
   label: string;
+  /** Rute melingkar (rekomendasi gowes): tujuan = titik awal, jadi
+   *  deteksi "tiba" hanya berlaku setelah menempuh hampir seluruh jalur. */
+  isLoop?: boolean;
 };
 
 type WakeLockLike = { release: () => Promise<void> };
@@ -71,6 +74,7 @@ export default function NavProvider({ children }: { children: ReactNode }) {
   const announcedFarRef = useRef(false);
   const announcedNearRef = useRef(false);
   const offRouteRef = useRef(0);
+  const maxCoordIdxRef = useRef(0); // titik terjauh yang sudah dilewati (untuk loop)
   const reroutingRef = useRef(false);
   const routeRef = useRef<NavRoute | null>(null);
   const avoidRef = useRef<AvoidGeometry | null>(null);
@@ -108,21 +112,43 @@ export default function NavProvider({ children }: { children: ReactNode }) {
     const r = routeRef.current;
     if (!r) return;
 
+    // Lacak seberapa jauh pengguna sudah menyusuri jalur (indeks titik terdekat)
+    let minD = Infinity;
+    let minIdx = 0;
+    if (r.coords.length) {
+      for (let i = 0; i < r.coords.length; i++) {
+        const d = haversineM(here, { lat: r.coords[i][0], lng: r.coords[i][1] });
+        if (d < minD) { minD = d; minIdx = i; }
+      }
+      if (minIdx > maxCoordIdxRef.current) maxCoordIdxRef.current = minIdx;
+    }
+
     // Tiba di tujuan?
-    if (haversineM(here, r.dest) < 25) {
+    // - Rute biasa: cukup dekat dengan titik tujuan.
+    // - Rute melingkar: tujuan = titik awal, jadi baru dianggap tiba bila sudah
+    //   menempuh >=85% panjang jalur DAN kembali dekat ke titik awal/akhir.
+    const nearDest = haversineM(here, r.dest) < 25;
+    if (r.isLoop) {
+      const progress = r.coords.length > 1 ? maxCoordIdxRef.current / (r.coords.length - 1) : 0;
+      const nearEnd = r.coords.length
+        ? haversineM(here, { lat: r.coords[r.coords.length - 1][0], lng: r.coords[r.coords.length - 1][1] }) < 30
+        : false;
+      if (progress >= 0.85 && (nearDest || nearEnd)) {
+        speak("Anda telah kembali ke titik awal. Perjalanan selesai.");
+        setArrivedAt(Date.now());
+        stop();
+        return;
+      }
+    } else if (nearDest) {
       speak("Anda telah tiba di tujuan.");
       setArrivedAt(Date.now());
       stop();
       return;
     }
 
-    // Keluar jalur -> hitung ulang rute
-    if (r.coords.length) {
-      let minD = Infinity;
-      for (let i = 0; i < r.coords.length; i++) {
-        const d = haversineM(here, { lat: r.coords[i][0], lng: r.coords[i][1] });
-        if (d < minD) minD = d;
-      }
+    // Keluar jalur -> hitung ulang rute (tidak berlaku untuk rute melingkar,
+    // karena reroute A->B akan merusak bentuk lingkaran)
+    if (!r.isLoop && r.coords.length) {
       if (minD > 50) {
         offRouteRef.current++;
         if (offRouteRef.current >= 3 && !reroutingRef.current) {
@@ -188,6 +214,7 @@ export default function NavProvider({ children }: { children: ReactNode }) {
     announcedNearRef.current = false;
     offRouteRef.current = 0;
     reroutingRef.current = false;
+    maxCoordIdxRef.current = 0;
     setRoute(r);
     routeRef.current = r;
     const first = r.steps[Math.min(1, r.steps.length - 1)];

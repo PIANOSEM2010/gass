@@ -15,7 +15,7 @@ import {
 import { useNav, maneuverIcon } from "../nav-provider";
 import {
   type NavStep, type AvoidGeometry, type LoopRoute,
-  fetchRoute, fetchLoopRoute, buildAvoidNearRoute, formatDist,
+  fetchRoute, fetchBestLoopRoute, buildAvoidNearRoute, formatDist,
 } from "@/lib/routing";
 
 type RoadMarker = {
@@ -510,7 +510,7 @@ export default function PetaClient({
       const avoid = avoidDanger
         ? buildAvoidNearRoute(zones, markers, origin, origin).geometry
         : null;
-      const loop = await fetchLoopRoute(origin, recoTargetKm, recoSeedRef.current, avoid);
+      const loop = await fetchBestLoopRoute(origin, recoTargetKm, recoSeedRef.current, avoid);
       setRecoRoute(loop);
     } catch (e) {
       setRecoRoute(null);
@@ -525,7 +525,14 @@ export default function PetaClient({
     if (!recoRoute || !userPos) return;
     const dest = { lat: userPos.lat, lng: userPos.lng };
     nav.begin(
-      { coords: recoRoute.coords, info: { distance: recoRoute.distance, duration: recoRoute.duration }, steps: [], dest, label: `Rute Gowes ${(recoRoute.distance / 1000).toFixed(1)} km` },
+      {
+        coords: recoRoute.coords,
+        info: { distance: recoRoute.distance, duration: recoRoute.duration },
+        steps: recoRoute.steps,        // panduan belok untuk arahan suara
+        dest,
+        label: `Rute Gowes ${(recoRoute.distance / 1000).toFixed(1)} km`,
+        isLoop: true,                  // rute melingkar: tujuan = titik awal
+      },
       avoidDanger ? buildAvoidNearRoute(zones, markers, dest, dest).geometry : null
     );
     setShowRecommend(false);
@@ -1168,7 +1175,7 @@ export default function PetaClient({
                 className="flex-1 bg-gradient-to-r from-lime-500 to-emerald-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
               >
                 <Sparkles size={16} />
-                Rekomendasi Rute Sepeda
+                Rekomendasi Rute Gowes
               </button>
               {userId && (
                 <button
