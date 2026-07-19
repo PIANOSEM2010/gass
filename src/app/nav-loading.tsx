@@ -99,11 +99,10 @@ function NavLoadingOverlay() {
     <div className="fixed inset-0 z-[3000] flex flex-col items-center justify-center bg-slate-950 nav-loading-fade">
       {/* Logo BUG: roda berputar + wordmark */}
       <div className="relative flex items-center justify-center">
-        <span className="absolute w-24 h-24 rounded-full border-4 border-lime-400/20" />
-        <span className="absolute w-24 h-24 rounded-full border-4 border-transparent border-t-lime-400 animate-spin" />
+        <span className="absolute w-28 h-28 rounded-full border-4 border-lime-400/20" />
+        <span className="absolute w-28 h-28 rounded-full border-4 border-transparent border-t-lime-400 animate-spin" />
         <span className="display-title text-3xl text-lime-400 tracking-tight">BUG</span>
       </div>
-      <p className="eyebrow mt-6 text-slate-400 !text-[11px]">Memuat…</p>
 
       <style>{`
         .nav-loading-fade { animation: navLoadingFade 160ms ease-out; }
