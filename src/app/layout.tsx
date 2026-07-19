@@ -4,6 +4,7 @@ import NavProvider from "./nav-provider";
 import ActivityDock from "./activity-dock";
 import PushRegistrar from "./push-registrar";
 import SessionKeeper from "./session-keeper";
+import NavLoadingProvider from "./nav-loading";
 import SosAlertProvider from "./sos-alert-provider";
 import InstallPrompt from "./install-prompt";
 import type { Metadata, Viewport } from "next";
@@ -38,13 +39,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GowesProvider>
           <PantauProvider>
             <NavProvider>
-              <SosAlertProvider />
-              <SessionKeeper />
-              <PushRegistrar />
-              <InstallPrompt />
-              <Navbar />
-              <ActivityDock />
-              <main className="pb-20">{children}</main>
+              <NavLoadingProvider>
+                <SosAlertProvider />
+                <SessionKeeper />
+                <PushRegistrar />
+                <InstallPrompt />
+                <Navbar />
+                <ActivityDock />
+                <main className="pb-20">{children}</main>
+              </NavLoadingProvider>
             </NavProvider>
           </PantauProvider>
         </GowesProvider>
