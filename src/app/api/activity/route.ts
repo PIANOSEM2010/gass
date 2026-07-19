@@ -66,6 +66,9 @@ export async function POST(req: Request) {
 
     const today = witaDate(0);
     const yesterday = witaDate(-1);
+    // Masa tenggang streak: masih hidup bila gowes terakhir dalam 2 hari terakhir
+    // (hari ini, kemarin, atau kemarin lusa). Baru putus bila bolong 2 hari penuh.
+    const dayBefore = witaDate(-2);
     const headers = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 
     // 1) Simpan aktivitas
@@ -103,7 +106,7 @@ export async function POST(req: Request) {
     let newStreak = prevStreak;
     let newLast = prevLast;
     if (qualifies && prevLast !== today) {
-      newStreak = prevLast === yesterday ? prevStreak + 1 : 1;
+      newStreak = (prevLast === yesterday || prevLast === dayBefore) ? prevStreak + 1 : 1;
       newLast = today;
     }
     const newLongest = Math.max(prevLongest, newStreak);
@@ -125,7 +128,7 @@ export async function POST(req: Request) {
       }),
     });
 
-    const effective = newLast === today || newLast === yesterday ? newStreak : 0;
+    const effective = (newLast === today || newLast === yesterday || newLast === dayBefore) ? newStreak : 0;
     return Response.json({
       ok: true,
       current_streak: effective,

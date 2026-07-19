@@ -19,10 +19,11 @@ export default async function LeaderboardPage() {
 
   const today = witaDate(0);
   const yest = witaDate(-1);
+  const dayBefore = witaDate(-2); // masa tenggang 2 hari
   const board = (rows || [])
     .map((r) => ({
       ...r,
-      streak: r.last_activity_date === today || r.last_activity_date === yest ? r.current_streak : 0,
+      streak: (r.last_activity_date === today || r.last_activity_date === yest || r.last_activity_date === dayBefore) ? r.current_streak : 0,
     }))
     .sort((a, b) => b.streak - a.streak || Number(b.total_distance_m) - Number(a.total_distance_m));
 
@@ -34,7 +35,7 @@ export default async function LeaderboardPage() {
         <Trophy className="text-yellow-500" size={24} />
         <h1 className="text-2xl font-bold text-gray-900">Papan Peringkat</h1>
       </div>
-      <p className="text-sm text-gray-500 mb-6">Lomba streak bersepeda 🔥 - gowes ≥1 km tiap hari untuk menjaga streakmu.</p>
+      <p className="text-sm text-gray-500 mb-6">Lomba streak bersepeda 🔥 - gowes ≥1 km per hari untuk menjaga streakmu. Ada toleransi: streak baru putus bila kamu absen 2 hari berturut-turut.</p>
 
       {board.length === 0 ? (
         <p className="text-center text-gray-400 py-12">Belum ada peserta. Jadilah yang pertama - catat perjalananmu di tab Gowes!</p>

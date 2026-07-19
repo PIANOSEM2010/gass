@@ -29,8 +29,8 @@ export default async function Home() {
       .eq("user_id", user.id)
       .maybeSingle();
     if (s) {
-      const today = witaDate(0), yest = witaDate(-1);
-      streak = s.last_activity_date === today || s.last_activity_date === yest ? s.current_streak : 0;
+      const today = witaDate(0), yest = witaDate(-1), dayBefore = witaDate(-2);
+      streak = (s.last_activity_date === today || s.last_activity_date === yest || s.last_activity_date === dayBefore) ? s.current_streak : 0;
       totalKm = Number(s.total_distance_m) / 1000;
     }
   }
