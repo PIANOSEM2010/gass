@@ -95,18 +95,77 @@ export default function NavLoadingProvider({ children }: { children: React.React
 }
 
 function NavLoadingOverlay() {
+  // Jeruji roda dibuat programatik, memancar dari hub ke pelek
+  const spokes = Array.from({ length: 16 }, (_, i) => {
+    const a = (i * Math.PI * 2) / 16;
+    return {
+      x1: 60 + 11 * Math.cos(a),
+      y1: 60 + 11 * Math.sin(a),
+      x2: 60 + 46 * Math.cos(a),
+      y2: 60 + 46 * Math.sin(a),
+    };
+  });
+
   return (
-    <div className="fixed inset-0 z-[3000] flex flex-col items-center justify-center bg-slate-950 nav-loading-fade">
-      {/* Logo BUG: roda berputar + wordmark */}
+    <div className="fixed inset-0 z-[3000] flex flex-col items-center justify-center nav-loading-backdrop">
+      {/* Cahaya hijau lembut di belakang roda */}
+      <div className="absolute w-64 h-64 rounded-full bg-lime-400/15 blur-3xl" />
+
       <div className="relative flex items-center justify-center">
-        <span className="absolute w-28 h-28 rounded-full border-4 border-lime-400/20" />
-        <span className="absolute w-28 h-28 rounded-full border-4 border-transparent border-t-lime-400 animate-spin" />
-        <span className="display-title text-3xl text-lime-400 tracking-tight">BUG</span>
+        {/* Roda sepeda berputar (perlahan & mulus) */}
+        <svg width="128" height="128" viewBox="0 0 120 120" className="nav-wheel" aria-hidden="true">
+          <defs>
+            <linearGradient id="bugArc" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#bef264" />
+              <stop offset="100%" stopColor="#4ade80" />
+            </linearGradient>
+          </defs>
+          {/* ban luar */}
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="6" />
+          {/* pelek */}
+          <circle cx="60" cy="60" r="47" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="2" />
+          {/* jeruji */}
+          <g stroke="rgba(255,255,255,0.28)" strokeWidth="1.5">
+            {spokes.map((s, i) => (
+              <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />
+            ))}
+          </g>
+          {/* hub */}
+          <circle cx="60" cy="60" r="11" fill="none" stroke="rgba(255,255,255,0.32)" strokeWidth="2" />
+          <circle cx="60" cy="60" r="4" fill="#bef264" />
+          {/* pentil — penanda agar putaran terlihat */}
+          <circle cx="60" cy="8" r="3.5" fill="#4ade80" />
+        </svg>
+
+        {/* Busur progres hijau (berputar lebih cepat, terpisah dari roda) */}
+        <svg width="128" height="128" viewBox="0 0 120 120" className="absolute nav-arc" aria-hidden="true">
+          <circle
+            cx="60" cy="60" r="52" fill="none"
+            stroke="url(#bugArc)" strokeWidth="4" strokeLinecap="round"
+            strokeDasharray="70 260"
+          />
+        </svg>
+      </div>
+
+      {/* Wordmark elegan */}
+      <div className="mt-8 flex flex-col items-center nav-wordmark">
+        <span className="display-title text-2xl text-white tracking-[0.15em]">BUG</span>
+        <span className="eyebrow mt-1 text-lime-300/70 !text-[9px] tracking-[0.3em]">BULUNGAN UNTUK GOWESER</span>
       </div>
 
       <style>{`
-        .nav-loading-fade { animation: navLoadingFade 160ms ease-out; }
-        @keyframes navLoadingFade { from { opacity: 0 } to { opacity: 1 } }
+        .nav-loading-backdrop {
+          background: radial-gradient(120% 120% at 50% 40%, rgba(6,12,10,0.72), rgba(2,6,4,0.90));
+          backdrop-filter: blur(16px) saturate(120%);
+          -webkit-backdrop-filter: blur(16px) saturate(120%);
+          animation: navFade 220ms ease-out;
+        }
+        .nav-wheel { animation: navSpin 2.4s linear infinite; transform-origin: 50% 50%; }
+        .nav-arc { animation: navSpin 1s cubic-bezier(0.5,0,0.5,1) infinite; transform-origin: 50% 50%; }
+        .nav-wordmark { animation: navPulse 1.8s ease-in-out infinite; }
+        @keyframes navSpin { to { transform: rotate(360deg); } }
+        @keyframes navFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes navPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
       `}</style>
     </div>
   );
