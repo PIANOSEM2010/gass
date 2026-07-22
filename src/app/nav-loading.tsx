@@ -7,6 +7,9 @@
 // durasi minimum singkat agar tidak berkedip saat halaman terbuka instan.
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useGowes } from "./gowes-provider";
+import { usePantau } from "./pantau-provider";
+import { useNav } from "./nav-provider";
 
 type NavLoadingValue = {
   loading: boolean;
@@ -31,9 +34,24 @@ export default function NavLoadingProvider({ children }: { children: React.React
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Apakah ada aktivitas GPS yang sedang berjalan (catat gowes / teman pantau /
+  // navigasi rute)? Bila ya, JANGAN tampilkan overlay penuh saat pindah menu —
+  // ActivityDock sudah menampilkan statusnya, dan overlay penuh yang menutup
+  // peta/WebView bisa mengganggu sesi GPS yang sedang aktif.
+  const gowes = useGowes();
+  const pantau = usePantau();
+  const nav = useNav();
+  const activityRunning =
+    gowes.status === "tracking" ||
+    gowes.status === "paused" ||
+    pantau.sharing ||
+    Boolean(nav.navInfo);
+
   const startNavigation = useCallback((href?: string) => {
     // Abaikan bila menuju halaman yang sedang dibuka
     if (href && href === pathname) return;
+    // Jangan tampilkan overlay penuh saat ada sesi GPS berjalan (lihat catatan di atas)
+    if (activityRunning) return;
     targetRef.current = href ?? null;
     shownAtRef.current = Date.now();
     setLoading(true);
@@ -41,7 +59,7 @@ export default function NavLoadingProvider({ children }: { children: React.React
     // Pengaman: bila navigasi gagal/terlalu lama, tetap tutup overlay
     if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
     safetyTimerRef.current = setTimeout(() => setLoading(false), 8000);
-  }, [pathname]);
+  }, [pathname, activityRunning]);
 
   // Saat pathname berubah = halaman baru sudah render → sembunyikan overlay
   useEffect(() => {

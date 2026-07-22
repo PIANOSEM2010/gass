@@ -67,6 +67,17 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const statusRef = useRef<GowesStatus>("idle");
   statusRef.current = status;
 
+  // Tandai saat pencatatan gowes sedang berlangsung, agar SessionKeeper tidak
+  // memuat ulang halaman (reload akan mematikan pencatatan yang sedang jalan).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const active = status === "tracking" || status === "paused";
+    try {
+      if (active) window.sessionStorage.setItem("bug-activity-active", "1");
+      else window.sessionStorage.removeItem("bug-activity-active");
+    } catch { /* abaikan */ }
+  }, [status]);
+
   const acquireWake = useCallback(async () => {
     try {
       const nav = navigator as unknown as { wakeLock?: { request: (t: "screen") => Promise<WakeLockLike> } };

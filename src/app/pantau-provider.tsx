@@ -47,6 +47,16 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   sessionRef.current = sessionId;
   sharingRef.current = sharing;
 
+  // Tandai saat Teman Pantau aktif, agar SessionKeeper tidak reload (yang akan
+  // memutus berbagi lokasi yang sedang berjalan).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (sharing) window.sessionStorage.setItem("bug-activity-active", "1");
+      else window.sessionStorage.removeItem("bug-activity-active");
+    } catch { /* abaikan */ }
+  }, [sharing]);
+
   const acquireWake = useCallback(async () => {
     try {
       const nav = navigator as unknown as { wakeLock?: { request: (t: "screen") => Promise<WakeLockLike> } };

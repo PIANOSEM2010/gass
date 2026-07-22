@@ -20,7 +20,8 @@ export default function SessionKeeper() {
     const supabase = createClient();
 
     // 1. Saat aplikasi dibuka: kalau sesi (cookie) hilang tapi ada cadangan,
-    //    pulihkan — lalu muat ulang sekali supaya seluruh halaman ikut login.
+    //    pulihkan. Muat ulang HANYA bila tidak ada aktivitas yang sedang berjalan,
+    //    supaya pencatatan gowes / Teman Pantau tidak ikut mati karena reload.
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -34,7 +35,12 @@ export default function SessionKeeper() {
           refresh_token: saved.refresh_token,
         });
         if (!error) {
-          window.location.reload();
+          // setSession sudah memulihkan sesi di memori + menulis ulang cookie.
+          // Reload hanya perlu agar Server Component ikut mengenali login —
+          // tapi reload mematikan pencatatan yang sedang berjalan. Jadi lewati
+          // reload bila ada aktivitas aktif (ditandai flag di bawah).
+          const busy = typeof window !== "undefined" && window.sessionStorage.getItem("bug-activity-active") === "1";
+          if (!busy) window.location.reload();
         } else {
           // Cadangan sudah tidak berlaku (mis. user memang logout) — buang.
           localStorage.removeItem(KEY);
