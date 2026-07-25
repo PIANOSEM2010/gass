@@ -3,10 +3,11 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useGowes, type Pt } from "../gowes-provider";
+import { useGowes } from "../gowes-provider";
 import { isNativeApp } from "@/lib/native-geo";
 import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
+import { placeNameFromPath } from "@/lib/place-name";
 import {
   Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
@@ -44,7 +45,10 @@ export default function CatatClient({
   const [sharingForum, setSharingForum] = useState(false);
   const [template, setTemplate] = useState("rute");
   const [palette, setPalette] = useState("hijau");
-  const [placeName, setPlaceName] = useState("Bulungan");
+  // Nama daerah diisi dari GPS (reverse geocoding), bukan nilai tetap,
+  // agar kartu & caption mengikuti lokasi gowes yang sebenarnya.
+  const [placeName, setPlaceName] = useState("");
+  const [placeLoading, setPlaceLoading] = useState(false);
   const [cardPhoto, setCardPhoto] = useState<HTMLImageElement | null>(null);
   const [cardTransparent, setCardTransparent] = useState(false);
   const cardRef = useRef<HTMLCanvasElement>(null);
@@ -52,6 +56,9 @@ export default function CatatClient({
   // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah).
   // Digambar lagi setelah font display selesai dimuat agar tipografinya benar.
   useEffect(() => {
+    // Jangan gambar kartu selama nama lokasi masih dicari, supaya tidak
+    // sempat tampil nama daerah yang salah lalu berubah.
+    if (placeLoading) return;
     if (status === "saved" && cardRef.current) {
       const st = getStats();
       const doDraw = () => {
@@ -70,29 +77,24 @@ export default function CatatClient({
     }
     // getStats/getPath sengaja tidak dimasukkan dep (stabil, dibaca saat efek jalan)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, duration, savedElev, template, palette, placeName, cardPhoto, cardTransparent]);
+  }, [status, duration, savedElev, template, palette, placeName, cardPhoto, cardTransparent, placeLoading]);
 
   // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk caption
   useEffect(() => {
-    if (status !== "saved") return;
+    // Cari nama daerah SEJAK perjalanan diakhiri (status "finished"), supaya
+    // saat layar kartu muncul namanya sudah siap — bukan sempat salah dulu.
+    if (status !== "finished" && status !== "saved") return;
+    if (placeName || placeLoading) return;
     const path = getPath();
     if (!path || path.length === 0) return;
-    const mid = path[Math.floor(path.length / 2)];
     let cancelled = false;
+    setPlaceLoading(true);
     (async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${mid.lat}&lon=${mid.lng}&zoom=10&addressdetails=1&accept-language=id`,
-          { cache: "no-store" }
-        );
-        const j = await res.json();
-        const a = j.address || {};
-        // Prioritas: kabupaten (county) / kota (city) dulu, agar hashtag cocok
-        // dengan kampanye (mis. #GoweserAmanBulungan), baru turun ke tingkat bawah
-        let name: string = a.county || a.city || a.municipality || a.state || a.town || a.city_district || a.village || "";
-        name = name.replace(/^(Kabupaten|Kota|Kecamatan|Daerah Khusus Ibukota)\s+/i, "").trim();
-        if (!cancelled && name) setPlaceName(name);
-      } catch { /* pertahankan default */ }
+      const name = await placeNameFromPath(path);
+      if (!cancelled) {
+        if (name) setPlaceName(name);
+        setPlaceLoading(false);
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,7 +162,9 @@ export default function CatatClient({
     const canvas = cardRef.current;
     if (!canvas) return;
     const km = (getStats().distanceM / 1000).toFixed(2);
-    const text = `Baru saja gowes ${km} km di ${placeName} bersama BUG! 🚴 #GoweserAman${placeName.replace(/\s+/g, "")}`;
+    const text = placeName
+      ? `Baru saja gowes ${km} km di ${placeName} bersama BUG! 🚴 #GoweserAman${placeName.replace(/\s+/g, "")}`
+      : `Baru saja gowes ${km} km bersama BUG! 🚴`;
     // Di aplikasi Android: file ditulis ke cache lalu share sheet native.
     // Di browser: Web Share API; kalau tak ada → unduh otomatis.
     const dataUrl = canvas.toDataURL("image/png");
@@ -191,7 +195,7 @@ export default function CatatClient({
         }
       }
 
-      const title = `Gowes ${km} km di ${placeName}`;
+      const title = placeName ? `Gowes ${km} km di ${placeName}` : `Gowes ${km} km`;
       const body =
         `Jarak ${km} km, waktu ${fmtDuration(duration)}, elevasi ${Math.round(savedElev ?? getStats().elevM)} m. ` +
         `Dicatat lewat fitur Gowes di BUG.`;

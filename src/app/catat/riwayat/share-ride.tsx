@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Share2, Download, ImagePlus, X, Loader2 } from "lucide-react";
 import { drawCard, loadImage, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
+import { placeNameFromPath } from "@/lib/place-name";
 
 type Pt = { lat: number; lng: number };
 type Ride = {
@@ -26,17 +27,36 @@ export default function ShareRide({ ride }: { ride: Ride }) {
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [transparent, setTransparent] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Nama daerah ditentukan dari GPS jalur perjalanan itu sendiri
+  const [place, setPlace] = useState("");
+  const [placeLoading, setPlaceLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const rideDate = ride.started_at || ride.activity_date;
 
+  // Tentukan nama daerah dari jalur perjalanan saat dialog dibuka
+  useEffect(() => {
+    if (!open || place || placeLoading) return;
+    let cancelled = false;
+    setPlaceLoading(true);
+    (async () => {
+      const name = await placeNameFromPath(ride.path);
+      if (!cancelled) {
+        if (name) setPlace(name);
+        setPlaceLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   // Gambar ulang kartu setiap ada perubahan pilihan (dan setelah font siap)
   useEffect(() => {
-    if (!open || !canvasRef.current) return;
+    if (!open || !canvasRef.current || placeLoading) return;
     const doDraw = () => {
       if (!canvasRef.current) return;
       drawCard(canvasRef.current, {
-        template, palette, place: "Bulungan",
+        template, palette, place,
         path: ride.path || [],
         distanceM: ride.distance_m,
         durationS: ride.duration_s,
@@ -49,7 +69,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     if (typeof document !== "undefined" && document.fonts?.ready) {
       document.fonts.ready.then(doDraw).catch(() => { /* abaikan */ });
     }
-  }, [open, template, palette, photo, transparent, ride, rideDate]);
+  }, [open, template, palette, photo, transparent, ride, rideDate, place, placeLoading]);
 
   async function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -72,7 +92,9 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     setBusy(true);
     try {
       const km = (ride.distance_m / 1000).toFixed(2);
-      const text = `Gowes ${km} km bersama BUG! 🚴 #GoweserAmanBulungan`;
+      const text = place
+        ? `Gowes ${km} km di ${place} bersama BUG! 🚴 #GoweserAman${place.replace(/\s+/g, "")}`
+        : `Gowes ${km} km bersama BUG! 🚴`;
       const r = await shareImageDataUrl(canvas.toDataURL("image/png"), "gowes-bug.png", text);
       if (r.status === "failed") alert(`Gagal membagikan: ${r.error || "tidak diketahui"}`);
     } finally {

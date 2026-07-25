@@ -79,6 +79,11 @@ export type CardOptions = {
 // Menggambar kartu gowes ke canvas (1080x1080)
 export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
   const { template, path, distanceM, durationS, elevM, place } = opts;
+  // Bila nama daerah tidak terdeteksi, tulis "GOWES" saja (tanpa "DI ...")
+  const placeLabel = place && place.trim() ? `GOWES DI ${place.trim().toUpperCase()}` : "GOWES";
+  const hashtag = place && place.trim()
+    ? `#GOWESERAMAN${place.replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`
+    : "DICATAT DENGAN BUG";
   const pal = PALETTES[opts.palette] || PALETTES.hijau;
   const transparent = Boolean(opts.transparent);
   const photo = !transparent ? opts.photo || null : null;
@@ -300,7 +305,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     setSpacing(3);
     ctx.fillStyle = wText(0.5);
     ctx.font = dFont(24, 600, false);
-    ctx.fillText(`#GOWESERAMAN${place.replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`, W / 2, y);
+    ctx.fillText(hashtag, W / 2, y);
     setSpacing(0);
   };
 
@@ -330,7 +335,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.textAlign = "left";
     ctx.fillStyle = wText(0.75);
     ctx.font = dFont(30, 600, false);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 776);
+    ctx.fillText(placeLabel, 84, 776);
     setSpacing(0);
 
     // Tiga statistik raksasa berjajar (tanpa panel — bergaya story)
@@ -381,7 +386,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.textAlign = "left";
     ctx.fillStyle = wText(0.85);
     ctx.font = dFont(40, 600);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
+    ctx.fillText(placeLabel, 84, 212);
     setSpacing(0);
 
     // Statistik besar bertumpuk dengan bilah aksen
@@ -431,7 +436,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.textAlign = "left";
     ctx.fillStyle = wText(0.6);
     ctx.font = dFont(28, 600, false);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 866);
+    ctx.fillText(placeLabel, 84, 866);
     setSpacing(0);
 
     // Angka km raksasa dengan garis aksen miring di bawahnya
@@ -467,7 +472,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.textAlign = "left";
     ctx.fillStyle = wText(0.85);
     ctx.font = dFont(40, 600);
-    ctx.fillText(`GOWES DI ${place.toUpperCase()}`, 84, 212);
+    ctx.fillText(placeLabel, 84, 212);
     setSpacing(0);
 
     // Panel kaca berisi rute
