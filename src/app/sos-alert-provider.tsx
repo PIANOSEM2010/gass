@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useNavigateWithLoading } from "./nav-loading";
 import { createClient } from "@/lib/supabase/client";
 import { Siren, X, MapPin } from "lucide-react";
 
@@ -17,7 +18,7 @@ export default function SosAlertProvider() {
   const [alerts, setAlerts] = useState<SosAlert[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
-  const router = useRouter();
+  const navigate = useNavigateWithLoading();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -197,7 +198,7 @@ export default function SosAlertProvider() {
   function viewAndHelp(id: string) {
     dismiss(id);
     if (pathname !== "/forum") {
-      router.push("/forum");
+      navigate("/forum");
     }
   }
 

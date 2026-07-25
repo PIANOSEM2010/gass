@@ -4,7 +4,8 @@
 // bertumpuk. Kini semuanya jadi satu kartu, tiap fitur satu baris dengan
 // ikon (logo) dan tombol kontrolnya sendiri.
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useNavigateWithLoading } from "./nav-loading";
 import { Bike, Pause, Play, Square, Radio, X, ChevronUp, Minus, Navigation } from "lucide-react";
 import { useGowes } from "./gowes-provider";
 import { useNav, maneuverIcon } from "./nav-provider";
@@ -22,7 +23,7 @@ export default function ActivityDock() {
   const nav = useNav();
   const pantau = usePantau();
   const pathname = usePathname();
-  const router = useRouter();
+  const navigate = useNavigateWithLoading(); // pindah halaman + loading screen
 
   // Sebuah fitur tampil di dock hanya bila aktif DAN kita tidak sedang di halamannya
   const showGowes =
@@ -96,7 +97,7 @@ export default function ActivityDock() {
         <div className="divide-y divide-slate-700/70">
         {showGowes && (
           <div
-            onClick={() => router.push("/catat")}
+            onClick={() => navigate("/catat")}
             className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-white/5 transition-colors"
           >
             <span className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white ${gowesTracking ? "bg-gradient-to-br from-green-500 to-emerald-600" : gowesPaused ? "bg-gradient-to-br from-slate-500 to-slate-700" : "bg-gradient-to-br from-orange-500 to-amber-600"}`}>
@@ -140,7 +141,7 @@ export default function ActivityDock() {
 
         {showNav && (
           <div
-            onClick={() => router.push("/peta")}
+            onClick={() => navigate("/peta")}
             className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-white/5 transition-colors"
           >
             <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-white">
@@ -167,7 +168,7 @@ export default function ActivityDock() {
 
         {showPantau && (
           <div
-            onClick={() => router.push("/pantau")}
+            onClick={() => navigate("/pantau")}
             className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-white/5 transition-colors"
           >
             <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white relative">

@@ -6,7 +6,7 @@
 // dimuat (dideteksi dari perubahan pathname), overlay disembunyikan — dengan
 // durasi minimum singkat agar tidak berkedip saat halaman terbuka instan.
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useGowes } from "./gowes-provider";
 import { usePantau } from "./pantau-provider";
 import { useNav } from "./nav-provider";
@@ -22,6 +22,21 @@ export function useNavLoading(): NavLoadingValue {
   const ctx = useContext(NavLoadingContext);
   if (!ctx) return { loading: false, startNavigation: () => {} };
   return ctx;
+}
+
+// Navigasi terprogram (router.push) TIDAK terdeteksi oleh pemantau klik link,
+// jadi tombol yang memakainya — mis. pop-up mini aktivitas — harus memakai
+// hook ini agar loading screen tetap muncul.
+export function useNavigateWithLoading(): (href: string) => void {
+  const router = useRouter();
+  const { startNavigation } = useNavLoading();
+  return useCallback(
+    (href: string) => {
+      startNavigation(href);
+      router.push(href);
+    },
+    [router, startNavigation]
+  );
 }
 
 const MIN_VISIBLE_MS = 450; // durasi minimum overlay agar transisi terasa halus
