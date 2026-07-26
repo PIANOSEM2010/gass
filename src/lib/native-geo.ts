@@ -84,6 +84,47 @@ export function toGeoPos(p: GeolocationPosition): GeoPos {
   };
 }
 
+// Ambil posisi SEKALI. Di aplikasi memakai plugin native (bukan GPS browser),
+// supaya tidak bentrok dengan watcher gowes/pantau yang sedang berjalan.
+export function getPositionOnce(timeoutMs = 15000): Promise<GeoPos> {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    if (isNativeApp()) {
+      const handle = startWatch(
+        (p) => {
+          if (done) return;
+          done = true;
+          handle.stop();
+          resolve(p);
+        },
+        (msg) => {
+          if (done) return;
+          done = true;
+          handle.stop();
+          reject(new Error(msg));
+        },
+        { title: "BUG", message: "Mengambil lokasi…", distanceFilter: 0 }
+      );
+      setTimeout(() => {
+        if (done) return;
+        done = true;
+        handle.stop();
+        reject(new Error("Waktu tunggu GPS habis"));
+      }, timeoutMs);
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      reject(new Error("Browser tidak mendukung GPS"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve(toGeoPos(p)),
+      (err) => reject(new Error(err.message || "Gagal mengambil lokasi GPS")),
+      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 5000 }
+    );
+  });
+}
+
 // Mulai memantau posisi. Mengembalikan handle dengan .stop().
 export function startWatch(
   onPos: (p: GeoPos) => void,

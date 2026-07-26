@@ -8,6 +8,7 @@ import {
   ArrowLeft, Camera, MapPin, Loader2, X, CheckCircle2, AlertTriangle,
   Construction, ListChecks, Send, RefreshCw,
 } from "lucide-react";
+import { getPositionOnce } from "@/lib/native-geo";
 
 const InfraMap = dynamic(() => import("./infra-map"), {
   ssr: false,
@@ -78,13 +79,12 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
   const [success, setSuccess] = useState("");
 
   const captureLocation = useCallback(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) { setGpsError("Browser tidak mendukung GPS"); return; }
+    // Lokasi lewat modul bersama: di APLIKASI memakai plugin GPS native
+    // (GPS browser di WebView sering ditolak & bentrok dengan sesi gowes).
     setLocating(true); setGpsError("");
-    navigator.geolocation.getCurrentPosition(
-      (p) => { setCoords({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }); setLocating(false); },
-      (err) => { setGpsError(err.message || "Gagal mengambil lokasi. Aktifkan izin GPS."); setLocating(false); },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-    );
+    getPositionOnce()
+      .then((p) => { setCoords({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }); setLocating(false); })
+      .catch((e) => { setGpsError(e instanceof Error ? e.message : "Gagal mengambil lokasi. Aktifkan izin GPS."); setLocating(false); });
   }, []);
 
   useEffect(() => { captureLocation(); }, [captureLocation]);

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Siren, MapPin, Loader2, CheckCircle2, WifiOff, Phone, MessageSquare } from "lucide-react";
+import { getPositionOnce } from "@/lib/native-geo";
 import { createClient } from "@/lib/supabase/client";
 
 type Contact = {
@@ -44,18 +45,12 @@ export default function SosButton({
     };
   }, []);
 
-  function getLocation(): Promise<{ lat: number; lng: number }> {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Browser tidak mendukung GPS"));
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => reject(new Error(err.message || "Gagal mengambil lokasi")),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-      );
-    });
+  // Ambil lokasi lewat modul bersama: di APLIKASI memakai plugin GPS native.
+  // Dulu memakai GPS browser, yang di WebView sering ditolak ("User denied
+  // Geolocation") dan bentrok dengan sesi gowes/pantau yang sedang berjalan.
+  async function getLocation(): Promise<{ lat: number; lng: number }> {
+    const p = await getPositionOnce();
+    return { lat: p.coords.latitude, lng: p.coords.longitude };
   }
 
   function buildMessage(location: { lat: number; lng: number }) {

@@ -17,6 +17,7 @@ import {
   type NavStep, type AvoidGeometry, type LoopRoute,
   fetchRoute, fetchBestLoopRoute, buildAvoidNearRoute, formatDist,
 } from "@/lib/routing";
+import { startWatch, getPositionOnce, type WatchHandle } from "@/lib/native-geo";
 
 type RoadMarker = {
   id: string;
@@ -128,21 +129,32 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [9, 9],
 });
 
-function getCurrentLocationOnce(): Promise<{ lat: number; lng: number; accuracy: number }> {
-  return new Promise((resolve, reject) => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      reject(new Error("Browser tidak mendukung GPS"));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
-      (err) => reject(new Error(err.message || "Gagal mengambil lokasi")),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-    );
-  });
+// Ambil lokasi sekali lewat modul bersama: di APLIKASI memakai plugin GPS
+// native, bukan GPS browser — supaya tidak bentrok dengan sesi gowes/pantau.
+async function getCurrentLocationOnce(): Promise<{ lat: number; lng: number; accuracy: number }> {
+  const p = await getPositionOnce();
+  return { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
 }
 
 type Mode = "view" | "report" | "route-a" | "route-b";
+
+// Menjaga Leaflet tahu ukuran wadahnya (mencegah tampilan peta bergeser
+// setelah tinggi wadah berubah, mis. saat rotasi layar).
+function MapSizeFixer() {
+  const map = useMap();
+  useEffect(() => {
+    const fix = () => map.invalidateSize({ animate: false });
+    const t = setTimeout(fix, 120);
+    window.addEventListener("resize", fix);
+    window.addEventListener("orientationchange", fix);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", fix);
+      window.removeEventListener("orientationchange", fix);
+    };
+  }, [map]);
+  return null;
+}
 
 function ClickHandler({
   mode,
@@ -279,28 +291,26 @@ function LocationLayer({
       onUserDrag();
     },
   });
-  const watchIdRef = useRef<number | null>(null);
+  const watchRef = useRef<WatchHandle | null>(null);
   const firstFixRef = useRef(true);
   const lastPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const followRef = useRef(follow);
   followRef.current = follow;
 
   useEffect(() => {
+    // PENTING: memantau lokasi lewat startWatch() dari modul bersama.
+    // Dulu di sini memakai navigator.geolocation langsung — di aplikasi Android
+    // itu BENTROK dengan plugin GPS native, sehingga sesi catat gowes / teman
+    // pantau berhenti menerima posisi begitu halaman peta dibuka.
     if (!tracking) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
+      watchRef.current?.stop();
+      watchRef.current = null;
       firstFixRef.current = true;
       lastPosRef.current = null;
       return;
     }
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      onError("Browser tidak mendukung GPS");
-      return;
-    }
     firstFixRef.current = true;
-    const id = navigator.geolocation.watchPosition(
+    watchRef.current = startWatch(
       (p) => {
         const pos = {
           lat: p.coords.latitude,
@@ -316,15 +326,12 @@ function LocationLayer({
           map.panTo([pos.lat, pos.lng], { animate: true });
         }
       },
-      (err) => {
-        onError(err.message || "Gagal mengambil lokasi");
-      },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
+      (msg) => onError(msg || "Gagal mengambil lokasi"),
+      { title: "BUG — Peta", message: "Menampilkan posisimu di peta…", distanceFilter: 5 }
     );
-    watchIdRef.current = id;
     return () => {
-      navigator.geolocation.clearWatch(id);
-      watchIdRef.current = null;
+      watchRef.current?.stop();
+      watchRef.current = null;
     };
   }, [tracking, map, onPosition, onError]);
 
@@ -927,7 +934,7 @@ export default function PetaClient({
 
       {/* Legenda gabungan (lalu lintas + zona) */}
       {showLegend && (
-        <div className="absolute bottom-16 left-2 z-[1000] flex flex-col gap-2 max-w-[60%]">
+        <div className="absolute bottom-36 left-2 z-[1000] flex flex-col gap-2 max-w-[60%]">
           {showTraffic && tomtomKey && (
             <div className="bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
               <p className="font-semibold text-gray-700 mb-1">Insiden Jalan</p>
@@ -955,7 +962,7 @@ export default function PetaClient({
 
       {/* Route info card */}
       {routeInfo && !navigating && (
-        <div className="absolute bottom-24 left-2 right-2 z-[1000] bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
+        <div className="absolute bottom-44 left-2 right-2 z-[1000] bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Navigation size={18} className="text-purple-600" />
@@ -1114,7 +1121,7 @@ export default function PetaClient({
 
       {/* Tombol kanan bawah */}
       {!navigating && !routeInfo && (
-        <div className="absolute bottom-16 right-3 z-[1000] flex flex-col gap-2">
+        <div className="absolute bottom-36 right-3 z-[1000] flex flex-col gap-2">
 <button
             onClick={toggleTraffic}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
@@ -1160,7 +1167,7 @@ export default function PetaClient({
 
       {/* Bottom action bar */}
       {navigating ? (
-        <div className="absolute bottom-2 left-2 right-2 z-[1000]">
+        <div className="absolute bottom-[5.5rem] left-2 right-2 z-[1000]">
           <button
             onClick={stopNavigation}
             className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg"
@@ -1169,7 +1176,7 @@ export default function PetaClient({
           </button>
         </div>
       ) : (
-        <div className="absolute bottom-2 left-2 right-2 z-[1000] flex gap-2">
+        <div className="absolute bottom-[5.5rem] left-2 right-2 z-[1000] flex gap-2">
           {mode === "view" && !routeInfo && (
             <>
               <button
@@ -1201,6 +1208,7 @@ export default function PetaClient({
 
       {/* Map */}
       <MapContainer center={[2.8450, 117.3680]} zoom={14} style={{ height: "100%", width: "100%" }}>
+        <MapSizeFixer />
         <TileLayer
           attribution='&copy; OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
