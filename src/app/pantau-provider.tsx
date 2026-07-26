@@ -5,7 +5,9 @@
 // saat pengguna membuka Catat Gowes, Peta, atau fitur lain.
 import { type ReactNode, createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { type GeoPos, type WatchHandle, startWatch, toGeoPos, isNativeApp } from "@/lib/native-geo";
+import { type GeoPos, type WatchHandle, startWatch, toGeoPos, isNativeApp } from "@/lib/native-geo";const PANTAU_SESSION_KEY = "bug-pantau-session";
+
+
 
 type WakeLockLike = { release: () => Promise<void> };
 
@@ -52,10 +54,21 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      if (sharing) window.sessionStorage.setItem("bug-activity-active", "1");
-      else window.sessionStorage.removeItem("bug-activity-active");
+      // Kunci khusus pantau (dulu satu kunci dengan gowes → saling menghapus)
+      if (sharing) window.sessionStorage.setItem("bug-pantau-active", "1");
+      else window.sessionStorage.removeItem("bug-pantau-active");
+      // Simpan sesi agar TAHAN PUTUS: bila halaman ter-restart, berbagi lokasi
+      // dilanjutkan otomatis tanpa perlu menekan tombol lagi.
+      if (sharing && sessionId) {
+        window.localStorage.setItem(
+          PANTAU_SESSION_KEY,
+          JSON.stringify({ v: 1, sessionId, at: Date.now() })
+        );
+      } else {
+        window.localStorage.removeItem(PANTAU_SESSION_KEY);
+      }
     } catch { /* abaikan */ }
-  }, [sharing]);
+  }, [sharing, sessionId]);
 
   const acquireWake = useCallback(async () => {
     try {
@@ -183,6 +196,52 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
     } finally {
       setStarting(false);
     }
+  }, [acquireWake, sendPosition]);
+
+  // ---------- TAHAN PUTUS: lanjutkan sesi berbagi yang tertinggal ----------
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || typeof window === "undefined") return;
+    restoredRef.current = true;
+    (async () => {
+      try {
+        const raw = window.localStorage.getItem(PANTAU_SESSION_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw) as { v?: number; sessionId?: string; at?: number };
+        if (!saved?.sessionId || !saved.at || Date.now() - saved.at > 12 * 3600 * 1000) {
+          window.localStorage.removeItem(PANTAU_SESSION_KEY);
+          return;
+        }
+        // Pastikan sesinya memang masih aktif di server
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("live_sessions")
+          .select("id, active")
+          .eq("id", saved.sessionId)
+          .single();
+        if (!data || data.active !== true) {
+          window.localStorage.removeItem(PANTAU_SESSION_KEY);
+          return;
+        }
+        setSessionId(saved.sessionId);
+        sessionRef.current = saved.sessionId;
+        setSharing(true);
+        sharingRef.current = true;
+        acquireWake();
+        lastSentRef.current = 0;
+        watchRef.current = startWatch(
+          (p) => sendPosition(p, false),
+          (msg) => setError(msg),
+          {
+            title: "BUG — Teman Pantau",
+            message: "Membagikan lokasimu ke keluarga…",
+            distanceFilter: 0,
+          }
+        );
+      } catch {
+        /* abaikan */
+      }
+    })();
   }, [acquireWake, sendPosition]);
 
   const stop = useCallback(async () => {

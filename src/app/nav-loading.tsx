@@ -7,9 +7,6 @@
 // durasi minimum singkat agar tidak berkedip saat halaman terbuka instan.
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useGowes } from "./gowes-provider";
-import { usePantau } from "./pantau-provider";
-import { useNav } from "./nav-provider";
 
 type NavLoadingValue = {
   loading: boolean;
@@ -49,18 +46,6 @@ export default function NavLoadingProvider({ children }: { children: React.React
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Saat ada sesi GPS berjalan (catat gowes / teman pantau / navigasi), tampilkan
-  // versi RINGAN: bilah tipis di atas. Overlay layar penuh ber-efek blur terbukti
-  // terlalu berat bagi WebView saat GPS + peta aktif — halaman bisa ter-restart
-  // diam-diam dan sesi pencatatan ikut mati. Loading tetap terlihat, tanpa risiko.
-  const gowes = useGowes();
-  const pantau = usePantau();
-  const nav = useNav();
-  const activityRunning =
-    gowes.status === "tracking" ||
-    gowes.status === "paused" ||
-    pantau.sharing ||
-    Boolean(nav.navInfo);
 
   const startNavigation = useCallback((href?: string) => {
     // Abaikan bila menuju halaman yang sedang dibuka
@@ -120,7 +105,9 @@ export default function NavLoadingProvider({ children }: { children: React.React
   return (
     <NavLoadingContext.Provider value={{ loading, startNavigation }}>
       {children}
-      {loading && (activityRunning ? <NavLoadingBar /> : <NavLoadingOverlay />)}
+      {/* Overlay penuh dipakai di SEMUA perpindahan agar konsisten. Aman
+          sekarang: sesi gowes & pantau tahan-putus (dipulihkan otomatis). */}
+      {loading && <NavLoadingOverlay />}
     </NavLoadingContext.Provider>
   );
 }
@@ -203,20 +190,3 @@ function NavLoadingOverlay() {
   );
 }
 
-// Versi RINGAN: bilah tipis bergerak di bagian atas layar.
-// Dipakai saat ada sesi GPS berjalan — tanpa menutupi layar, tanpa efek berat,
-// sehingga pencatatan gowes / teman pantau tidak terganggu.
-function NavLoadingBar() {
-  return (
-    <div className="fixed top-0 left-0 right-0 z-[3000] h-[3px] bg-slate-900/30 overflow-hidden" aria-hidden="true">
-      <div className="nav-bar-stripe h-full w-1/3 bg-gradient-to-r from-lime-300 to-emerald-500 rounded-full" />
-      <style>{`
-        .nav-bar-stripe { animation: navBarSlide 900ms ease-in-out infinite; }
-        @keyframes navBarSlide {
-          0%   { transform: translateX(-100%); }
-          100% { transform: translateX(300%); }
-        }
-      `}</style>
-    </div>
-  );
-}

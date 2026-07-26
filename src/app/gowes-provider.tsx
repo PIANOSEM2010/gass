@@ -7,6 +7,12 @@ export type GowesStatus = "idle" | "tracking" | "paused" | "finished" | "saving"
 export type GowesStats = { distanceM: number; durationS: number; elevM: number; startedAt: number; endedAt: number };
 type WakeLockLike = { release: () => Promise<void> };
 
+// Kunci penyimpanan sesi: dipakai agar pencatatan TAHAN PUTUS — bila halaman
+// ter-restart (WebView kehabisan memori, aplikasi dimuat ulang, dsb), sesi
+// dipulihkan otomatis dan pencatatan lanjut tanpa kehilangan data.
+const GOWES_SESSION_KEY = "bug-gowes-session";
+const MAX_SAVED_POINTS = 30000;
+
 function haversine(a: Pt, b: Pt): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -73,8 +79,10 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     const active = status === "tracking" || status === "paused";
     try {
-      if (active) window.sessionStorage.setItem("bug-activity-active", "1");
-      else window.sessionStorage.removeItem("bug-activity-active");
+      // Kunci khusus gowes. Dulu gowes & pantau memakai satu kunci yang sama,
+      // sehingga salah satu bisa menghapus penanda milik yang lain.
+      if (active) window.sessionStorage.setItem("bug-gowes-active", "1");
+      else window.sessionStorage.removeItem("bug-gowes-active");
     } catch { /* abaikan */ }
   }, [status]);
 
@@ -224,6 +232,98 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     distRef.current = 0; elevRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastAltRef.current = null;
     startRef.current = 0; endRef.current = 0; pausedMsRef.current = 0; pauseStartRef.current = 0;
   }, [stopTracking]);
+
+  // ---------- TAHAN PUTUS: simpan & pulihkan sesi ----------
+  const persistSession = useCallback((st: GowesStatus) => {
+    if (typeof window === "undefined") return;
+    try {
+      if (st === "idle" || st === "saved") {
+        window.localStorage.removeItem(GOWES_SESSION_KEY);
+        return;
+      }
+      const pts = pathRef.current.length > MAX_SAVED_POINTS
+        ? pathRef.current.slice(-MAX_SAVED_POINTS)
+        : pathRef.current;
+      window.localStorage.setItem(
+        GOWES_SESSION_KEY,
+        JSON.stringify({
+          v: 1,
+          status: st,
+          startedAt: startRef.current,
+          endedAt: endRef.current,
+          pausedMs: pausedMsRef.current,
+          pauseStart: pauseStartRef.current,
+          dist: distRef.current,
+          elev: elevRef.current,
+          // koordinat dipendekkan agar hemat ruang
+          path: pts.map((pt) => [Number(pt.lat.toFixed(6)), Number(pt.lng.toFixed(6))]),
+          at: Date.now(),
+        })
+      );
+    } catch {
+      /* penyimpanan penuh / tidak tersedia — jangan ganggu pencatatan */
+    }
+  }, []);
+
+  // Simpan tiap kali status berubah, dan berkala selama merekam
+  useEffect(() => {
+    persistSession(status);
+    if (status !== "tracking") return;
+    const iv = setInterval(() => persistSession("tracking"), 5000);
+    return () => clearInterval(iv);
+  }, [status, persistSession]);
+
+  // Pulihkan sesi yang tertinggal saat provider pertama kali dijalankan
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || typeof window === "undefined") return;
+    restoredRef.current = true;
+    try {
+      const raw = window.localStorage.getItem(GOWES_SESSION_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        v?: number; status?: GowesStatus; startedAt?: number; endedAt?: number;
+        pausedMs?: number; pauseStart?: number; dist?: number; elev?: number;
+        path?: [number, number][];
+      };
+      if (!saved || saved.v !== 1) return;
+      if (saved.status !== "tracking" && saved.status !== "paused" && saved.status !== "finished") return;
+      // Sesi lebih dari 24 jam dianggap kedaluwarsa
+      if (!saved.startedAt || Date.now() - saved.startedAt > 24 * 3600 * 1000) {
+        window.localStorage.removeItem(GOWES_SESSION_KEY);
+        return;
+      }
+
+      startRef.current = saved.startedAt;
+      endRef.current = saved.endedAt || 0;
+      pausedMsRef.current = saved.pausedMs || 0;
+      pauseStartRef.current = saved.pauseStart || 0;
+      distRef.current = saved.dist || 0;
+      elevRef.current = saved.elev || 0;
+      pathRef.current = Array.isArray(saved.path)
+        ? saved.path.map(([lat, lng]) => ({ lat, lng }))
+        : [];
+      // Titik acuan dikosongkan agar perpindahan selama jeda/putus tidak
+      // dihitung sebagai jarak melompat
+      lastPtRef.current = null;
+      lastTimeRef.current = 0;
+      lastAltRef.current = null;
+
+      setDistance(distRef.current);
+      setElev(elevRef.current);
+      const basis = saved.status === "paused" && saved.pauseStart ? saved.pauseStart : Date.now();
+      setDuration(Math.max(0, Math.floor((basis - startRef.current - pausedMsRef.current) / 1000)));
+      setStatus(saved.status);
+
+      if (saved.status === "tracking") {
+        acquireWake();
+        beginTimer();
+        beginWatch();
+      }
+    } catch {
+      /* data rusak — abaikan */
+    }
+  }, [acquireWake, beginTimer, beginWatch]);
 
   const getStats = useCallback((): GowesStats => ({
     distanceM: distRef.current, durationS: duration, elevM: elevRef.current,

@@ -39,7 +39,12 @@ export default function SessionKeeper() {
           // Reload hanya perlu agar Server Component ikut mengenali login —
           // tapi reload mematikan pencatatan yang sedang berjalan. Jadi lewati
           // reload bila ada aktivitas aktif (ditandai flag di bawah).
-          const busy = typeof window !== "undefined" && window.sessionStorage.getItem("bug-activity-active") === "1";
+          // Jangan muat ulang bila ada aktivitas berjalan (gowes atau pantau) —
+          // masing-masing punya penandanya sendiri.
+          const busy =
+            typeof window !== "undefined" &&
+            (window.sessionStorage.getItem("bug-gowes-active") === "1" ||
+              window.sessionStorage.getItem("bug-pantau-active") === "1");
           if (!busy) window.location.reload();
         } else {
           // Cadangan sudah tidak berlaku (mis. user memang logout) — buang.
