@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { BUILD_TAG } from "@/lib/version";
 import { redirect } from "next/navigation";
 import LogoutButton from "./logout-button";
 
@@ -32,6 +33,8 @@ export default async function ProfilPage() {
         <a href="/admin" className="block w-full mt-6 bg-purple-600 text-white py-2 rounded-lg font-medium text-center">Buka Admin Panel</a>
       )}
       <LogoutButton />
+      {/* Penanda versi: untuk memastikan versi mana yang sedang hidup */}
+      <p className="mt-6 text-center text-[11px] text-gray-400">BUG {BUILD_TAG}</p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 // src/app/api/activity/route.ts
+import { createClient } from "@/lib/supabase/server";
 // Simpan ride + hitung streak berdasar TOTAL jarak hari itu (service role, bypass RLS).
 // Elevasi dihitung akurat dari DEM via Open-Meteo (fallback ke estimasi GPS dari klien).
 export const runtime = "nodejs";
@@ -48,7 +49,15 @@ export async function POST(req: Request) {
     if (!url || !key) return Response.json({ ok: false, error: "Supabase env belum lengkap" }, { status: 500 });
 
     const b = await req.json().catch(() => ({}));
-    const userId = typeof b?.userId === "string" ? b.userId : null;
+    // Utamakan identitas dari SESI server (aman) — nilai dari badan permintaan
+    // hanya dipakai sebagai cadangan agar penyimpanan tidak gagal.
+    let userId: string | null = null;
+    try {
+      const supa = await createClient();
+      const { data: { user } } = await supa.auth.getUser();
+      userId = user?.id ?? null;
+    } catch { /* lanjut ke cadangan */ }
+    if (!userId) userId = typeof b?.userId === "string" ? b.userId : null;
     if (!userId) return Response.json({ ok: false, error: "userId kosong" }, { status: 400 });
 
     const distance_m = Math.max(0, Math.round(Number(b?.distance_m) || 0));

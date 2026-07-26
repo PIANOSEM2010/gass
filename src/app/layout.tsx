@@ -8,18 +8,13 @@ import NavLoadingProvider from "./nav-loading";
 import SosAlertProvider from "./sos-alert-provider";
 import InstallPrompt from "./install-prompt";
 import type { Metadata, Viewport } from "next";
-import { Inter, Barlow_Condensed } from "next/font/google";
+// build-test
 import "./globals.css";
 import Navbar from "@/components/navbar";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
+const inter = { variable: "" };
 // Font display bergaya atletik/racing untuk judul & angka besar
-const barlow = Barlow_Condensed({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  style: ["normal", "italic"],
-  variable: "--font-display",
-});
+const barlow = { variable: "" };
 
 export const metadata: Metadata = {
   title: "BUG - Bulungan untuk Goweser",
