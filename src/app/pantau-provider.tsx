@@ -53,6 +53,10 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   // memutus berbagi lokasi yang sedang berjalan).
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // JANGAN menyimpan/menghapus sebelum pemulihan selesai: pada pemuatan awal
+    // status sharing masih false, sehingga sesi tersimpan bisa terhapus lebih
+    // dulu dan pemulihan tidak pernah menemukan apa pun.
+    if (!restoreDoneRef.current) return;
     try {
       // Kunci khusus pantau (dulu satu kunci dengan gowes → saling menghapus)
       if (sharing) window.sessionStorage.setItem("bug-pantau-active", "1");
@@ -199,48 +203,66 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
   }, [acquireWake, sendPosition]);
 
   // ---------- TAHAN PUTUS: lanjutkan sesi berbagi yang tertinggal ----------
+  // Dijalankan SINKRON: berbagi langsung dihidupkan kembali begitu sesi
+  // tersimpan ditemukan, tanpa menunggu jawaban server. Verifikasi ke server
+  // dilakukan di belakang; berbagi baru dihentikan bila server benar-benar
+  // menyatakan sesi sudah tidak aktif. (Versi lama menunggu await lebih dulu,
+  // dan bila jalur itu gagal, berbagi tidak pernah pulih.)
   const restoredRef = useRef(false);
+  const restoreDoneRef = useRef(false);
   useEffect(() => {
     if (restoredRef.current || typeof window === "undefined") return;
     restoredRef.current = true;
+
+    let saved: { sessionId?: string; at?: number } | null = null;
+    try {
+      const raw = window.localStorage.getItem(PANTAU_SESSION_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch {
+      saved = null;
+    }
+    const segar = Boolean(saved?.sessionId && saved?.at && Date.now() - (saved.at as number) < 12 * 3600 * 1000);
+    if (!segar) {
+      try { window.localStorage.removeItem(PANTAU_SESSION_KEY); } catch { /* abaikan */ }
+      restoreDoneRef.current = true;
+      return;
+    }
+
+    const id = saved!.sessionId as string;
+    setSessionId(id);
+    sessionRef.current = id;
+    setSharing(true);
+    sharingRef.current = true;
+    acquireWake();
+    lastSentRef.current = 0;
+    try {
+      watchRef.current = startWatch(
+        (p) => sendPosition(p, false),
+        (msg) => setError(msg),
+        { title: "BUG — Teman Pantau", message: "Membagikan lokasimu ke keluarga…", distanceFilter: 0 }
+      );
+    } catch { /* GPS belum siap — pengiriman berikutnya tetap dicoba */ }
+    restoreDoneRef.current = true;
+
+    // Verifikasi di belakang: hentikan hanya bila server bilang sudah tidak aktif
     (async () => {
       try {
-        const raw = window.localStorage.getItem(PANTAU_SESSION_KEY);
-        if (!raw) return;
-        const saved = JSON.parse(raw) as { v?: number; sessionId?: string; at?: number };
-        if (!saved?.sessionId || !saved.at || Date.now() - saved.at > 12 * 3600 * 1000) {
-          window.localStorage.removeItem(PANTAU_SESSION_KEY);
-          return;
-        }
-        // Pastikan sesinya memang masih aktif di server
         const supabase = createClient();
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("live_sessions")
           .select("id, active")
-          .eq("id", saved.sessionId)
+          .eq("id", id)
           .single();
-        if (!data || data.active !== true) {
-          window.localStorage.removeItem(PANTAU_SESSION_KEY);
-          return;
+        if (!error && data && data.active !== true) {
+          watchRef.current?.stop();
+          watchRef.current = null;
+          setSharing(false);
+          sharingRef.current = false;
+          setSessionId(null);
+          sessionRef.current = null;
+          try { window.localStorage.removeItem(PANTAU_SESSION_KEY); } catch { /* abaikan */ }
         }
-        setSessionId(saved.sessionId);
-        sessionRef.current = saved.sessionId;
-        setSharing(true);
-        sharingRef.current = true;
-        acquireWake();
-        lastSentRef.current = 0;
-        watchRef.current = startWatch(
-          (p) => sendPosition(p, false),
-          (msg) => setError(msg),
-          {
-            title: "BUG — Teman Pantau",
-            message: "Membagikan lokasimu ke keluarga…",
-            distanceFilter: 0,
-          }
-        );
-      } catch {
-        /* abaikan */
-      }
+      } catch { /* gagal memeriksa — biarkan berbagi tetap jalan */ }
     })();
   }, [acquireWake, sendPosition]);
 
