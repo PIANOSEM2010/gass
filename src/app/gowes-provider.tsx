@@ -265,8 +265,10 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Simpan tiap kali status berubah, dan berkala selama merekam
+  // Simpan tiap kali status berubah, dan berkala selama merekam.
+  // Menunggu pemulihan selesai supaya tidak menghapus sesi yang tersimpan.
   useEffect(() => {
+    if (!restoreDoneRef.current) return;
     persistSession(status);
     if (status !== "tracking") return;
     const iv = setInterval(() => persistSession("tracking"), 5000);
@@ -275,6 +277,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
 
   // Pulihkan sesi yang tertinggal saat provider pertama kali dijalankan
   const restoredRef = useRef(false);
+  const restoreDoneRef = useRef(false);
   useEffect(() => {
     if (restoredRef.current || typeof window === "undefined") return;
     restoredRef.current = true;
@@ -322,6 +325,8 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       /* data rusak — abaikan */
+    } finally {
+      restoreDoneRef.current = true;
     }
   }, [acquireWake, beginTimer, beginWatch]);
 

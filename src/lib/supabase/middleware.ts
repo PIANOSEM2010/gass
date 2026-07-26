@@ -23,8 +23,17 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // PENTING: getUser() menyegarkan token & menulis ulang cookie sesi
-  await supabase.auth.getUser()
+  // PENTING: getUser() menyegarkan token & menulis ulang cookie sesi.
+  // TAPI dilewati untuk permintaan PREFETCH: Next.js memuat-awal banyak tautan
+  // sekaligus, dan penyegaran token paralel bisa membuat sesi dianggap tidak
+  // valid (refresh token berputar). Akibatnya halaman server mengalihkan ke
+  // login dan Next.js memuat ulang penuh -> semua sesi GPS mati.
+  const isPrefetch =
+    request.headers.get('next-router-prefetch') === '1' ||
+    request.headers.get('purpose') === 'prefetch'
+  if (!isPrefetch) {
+    await supabase.auth.getUser()
+  }
 
   return supabaseResponse
 }
