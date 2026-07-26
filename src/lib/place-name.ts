@@ -13,20 +13,24 @@ function keyOf(lat: number, lng: number): string {
   return `${lat.toFixed(2)},${lng.toFixed(2)}`;
 }
 
-function pickName(a: Record<string, string>): string {
-  // Prioritas tingkat kota/kabupaten lebih dulu (city untuk kota seperti
-  // Tarakan, county untuk kabupaten seperti Bulungan), baru turun ke
-  // tingkat yang lebih kecil, dan provinsi sebagai pilihan terakhir.
+export function pickName(a: Record<string, string>): string {
+  // Di Indonesia, tingkat kabupaten/kota hampir selalu diberi label eksplisit
+  // ("Kabupaten Bulungan", "Kota Tarakan", "Kabupaten Malinau"). Itu penanda
+  // paling bisa dipercaya, jadi dicari lebih dulu di SELURUH field alamat —
+  // sebelum jatuh ke urutan umum di bawahnya.
+  const values = Object.values(a || {}).filter((v) => typeof v === "string");
+  const kabKota = values.find((v) => /^(Kabupaten|Kota)\s+/i.test(v));
   const raw =
-    a.city ||
-    a.county ||
+    kabKota ||
+    a.county ||        // umumnya memuat kabupaten/kota
+    a.city ||          // kota
+    a.regency ||
     a.municipality ||
     a.town ||
     a.city_district ||
-    a.regency ||
     a.village ||
     a.suburb ||
-    a.state ||
+    a.state ||         // provinsi sebagai pilihan terakhir
     "";
   return raw
     .replace(/^(Kabupaten|Kota Administrasi|Kota|Kecamatan|Kelurahan|Desa|Daerah Khusus Ibukota)\s+/i, "")
@@ -44,12 +48,30 @@ async function fetchOnce(lat: number, lng: number, zoom: number): Promise<string
 }
 
 // Ambil nama tempat dari satu titik. Mengembalikan "" bila gagal.
+//
+// Utamakan lewat server aplikasi (/api/place-name): di sana permintaan
+// mengirim identitas aplikasi & hasilnya di-cache bersama, jadi lebih andal.
+// Bila route tidak tersedia, baru minta langsung dari layanan peta.
 export async function reverseGeocodePlace(lat: number, lng: number): Promise<string> {
   const k = keyOf(lat, lng);
   const hit = cache.get(k);
   if (hit !== undefined) return hit;
 
-  // Coba tingkat kota/kabupaten dulu; bila kosong, coba tingkat lebih detail.
+  // 1. Lewat server aplikasi
+  try {
+    const res = await fetch(`/api/place-name?lat=${lat}&lng=${lng}`, { cache: "no-store" });
+    if (res.ok) {
+      const j = (await res.json()) as { name?: string };
+      if (j?.name) {
+        cache.set(k, j.name);
+        return j.name;
+      }
+    }
+  } catch {
+    /* lanjut ke cara langsung */
+  }
+
+  // 2. Langsung ke layanan peta (cadangan)
   for (const zoom of [10, 12]) {
     try {
       const name = await fetchOnce(lat, lng, zoom);
@@ -58,7 +80,6 @@ export async function reverseGeocodePlace(lat: number, lng: number): Promise<str
         return name;
       }
     } catch {
-      // Jeda singkat lalu lanjut percobaan berikutnya (Nominatim membatasi laju)
       await new Promise((r) => setTimeout(r, 700));
     }
   }

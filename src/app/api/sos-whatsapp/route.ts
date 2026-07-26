@@ -1,29 +1,54 @@
 // src/app/api/sos-whatsapp/route.ts
-// Mengirim pesan SOS otomatis via gateway Fonnte ke kontak darurat pengguna + admin.
-// Token Fonnte HANYA dibaca dari server (env), tidak pernah terekspos ke browser.
+// Mengirim pesan SOS otomatis ke kontak darurat pengguna + admin.
+//
+// Pengirim utama: TELNYX (SMS atau WhatsApp, lihat src/lib/telnyx.ts).
+// Fonnte hanya dipakai sebagai jaring pengaman bila Telnyx belum siap/gagal —
+// karena ini fitur darurat, pesan tidak boleh gagal terkirim total.
+//
+// Pilih pengirim lewat env SOS_PROVIDER: "telnyx" (bawaan) | "fonnte" | "both".
+// Semua kunci HANYA dibaca di server, tidak pernah sampai ke browser.
+
+import { sendViaTelnyx, normalizeTargets, isTelnyxConfigured } from "@/lib/telnyx";
 
 export const runtime = "nodejs";
 
-function normalizeNumbers(list: string[]): string[] {
-  const out: string[] = [];
-  for (const raw of list) {
-    if (!raw) continue;
-    const digits = String(raw).replace(/[^\d]/g, "");
-    if (digits.length >= 8) out.push(digits);
+// Fonnte memakai nomor tanpa tanda "+" (mis. 6281...)
+function toFonnteNumbers(list: string[]): string[] {
+  return normalizeTargets(list).map((n) => n.replace(/^\+/, ""));
+}
+
+async function sendViaFonnte(rawTargets: string[], message: string) {
+  const token = process.env.FONNTE_TOKEN;
+  if (!token) return { sent: 0, failed: rawTargets.length, errors: ["FONNTE_TOKEN belum di-set"] };
+  const targets = toFonnteNumbers(rawTargets);
+  if (targets.length === 0) return { sent: 0, failed: 0, errors: ["Tidak ada nomor tujuan"] };
+
+  const params = new URLSearchParams();
+  params.append("target", targets.join(","));
+  params.append("message", message);
+  params.append("countryCode", "62");
+
+  try {
+    const res = await fetch("https://api.fonnte.com/send", {
+      method: "POST",
+      headers: {
+        Authorization: token, // Fonnte tidak memakai "Bearer"
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      return { sent: 0, failed: targets.length, errors: [`Fonnte ${res.status}: ${JSON.stringify(data).slice(0, 200)}`] };
+    }
+    return { sent: targets.length, failed: 0, errors: [] as string[] };
+  } catch (e) {
+    return { sent: 0, failed: targets.length, errors: [e instanceof Error ? e.message : String(e)] };
   }
-  return out;
 }
 
 export async function POST(req: Request) {
   try {
-    const token = process.env.FONNTE_TOKEN;
-    if (!token) {
-      return Response.json(
-        { ok: false, error: "FONNTE_TOKEN belum di-set di environment" },
-        { status: 500 }
-      );
-    }
-
     const body = await req.json().catch(() => ({}));
     const message: string = typeof body?.message === "string" ? body.message : "";
     const contacts: string[] = Array.isArray(body?.contacts) ? body.contacts : [];
@@ -32,42 +57,55 @@ export async function POST(req: Request) {
       return Response.json({ ok: false, error: "Pesan kosong" }, { status: 400 });
     }
 
-    // Nomor admin dari env (boleh lebih dari satu, pisahkan dengan koma)
+    // Nomor admin dari env (boleh lebih dari satu, dipisah koma)
     const adminNumbers = (process.env.ADMIN_WHATSAPP || "").split(",");
-
-    // Gabungkan kontak darurat pengguna + admin, bersihkan & buang duplikat
-    const targets = Array.from(new Set(normalizeNumbers([...contacts, ...adminNumbers])));
+    const rawTargets = [...contacts, ...adminNumbers].filter(Boolean);
+    const targets = normalizeTargets(rawTargets);
 
     if (targets.length === 0) {
       return Response.json({ ok: false, error: "Tidak ada nomor tujuan" }, { status: 400 });
     }
 
-    // Fonnte: satu request, banyak tujuan (dipisah koma).
-    // countryCode 62 otomatis mengubah angka 0 di depan menjadi 62.
-    const params = new URLSearchParams();
-    params.append("target", targets.join(","));
-    params.append("message", message);
-    params.append("countryCode", "62");
+    const provider = (process.env.SOS_PROVIDER || "telnyx").toLowerCase();
+    const useTelnyx = provider !== "fonnte" && isTelnyxConfigured();
 
-    const fonnteRes = await fetch("https://api.fonnte.com/send", {
-      method: "POST",
-      headers: {
-        Authorization: token, // Fonnte tidak memakai "Bearer", token langsung
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
+    let telnyx: { sent: number; failed: number; errors: string[] } | null = null;
+    let fonnte: { sent: number; failed: number; errors: string[] } | null = null;
 
-    const data = await fonnteRes.json().catch(() => null);
+    if (useTelnyx) {
+      telnyx = await sendViaTelnyx(targets, message);
+      if (telnyx.errors.length > 0) console.error("[sos] Telnyx:", telnyx.errors);
+    }
 
-    if (!fonnteRes.ok) {
+    // Jaring pengaman: pakai Fonnte bila Telnyx tidak dipakai, tidak ada yang
+    // terkirim, atau memang diminta mengirim lewat keduanya.
+    const needFallback = provider === "fonnte" || provider === "both" || !telnyx || telnyx.sent === 0;
+    if (needFallback && process.env.FONNTE_TOKEN) {
+      fonnte = await sendViaFonnte(rawTargets, message);
+      if (fonnte.errors.length > 0) console.error("[sos] Fonnte:", fonnte.errors);
+    }
+
+    const totalSent = (telnyx?.sent || 0) + (fonnte?.sent || 0);
+    if (totalSent === 0) {
       return Response.json(
-        { ok: false, error: "Gateway Fonnte menolak permintaan", detail: data },
+        {
+          ok: false,
+          error: "Semua jalur pengiriman gagal",
+          targets: targets.length,
+          telnyx,
+          fonnte,
+        },
         { status: 502 }
       );
     }
 
-    return Response.json({ ok: true, targets: targets.length, fonnte: data });
+    return Response.json({
+      ok: true,
+      targets: targets.length,
+      provider: telnyx && telnyx.sent > 0 ? "telnyx" : "fonnte",
+      telnyx,
+      fonnte,
+    });
   } catch (err) {
     return Response.json(
       { ok: false, error: err instanceof Error ? err.message : "Kesalahan tak terduga" },

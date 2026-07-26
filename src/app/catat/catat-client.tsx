@@ -49,9 +49,16 @@ export default function CatatClient({
   // agar kartu & caption mengikuti lokasi gowes yang sebenarnya.
   const [placeName, setPlaceName] = useState("");
   const [placeLoading, setPlaceLoading] = useState(false);
+  const placeReqRef = useRef(false);   // pencarian nama daerah sudah dijalankan?
+  const mountedRef = useRef(true);
   const [cardPhoto, setCardPhoto] = useState<HTMLImageElement | null>(null);
   const [cardTransparent, setCardTransparent] = useState(false);
   const cardRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // Gambar kartu saat layar tersimpan tampil (atau saat template/warna/lokasi diubah).
   // Digambar lagi setelah font display selesai dimuat agar tipografinya benar.
@@ -79,24 +86,36 @@ export default function CatatClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, duration, savedElev, template, palette, placeName, cardPhoto, cardTransparent, placeLoading]);
 
-  // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk caption
+  // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk kartu & caption.
+  // Dicari SEKALI per perjalanan, dan TIDAK dibatalkan saat status berubah
+  // (finished -> saved), supaya penanda "sedang mencari" selalu dimatikan —
+  // dulu di sinilah kartu bisa terkunci dan tidak pernah tergambar.
   useEffect(() => {
-    // Cari nama daerah SEJAK perjalanan diakhiri (status "finished"), supaya
-    // saat layar kartu muncul namanya sudah siap — bukan sempat salah dulu.
+    // Perjalanan baru dimulai: siapkan pencarian ulang
+    if (status === "tracking" && placeReqRef.current) {
+      placeReqRef.current = false;
+      setPlaceName("");
+      return;
+    }
     if (status !== "finished" && status !== "saved") return;
-    if (placeName || placeLoading) return;
+    if (placeReqRef.current) return;
     const path = getPath();
     if (!path || path.length === 0) return;
-    let cancelled = false;
+
+    placeReqRef.current = true;
     setPlaceLoading(true);
+    // Pengaman: kartu tidak boleh tertahan lebih dari 3 detik apa pun yang terjadi
+    const guard = setTimeout(() => {
+      if (mountedRef.current) setPlaceLoading(false);
+    }, 3000);
+
     (async () => {
       const name = await placeNameFromPath(path);
-      if (!cancelled) {
-        if (name) setPlaceName(name);
-        setPlaceLoading(false);
-      }
+      clearTimeout(guard);
+      if (!mountedRef.current) return;
+      if (name) setPlaceName(name);
+      setPlaceLoading(false);
     })();
-    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 

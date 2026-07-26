@@ -24,8 +24,9 @@ export default async function GowesPage() {
     .select("user_id,current_streak,last_activity_date,total_distance_m,total_rides,full_name,organization")
     .order("current_streak", { ascending: false }).limit(100);
 
-  const today = witaDate(0), yest = witaDate(-1);
-  const alive = (d: string | null) => d === today || d === yest;
+  const today = witaDate(0), yest = witaDate(-1), dayBefore = witaDate(-2);
+  // Masa tenggang 2 hari: streak baru putus bila absen 2 hari berturut-turut
+  const alive = (d: string | null) => d === today || d === yest || d === dayBefore;
   const myStreak = mine && alive(mine.last_activity_date) ? mine.current_streak : 0;
 
   const board = (rows || [])

@@ -811,7 +811,9 @@ export default function PetaClient({
   const showLegend = mode === "view" && !routeInfo && !navigating && ((showTraffic && !!tomtomKey) || (showZones && zones.length > 0));
 
   return (
-    <div className="relative h-[calc(100vh-9rem)] w-full">
+    // Tinggi peta dibuat menempel tepat ke navbar (navbar = 4rem); margin bawah
+    // negatif membatalkan padding bawah <main> agar tidak ada celah abu-abu.
+    <div className="relative h-[calc(100vh-4rem)] -mb-20 w-full">
       {/* Banner navigasi */}
       {navigating && navInfo && (
         <div className="absolute top-2 left-2 right-2 z-[1100] bg-gradient-to-r from-purple-600 to-violet-700 text-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3">
