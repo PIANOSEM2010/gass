@@ -7,6 +7,9 @@
 // durasi minimum singkat agar tidak berkedip saat halaman terbuka instan.
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useGowes } from "./gowes-provider";
+import { usePantau } from "./pantau-provider";
+import { useNav } from "./nav-provider";
 
 type NavLoadingValue = {
   loading: boolean;
@@ -45,6 +48,19 @@ export default function NavLoadingProvider({ children }: { children: React.React
   const shownAtRef = useRef(0);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Saat ada sesi GPS berjalan (catat gowes / teman pantau / navigasi), tampilkan
+  // versi RINGAN: bilah tipis di atas. Overlay layar penuh ber-efek blur terbukti
+  // terlalu berat bagi WebView saat GPS + peta aktif — halaman bisa ter-restart
+  // diam-diam dan sesi pencatatan ikut mati. Loading tetap terlihat, tanpa risiko.
+  const gowes = useGowes();
+  const pantau = usePantau();
+  const nav = useNav();
+  const activityRunning =
+    gowes.status === "tracking" ||
+    gowes.status === "paused" ||
+    pantau.sharing ||
+    Boolean(nav.navInfo);
 
   const startNavigation = useCallback((href?: string) => {
     // Abaikan bila menuju halaman yang sedang dibuka
@@ -104,7 +120,7 @@ export default function NavLoadingProvider({ children }: { children: React.React
   return (
     <NavLoadingContext.Provider value={{ loading, startNavigation }}>
       {children}
-      {loading && <NavLoadingOverlay />}
+      {loading && (activityRunning ? <NavLoadingBar /> : <NavLoadingOverlay />)}
     </NavLoadingContext.Provider>
   );
 }
@@ -123,9 +139,6 @@ function NavLoadingOverlay() {
 
   return (
     <div className="fixed inset-0 z-[3000] flex flex-col items-center justify-center nav-loading-backdrop">
-      {/* Cahaya hijau lembut di belakang roda */}
-      <div className="absolute w-64 h-64 rounded-full bg-lime-400/15 blur-3xl" />
-
       <div className="relative flex items-center justify-center">
         {/* Roda sepeda berputar (perlahan & mulus) */}
         <svg width="128" height="128" viewBox="0 0 120 120" className="nav-wheel" aria-hidden="true">
@@ -169,11 +182,15 @@ function NavLoadingOverlay() {
       </div>
 
       <style>{`
+        /* Latar solid + gradasi radial saja. TANPA backdrop-filter: efek blur
+           layar penuh sangat berat bagi WebView (bisa membuat halaman
+           ter-restart saat peta & GPS aktif). Cahaya hijau dibuat lewat
+           gradasi, bukan filter blur, agar murah. */
         .nav-loading-backdrop {
-          background: radial-gradient(120% 120% at 50% 40%, rgba(6,12,10,0.72), rgba(2,6,4,0.90));
-          backdrop-filter: blur(16px) saturate(120%);
-          -webkit-backdrop-filter: blur(16px) saturate(120%);
-          animation: navFade 220ms ease-out;
+          background:
+            radial-gradient(38% 26% at 50% 42%, rgba(163,230,53,0.16), rgba(163,230,53,0) 70%),
+            radial-gradient(120% 120% at 50% 40%, #0a1410, #020604);
+          animation: navFade 200ms ease-out;
         }
         .nav-wheel { animation: navSpin 2.4s linear infinite; transform-origin: 50% 50%; }
         .nav-arc { animation: navSpin 1s cubic-bezier(0.5,0,0.5,1) infinite; transform-origin: 50% 50%; }
@@ -181,6 +198,24 @@ function NavLoadingOverlay() {
         @keyframes navSpin { to { transform: rotate(360deg); } }
         @keyframes navFade { from { opacity: 0; } to { opacity: 1; } }
         @keyframes navPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+      `}</style>
+    </div>
+  );
+}
+
+// Versi RINGAN: bilah tipis bergerak di bagian atas layar.
+// Dipakai saat ada sesi GPS berjalan — tanpa menutupi layar, tanpa efek berat,
+// sehingga pencatatan gowes / teman pantau tidak terganggu.
+function NavLoadingBar() {
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[3000] h-[3px] bg-slate-900/30 overflow-hidden" aria-hidden="true">
+      <div className="nav-bar-stripe h-full w-1/3 bg-gradient-to-r from-lime-300 to-emerald-500 rounded-full" />
+      <style>{`
+        .nav-bar-stripe { animation: navBarSlide 900ms ease-in-out infinite; }
+        @keyframes navBarSlide {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
       `}</style>
     </div>
   );
