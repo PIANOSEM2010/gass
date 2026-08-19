@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type MemberType = "pelajar" | "pekerja";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -31,16 +33,27 @@ export default function RegisterPage() {
           member_type: memberType,
           organization,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
+
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      setSuccess(true);
-      setLoading(false);
+      return;
     }
+
+    // Bila konfirmasi email DIMATIKAN di Supabase, signUp langsung memberi
+    // sesi aktif -> masuk saja ke aplikasi tanpa perlu buka email.
+    if (data.session) {
+      router.push("/");
+      router.refresh();
+      return;
+    }
+
+    // Bila konfirmasi email dinyalakan, tampilkan petunjuk cek email.
+    setSuccess(true);
+    setLoading(false);
   }
 
   if (success) {
