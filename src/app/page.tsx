@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IkonGowes } from "@/components/bug-icons";
 import { createClient } from "@/lib/supabase/server";
 import { Map, BookOpen, Siren, Megaphone, Users, Bike, Flame, ChevronRight, Trophy, Construction, BarChart3, Zap } from "lucide-react";
 
@@ -36,7 +37,34 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white pb-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white pb-8 relative">
+      {/* Tab atas: Forum & Kampanye tidak lagi butuh slot navbar sendiri */}
+      <div className="sticky top-0 z-[900] bg-white/95 backdrop-blur border-b border-gray-200 flex gap-5 px-5">
+        {[
+          { href: "/", label: "Umpan", aktif: true },
+          { href: "/forum", label: "Forum", aktif: false },
+          { href: "/kampanye", label: "Kampanye", aktif: false },
+        ].map((t) => (
+          <Link
+            key={t.href}
+            href={t.href}
+            className={`py-3 display-title text-sm tracking-wide border-b-2 ${
+              t.aktif ? "text-green-700 border-green-600" : "text-gray-400 border-transparent"
+            }`}
+          >
+            {t.label.toUpperCase()}
+          </Link>
+        ))}
+      </div>
+      {/* Tombol aksi utama: selalu terlihat, tidak perlu masuk menu */}
+      <Link
+        href="/catat"
+        className="fixed right-4 z-[1250] flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-400 to-emerald-500 pl-4 pr-5 py-3 shadow-lg shadow-emerald-600/30 active:scale-95 transition-transform"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 78px)" }}
+      >
+        <IkonGowes size={19} accent="#062014" />
+        <span className="display-title text-sm tracking-wide text-slate-950">CATAT GOWES</span>
+      </Link>
       {/* Hero: carbon-dark bergaya jersey balap */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-green-900 text-white px-5 pt-10 pb-12 rounded-b-[2.5rem] shadow-lg speed-lines">
         <div className="absolute -right-8 -bottom-8 opacity-[0.08]"><Bike size={210} /></div>

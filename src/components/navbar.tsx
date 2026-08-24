@@ -4,17 +4,18 @@ import { usePathname } from "next/navigation";
 import { useNavLoading } from "@/app/nav-loading";
 // Ikon khusus BUG (digambar sendiri) menggantikan ikon pustaka umum
 import {
-  IkonBeranda, IkonPeta, IkonGowes, IkonSos, IkonEdukasi, IkonProfil, IkonForum,
+  IkonBeranda, IkonPeta, IkonSos, IkonEdukasi, IkonProfil,
 } from "@/components/bug-icons";
 
+// Empat tab + tombol SOS di tengah (sesuai rancangan yang disetujui).
+// Catat Gowes dipindah ke tombol mengambang di halaman Umpan agar selalu
+// terlihat; Forum & Kampanye masuk ke tab atas halaman Umpan.
 const leftTabs = [
-  { href: "/", label: "Beranda", icon: IkonBeranda },
+  { href: "/", label: "Umpan", icon: IkonBeranda },
   { href: "/peta", label: "Peta", icon: IkonPeta },
-  { href: "/catat", label: "Gowes", icon: IkonGowes },
 ];
 const rightTabs = [
   { href: "/edukasi", label: "Edukasi", icon: IkonEdukasi },
-  { href: "/forum", label: "Forum", icon: IkonForum },
   { href: "/profil", label: "Profil", icon: IkonProfil },
 ];
 
