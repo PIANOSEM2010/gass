@@ -127,6 +127,11 @@ function NavLoadingOverlay() {
   return (
     <div className="fixed inset-0 z-[3000] flex flex-col items-center justify-center nav-loading-backdrop">
       <div className="relative flex items-center justify-center">
+        {/* Perisai diam sebagai bingkai (motif logo), roda berputar di dalamnya */}
+        <svg width="128" height="128" viewBox="0 0 64 64" className="absolute" aria-hidden="true">
+          <path d="M32 5 L56 14 V31 C56 45.5 45.5 55.5 32 60 C18.5 55.5 8 45.5 8 31 V14 Z"
+            fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="2.2" strokeLinejoin="round" />
+        </svg>
         {/* Roda sepeda berputar (perlahan & mulus) */}
         <svg width="128" height="128" viewBox="0 0 120 120" className="nav-wheel" aria-hidden="true">
           <defs>

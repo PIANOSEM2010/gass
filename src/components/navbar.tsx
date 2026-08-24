@@ -2,24 +2,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNavLoading } from "@/app/nav-loading";
-import { Home, Map, Siren, BookOpen, User, Bike, MessageSquare, type LucideIcon } from "lucide-react";
+// Ikon khusus BUG (digambar sendiri) menggantikan ikon pustaka umum
+import {
+  IkonBeranda, IkonPeta, IkonGowes, IkonSos, IkonEdukasi, IkonProfil, IkonForum,
+} from "@/components/bug-icons";
 
 const leftTabs = [
-  { href: "/", label: "Beranda", icon: Home },
-  { href: "/peta", label: "Peta", icon: Map },
-  { href: "/catat", label: "Gowes", icon: Bike },
+  { href: "/", label: "Beranda", icon: IkonBeranda },
+  { href: "/peta", label: "Peta", icon: IkonPeta },
+  { href: "/catat", label: "Gowes", icon: IkonGowes },
 ];
 const rightTabs = [
-  { href: "/edukasi", label: "Edukasi", icon: BookOpen },
-  { href: "/forum", label: "Forum", icon: MessageSquare },
-  { href: "/profil", label: "Profil", icon: User },
+  { href: "/edukasi", label: "Edukasi", icon: IkonEdukasi },
+  { href: "/forum", label: "Forum", icon: IkonForum },
+  { href: "/profil", label: "Profil", icon: IkonProfil },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const { startNavigation } = useNavLoading();
 
-  function Tab({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
+  function Tab({ href, label, icon: Icon }: { href: string; label: string; icon: (p: { size?: number; strokeWidth?: number }) => React.ReactElement }) {
     const active = pathname === href;
     return (
       <Link href={href} prefetch={false} onClick={() => startNavigation(href)} className="flex flex-col items-center justify-center flex-1 h-full group">
@@ -43,7 +46,7 @@ export default function Navbar() {
         {/* SOS: tombol tengah, paling besar, menonjol ke atas */}
         <Link href="/sos" prefetch={false} onClick={() => startNavigation("/sos")} className="absolute left-1/2 -translate-x-1/2 -top-6 flex flex-col items-center">
           <span className="sos-pulse w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center shadow-lg border-4 border-slate-950 active:scale-95 transition-transform">
-            <Siren size={30} />
+            <IkonSos size={28} />
           </span>
           <span className={`eyebrow mt-1 !text-[10px] ${pathname === "/sos" ? "text-red-400" : "text-red-500"}`}>SOS</span>
         </Link>
