@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +33,24 @@ function LogoGoogle() {
   );
 }
 
+// Tanda centang kecil yang muncul saat isian sudah sah.
+function TandaSah({ tampil, kanan = 14 }: { tampil: boolean; kanan?: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full bg-lime-400 text-slate-950"
+      style={{
+        right: kanan,
+        opacity: tampil ? 1 : 0,
+        transform: `translateY(-50%) scale(${tampil ? 1 : 0.5})`,
+        transition: "opacity .22s ease, transform .28s cubic-bezier(.22,1.6,.36,1)",
+      }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+    </span>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -42,8 +60,78 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // --- Tombol "tali pengikat" ---------------------------------------------
+  // Tombol Masuk baru benar-benar diam setelah kedua isian terisi sah. Selama
+  // belum, ia bergoyang; di perangkat ber-tetikus ia juga sedikit menghindar
+  // dari kursor. Penghindaran dibatasi (maksimal 4 kali) dan tidak pernah
+  // berlaku di layar sentuh, agar tombol tetap bisa ditekan siapa pun.
+  const emailSah = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const sandiSah = password.length >= 6;
+  const sisaIsian = (emailSah ? 0 : 1) + (sandiSah ? 0 : 1);
+  const [geser, setGeser] = useState({ x: 0, y: 0 });
+  const [getar, setGetar] = useState(false);
+  // Goyangan hanya muncul sesaat (2 putaran) setiap kali pengguna mengetik,
+  // lalu tombol diam kembali. Tombol yang bergerak terus-menerus akan sulit
+  // ditekan - sudah terbukti pada pengujian browser.
+  const [bergoyang, setBergoyang] = useState(false);
+  const goyangTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const picuGoyangan = useCallback(() => {
+    setBergoyang(false);
+    requestAnimationFrame(() => setBergoyang(true));
+    if (goyangTimer.current) clearTimeout(goyangTimer.current);
+    goyangTimer.current = setTimeout(() => setBergoyang(false), 1700);
+  }, []);
+  const lariRef = useRef(0);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const sandiRef = useRef<HTMLInputElement>(null);
+  const tombolRef = useRef<HTMLButtonElement>(null);
+  const [pakaiTetikus, setPakaiTetikus] = useState(false);
+
+  useEffect(() => {
+    setPakaiTetikus(
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+  }, []);
+
+  // Kembali ke tempat semula begitu kedua isian lengkap.
+  useEffect(() => { if (sisaIsian === 0) { setGeser({ x: 0, y: 0 }); lariRef.current = 0; } }, [sisaIsian]);
+
+  const hindari = useCallback((e: React.MouseEvent) => {
+    if (!pakaiTetikus || sisaIsian === 0 || lariRef.current >= 4) return;
+    const el = tombolRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    const jarak = Math.hypot(dx, dy) || 1;
+    if (jarak > 90) return;
+    // Semakin sedikit isian yang tersisa, semakin lemah larinya.
+    const kuat = sisaIsian === 2 ? 46 : 22;
+    lariRef.current += 1;
+    setGeser({
+      x: Math.max(-70, Math.min(70, (-dx / jarak) * kuat)),
+      y: Math.max(-22, Math.min(22, (-dy / jarak) * (kuat / 2.4))),
+    });
+  }, [pakaiTetikus, sisaIsian]);
+
+  // Ditekan saat isian belum lengkap: tombol bergetar lalu menuntun ke
+  // kolom yang masih kosong. Ini yang membuat animasinya tetap berguna.
+  function tuntunKeKolomKosong() {
+    setGetar(true);
+    setTimeout(() => setGetar(false), 360);
+    (!emailSah ? emailRef : sandiRef).current?.focus();
+  }
+
+  const pesanTombol = sisaIsian === 2
+    ? "Dua isian lagi sebelum tombol ini diam."
+    : sisaIsian === 1
+      ? (emailSah ? "Tinggal kata sandi — tombolnya mulai melambat." : "Tinggal email — tombolnya mulai melambat.")
+      : "Terkunci. Silakan masuk.";
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (sisaIsian > 0) { tuntunKeKolomKosong(); return; }
     setLoading(true);
     setError("");
     const supabase = createClient();
@@ -107,13 +195,17 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-2.5">
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            placeholder="nama@email.com"
-            className="w-full bg-[#0B1F18] border border-lime-400/15 rounded-xl px-4 py-3.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-lime-400/50" />
           <div className="relative">
-            <input type={lihatSandi ? "text" : "password"} required value={password}
-              onChange={(e) => setPassword(e.target.value)} placeholder="Kata sandi"
-              className="w-full bg-[#0B1F18] border border-lime-400/15 rounded-xl px-4 py-3.5 pr-16 text-sm placeholder:text-slate-500 focus:outline-none focus:border-lime-400/50" />
+            <input ref={emailRef} type="email" required value={email} onChange={(e) => { setEmail(e.target.value); picuGoyangan(); }}
+              placeholder="nama@email.com"
+              className={`w-full bg-[#0B1F18] border rounded-xl px-4 py-3.5 pr-11 text-sm placeholder:text-slate-500 focus:outline-none transition-colors ${emailSah ? "border-lime-400/60" : "border-lime-400/15 focus:border-lime-400/50"}`} />
+            <TandaSah tampil={emailSah} />
+          </div>
+          <div className="relative">
+            <input ref={sandiRef} type={lihatSandi ? "text" : "password"} required value={password}
+              onChange={(e) => { setPassword(e.target.value); picuGoyangan(); }} placeholder="Kata sandi (min. 6 huruf)"
+              className={`w-full bg-[#0B1F18] border rounded-xl px-4 py-3.5 pr-[86px] text-sm placeholder:text-slate-500 focus:outline-none transition-colors ${sandiSah ? "border-lime-400/60" : "border-lime-400/15 focus:border-lime-400/50"}`} />
+            <TandaSah tampil={sandiSah} kanan={54} />
             <button type="button" onClick={() => setLihatSandi((v) => !v)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-lime-400">
               {lihatSandi ? "tutup" : "lihat"}
@@ -122,10 +214,26 @@ export default function LoginPage() {
 
           {error && <p className="text-red-400 text-xs pt-1">{error}</p>}
 
-          <button type="submit" disabled={loading}
-            className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 rounded-xl py-3.5 display-title text-base tracking-wide disabled:opacity-60 active:scale-[.98] transition-transform">
-            {loading ? "MEMPROSES…" : "MASUK"}
-          </button>
+          {/* Wadah dibuat lebih tinggi agar tombol punya ruang menghindar
+              tanpa menggeser tata letak di sekitarnya. */}
+          <div className="relative h-[52px] pt-1" onMouseMove={hindari}>
+            <button ref={tombolRef} type="submit" disabled={loading}
+              onClick={(e) => { if (sisaIsian > 0) { e.preventDefault(); tuntunKeKolomKosong(); } }}
+              aria-describedby="petunjuk-tombol"
+              className={`absolute inset-x-0 top-1 rounded-xl py-3.5 display-title text-base tracking-wide disabled:opacity-60 ${getar ? "bug-getar" : bergoyang && sisaIsian === 2 ? "bug-goyah-kuat" : bergoyang && sisaIsian === 1 ? "bug-goyah-lemah" : sisaIsian > 0 ? "bug-nafas" : ""} ${sisaIsian === 0
+                ? "bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 shadow-[0_0_22px_rgba(180,255,58,.35)] active:scale-[.98]"
+                : "bg-lime-400/10 text-lime-300/70 border border-dashed border-lime-400/30"}`}
+              style={{
+                transform: `translate(${geser.x}px, ${geser.y}px)`,
+                transition: "transform .38s cubic-bezier(.22,1,.36,1), background-color .3s, color .3s, box-shadow .3s",
+              }}>
+              {loading ? "MEMPROSES…" : "MASUK"}
+            </button>
+          </div>
+          <p id="petunjuk-tombol" className={`text-[11px] pt-1 flex items-center gap-1.5 ${sisaIsian === 0 ? "text-lime-400" : "text-slate-500"}`}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full ${sisaIsian === 0 ? "bg-lime-400" : "bg-slate-600"}`} />
+            {pesanTombol}
+          </p>
         </form>
 
         <div className="flex items-center justify-between mt-5 text-xs">
