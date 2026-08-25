@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6f5;
-  --foreground: #0f172a;
+  --background: #071310;
+  --foreground: #e2e8f0;
   /* Palet sporty: hijau balap + aksen lime "hi-vis" khas jersey pesepeda */
   --brand: #16a34a;
   --brand-dark: #052e16;
@@ -135,3 +135,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .bug-goyah-kuat, .bug-goyah-lemah, .bug-getar, .bug-nafas { animation: none !important; }
 }
+
+/* Baris story digulir mendatar tanpa batang gulir yang mengganggu */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

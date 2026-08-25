@@ -10,23 +10,23 @@ export default async function AdminSosPage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">SOS Logs</h1>
-      <p className="text-sm text-gray-600 mb-6">Menampilkan {logs?.length || 0} dari maks. 100 SOS terbaru.</p>
+      <h1 className="text-2xl font-bold text-white mb-1">SOS Logs</h1>
+      <p className="text-sm text-slate-400 mb-6">Menampilkan {logs?.length || 0} dari maks. 100 SOS terbaru.</p>
       {(!logs || logs.length === 0) ? (
-        <div className="bg-white rounded-xl p-8 text-center text-gray-500">Belum ada SOS tercatat.</div>
+        <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada SOS tercatat.</div>
       ) : (
         <div className="space-y-2">
           {logs.map((log) => {
             const profile = profileMap.get(log.user_id);
             return (
-              <div key={log.id} className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-500">
+              <div key={log.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm border-l-4 border-red-500">
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500"><Clock size={12} />{new Date(log.created_at).toLocaleString("id-ID")}</div>
-                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{log.status}</span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400"><Clock size={12} />{new Date(log.created_at).toLocaleString("id-ID")}</div>
+                  <span className="text-xs bg-red-100 text-red-300 px-2 py-0.5 rounded-full">{log.status}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-1"><User size={14} />{profile?.full_name || "Anonim"}</div>
-                {profile?.school && <p className="text-xs text-gray-500 ml-6 mb-2">{profile.school}</p>}
-                <a href={`https://www.google.com/maps?q=${log.lat},${log.lng}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-green-700 hover:underline"><MapPin size={14} />{log.lat.toFixed(5)}, {log.lng.toFixed(5)}</a>
+                <div className="flex items-center gap-2 text-sm font-medium text-white mb-1"><User size={14} />{profile?.full_name || "Anonim"}</div>
+                {profile?.school && <p className="text-xs text-slate-400 ml-6 mb-2">{profile.school}</p>}
+                <a href={`https://www.google.com/maps?q=${log.lat},${log.lng}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-lime-300 hover:underline"><MapPin size={14} />{log.lat.toFixed(5)}, {log.lng.toFixed(5)}</a>
               </div>
             );
           })}

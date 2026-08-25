@@ -68,10 +68,10 @@ function Bars({ items }: { items: { label: string; value: number; color: string 
       {items.map((it) => (
         <div key={it.label}>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-gray-600">{it.label}</span>
-            <span className="font-semibold text-gray-800">{it.value}</span>
+            <span className="text-slate-400">{it.label}</span>
+            <span className="font-semibold text-slate-100">{it.value}</span>
           </div>
-          <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-2.5 rounded-full bg-[#122019] overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${Math.max(it.value > 0 ? 4 : 0, (it.value / max) * 100)}%`, background: it.color }} />
           </div>
         </div>
@@ -121,10 +121,10 @@ export default async function DashboardPage() {
   const maxDay = Math.max(1, ...days.map((d) => d.count));
 
   const cards = [
-    { label: "Laporan masuk", value: infraTotal, icon: FileWarning, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Sudah ditangani", value: handled, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Zona rawan dipetakan", value: zonesTotal, icon: TriangleAlert, color: "text-red-600", bg: "bg-red-50" },
-    { label: "Penanda jalan", value: approvedMarkers, icon: MapPin, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Laporan masuk", value: infraTotal, icon: FileWarning, color: "text-amber-600", bg: "bg-amber-400/10" },
+    { label: "Sudah ditangani", value: handled, icon: CheckCircle2, color: "text-green-600", bg: "bg-lime-400/10" },
+    { label: "Zona rawan dipetakan", value: zonesTotal, icon: TriangleAlert, color: "text-red-600", bg: "bg-red-500/10" },
+    { label: "Penanda jalan", value: approvedMarkers, icon: MapPin, color: "text-blue-600", bg: "bg-sky-400/10" },
     { label: "Pesepeda aktif (7 hari)", value: activeCyclists, icon: Bike, color: "text-orange-600", bg: "bg-orange-50" },
     { label: "SOS tercatat", value: sosTotal, icon: Siren, color: "text-rose-600", bg: "bg-rose-50" },
   ];
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
               <p className="text-xs opacity-80">Kabupaten Bulungan</p>
             </div>
           </div>
-          <div className="mt-4 bg-white/10 rounded-2xl p-4">
+          <div className="mt-4 bg-[#0E1C17]/10 rounded-2xl p-4">
             <p className="text-xs opacity-80">Total jarak bersepeda komunitas</p>
             <p className="text-4xl font-extrabold leading-none mt-1">{totalKm.toFixed(1)}<span className="text-lg font-bold ml-1">km</span></p>
             <p className="text-xs opacity-80 mt-1">{sos30} panggilan darurat dalam 30 hari terakhir</p>
@@ -163,51 +163,51 @@ export default async function DashboardPage() {
           {cards.map((c) => {
             const Icon = c.icon;
             return (
-              <div key={c.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div key={c.label} className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4">
                 <div className={`w-10 h-10 rounded-xl ${c.bg} ${c.color} flex items-center justify-center mb-2`}><Icon size={20} /></div>
-                <p className="text-2xl font-extrabold text-gray-900 leading-none">{c.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{c.label}</p>
+                <p className="text-2xl font-extrabold text-white leading-none">{c.value}</p>
+                <p className="text-xs text-slate-400 mt-1">{c.label}</p>
               </div>
             );
           })}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
+        <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-gray-800 text-sm">Tindak lanjut laporan</h2>
-            <span className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">{handledPct}% ditangani</span>
+            <h2 className="font-bold text-slate-100 text-sm">Tindak lanjut laporan</h2>
+            <span className="text-xs font-semibold text-lime-300 bg-lime-400/10 px-2 py-0.5 rounded-full">{handledPct}% ditangani</span>
           </div>
-          {infraTotal > 0 ? <Bars items={statusBars} /> : <p className="text-xs text-gray-400 py-4 text-center">Belum ada laporan masuk.</p>}
+          {infraTotal > 0 ? <Bars items={statusBars} /> : <p className="text-xs text-slate-500 py-4 text-center">Belum ada laporan masuk.</p>}
         </div>
 
         {catBars.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
-            <h2 className="font-bold text-gray-800 text-sm mb-3">Jenis laporan jalan</h2>
+          <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
+            <h2 className="font-bold text-slate-100 text-sm mb-3">Jenis laporan jalan</h2>
             <Bars items={catBars} />
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
-          <h2 className="font-bold text-gray-800 text-sm mb-3">Sebaran zona rawan</h2>
-          {zonesTotal > 0 ? <Bars items={zoneBars} /> : <p className="text-xs text-gray-400 py-4 text-center">Belum ada zona dipetakan.</p>}
+        <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
+          <h2 className="font-bold text-slate-100 text-sm mb-3">Sebaran zona rawan</h2>
+          {zonesTotal > 0 ? <Bars items={zoneBars} /> : <p className="text-xs text-slate-500 py-4 text-center">Belum ada zona dipetakan.</p>}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
-          <h2 className="font-bold text-gray-800 text-sm mb-3">Aktivitas gowes 7 hari terakhir</h2>
+        <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-4">
+          <h2 className="font-bold text-slate-100 text-sm mb-3">Aktivitas gowes 7 hari terakhir</h2>
           <div className="flex items-end justify-between gap-1.5">
             {days.map((d) => (
               <div key={d.date} className="flex-1 flex flex-col items-center">
-                <span className="text-[10px] font-semibold text-gray-600 mb-1">{d.count}</span>
+                <span className="text-[10px] font-semibold text-slate-400 mb-1">{d.count}</span>
                 <div className="w-full bg-green-100 rounded-md flex items-end" style={{ height: 80 }}>
                   <div className="w-full bg-gradient-to-t from-green-600 to-emerald-400 rounded-md" style={{ height: `${Math.max(4, (d.count / maxDay) * 100)}%` }} />
                 </div>
-                <span className="text-[10px] text-gray-400 mt-1">{d.label}</span>
+                <span className="text-[10px] text-slate-500 mt-1">{d.label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-gray-400">Data langsung dari komunitas BUG. Diperbarui {lastUpdated} WITA.</p>
+        <p className="text-center text-[11px] text-slate-500">Data langsung dari komunitas BUG. Diperbarui {lastUpdated} WITA.</p>
       </div>
     </div>
   );

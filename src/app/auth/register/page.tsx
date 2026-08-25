@@ -1,7 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import {
+  KerangkaAuth, LogoGoogle, TandaSah, PetunjukTombol, kelasIsian, useTombolTali,
+} from "@/components/auth-ui";
 
 type MemberType = "pelajar" | "pekerja";
 
@@ -11,14 +14,42 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [memberType, setMemberType] = useState<MemberType>("pelajar");
   const [organization, setOrganization] = useState("");
+  const [lihatSandi, setLihatSandi] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const isPelajar = memberType === "pelajar";
+  const namaSah = fullName.trim().length >= 3;
+  const asalSah = organization.trim().length >= 3;
+  const emailSah = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const sandiSah = password.length >= 6;
+  const sisaIsian = (namaSah ? 0 : 1) + (asalSah ? 0 : 1) + (emailSah ? 0 : 1) + (sandiSah ? 0 : 1);
+
+  const namaRef = useRef<HTMLInputElement>(null);
+  const asalRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const sandiRef = useRef<HTMLInputElement>(null);
+  const t = useTombolTali(sisaIsian);
+
+  function tuntunKeKolomKosong() {
+    t.getarkan();
+    const urutan: Array<[boolean, React.RefObject<HTMLInputElement | null>]> = [
+      [namaSah, namaRef], [asalSah, asalRef], [emailSah, emailRef], [sandiSah, sandiRef],
+    ];
+    urutan.find(([sah]) => !sah)?.[1].current?.focus();
+  }
+
+  const pesanTombol = sisaIsian === 0
+    ? "Terkunci. Silakan daftar."
+    : sisaIsian === 1
+      ? "Tinggal satu isian — tombolnya mulai melambat."
+      : `Masih ${sisaIsian} isian sebelum tombol ini diam.`;
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (sisaIsian > 0) { tuntunKeKolomKosong(); return; }
     setLoading(true);
     setError("");
     const supabase = createClient();
@@ -26,132 +57,130 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        data: {
-          full_name: fullName,
-          member_type: memberType,
-          organization,
-        },
+        data: { full_name: fullName, member_type: memberType, organization },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      setSuccess(true);
-      setLoading(false);
+    if (error) { setError(error.message); setLoading(false); }
+    else { setSuccess(true); setLoading(false); }
+  }
+
+  async function handleGoogle() {
+    setGoogleLoading(true);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) { setError(error.message); setGoogleLoading(false); }
+    } catch {
+      setError("Gagal membuka halaman Google. Coba lagi.");
+      setGoogleLoading(false);
     }
   }
 
   if (success) {
     return (
-      <div className="px-4 pt-12 max-w-md mx-auto">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-          <h2 className="text-xl font-bold text-green-800 mb-2">Pendaftaran berhasil!</h2>
-          <p className="text-sm text-green-700">
-            Cek email kamu di <strong>{email}</strong> untuk link konfirmasi. Setelah klik link, kamu bisa masuk.
+      <KerangkaAuth baris={["PERIKSA", "KOTAK"]} sorot="MASUKMU"
+        keterangan="Satu langkah lagi sebelum kamu bisa ikut gowes bersama.">
+        <div className="rounded-2xl border border-lime-400/25 bg-lime-400/5 p-6">
+          <div className="w-12 h-12 rounded-full bg-lime-400 text-slate-950 flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          </div>
+          <h2 className="display-title text-lg text-lime-300">PENDAFTARAN BERHASIL</h2>
+          <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+            Tautan konfirmasi sudah dikirim ke <strong className="text-white">{email}</strong>. Buka tautan itu, lalu kamu bisa masuk.
           </p>
-          <Link href="/auth/login" className="inline-block mt-4 text-green-700 font-medium underline">
-            Ke halaman masuk
+          <Link href="/auth/login"
+            className="mt-5 block text-center bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 rounded-xl py-3 display-title text-sm tracking-wide">
+            KE HALAMAN MASUK
           </Link>
         </div>
-      </div>
+      </KerangkaAuth>
     );
   }
 
   return (
-    <div className="px-4 pt-12 max-w-md mx-auto">
-      <h1 className="text-3xl font-bold text-green-700 text-center">Daftar</h1>
-      <p className="text-center text-gray-500 text-sm mt-1 mb-8">Bergabung dengan komunitas pesepeda Bulungan</p>
+    <KerangkaAuth baris={["GABUNG", "JADI"]} sorot="GOWESER"
+      keterangan="Buat akun untuk mencatat gowes, memakai tombol darurat, dan ikut komunitas.">
+      <button onClick={handleGoogle} disabled={googleLoading}
+        className="w-full bg-white text-slate-800 rounded-xl py-3.5 flex items-center justify-center gap-2.5 font-semibold text-sm active:scale-[.98] transition-transform disabled:opacity-70">
+        <LogoGoogle />
+        {googleLoading ? "Membuka Google…" : "Daftar dengan Google"}
+      </button>
 
-      <form onSubmit={handleRegister} className="bg-white rounded-xl p-6 shadow-sm space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-          <input
-            type="text"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
+      <div className="flex items-center gap-3 my-5">
+        <div className="flex-1 h-px bg-lime-400/15" />
+        <span className="eyebrow text-slate-500 !text-[10px]">atau isi sendiri</span>
+        <div className="flex-1 h-px bg-lime-400/15" />
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setMemberType("pelajar")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
-                isPelajar ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"
-              }`}
-            >
-              🎓 Pelajar
-            </button>
-            <button
-              type="button"
-              onClick={() => setMemberType("pekerja")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
-                !isPelajar ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"
-              }`}
-            >
-              🏢 Pekerja
-            </button>
-          </div>
+      <form onSubmit={handleRegister} className="space-y-2.5">
+        <div className="relative">
+          <input ref={namaRef} type="text" required value={fullName}
+            onChange={(e) => { setFullName(e.target.value); t.picuGoyangan(); }}
+            placeholder="Nama lengkap" className={kelasIsian(namaSah, "pr-11")} />
+          <TandaSah tampil={namaSah} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {isPelajar ? "Asal Sekolah" : "Asal Instansi"}
-          </label>
-          <input
-            type="text"
-            required
-            value={organization}
-            onChange={(e) => setOrganization(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder={isPelajar ? "SMA Negeri ... Bulungan" : "Nama kantor / instansi"}
-          />
+        <div className="grid grid-cols-2 gap-2.5">
+          {(["pelajar", "pekerja"] as MemberType[]).map((m) => {
+            const aktif = memberType === m;
+            return (
+              <button key={m} type="button" onClick={() => setMemberType(m)}
+                className={`rounded-xl py-3 text-sm font-semibold border transition-colors ${aktif
+                  ? "border-lime-400/60 bg-lime-400/15 text-lime-300"
+                  : "border-lime-400/15 bg-[#0B1F18] text-slate-400"}`}>
+                {m === "pelajar" ? "Pelajar" : "Pekerja"}
+              </button>
+            );
+          })}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
+        <div className="relative">
+          <input ref={asalRef} type="text" required value={organization}
+            onChange={(e) => { setOrganization(e.target.value); t.picuGoyangan(); }}
+            placeholder={isPelajar ? "Asal sekolah" : "Asal instansi"}
+            className={kelasIsian(asalSah, "pr-11")} />
+          <TandaSah tampil={asalSah} />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Min. 6 karakter"
-          />
+
+        <div className="relative">
+          <input ref={emailRef} type="email" required value={email}
+            onChange={(e) => { setEmail(e.target.value); t.picuGoyangan(); }}
+            placeholder="nama@email.com" className={kelasIsian(emailSah, "pr-11")} />
+          <TandaSah tampil={emailSah} />
         </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400"
-        >
-          {loading ? "Memproses..." : "Daftar"}
-        </button>
+
+        <div className="relative">
+          <input ref={sandiRef} type={lihatSandi ? "text" : "password"} required minLength={6} value={password}
+            onChange={(e) => { setPassword(e.target.value); t.picuGoyangan(); }}
+            placeholder="Kata sandi (min. 6 huruf)" className={kelasIsian(sandiSah, "pr-[86px]")} />
+          <TandaSah tampil={sandiSah} kanan={54} />
+          <button type="button" onClick={() => setLihatSandi((v) => !v)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-lime-400">
+            {lihatSandi ? "tutup" : "lihat"}
+          </button>
+        </div>
+
+        {error && <p className="text-red-400 text-xs pt-1">{error}</p>}
+
+        <div className="relative h-[52px] pt-1" onMouseMove={t.hindari}>
+          <button ref={t.tombolRef} type="submit" disabled={loading}
+            onClick={(e) => { if (sisaIsian > 0) { e.preventDefault(); tuntunKeKolomKosong(); } }}
+            aria-describedby="petunjuk-daftar" style={t.gayaTombol}
+            className={`absolute inset-x-0 top-1 rounded-xl py-3.5 display-title text-base tracking-wide disabled:opacity-60 ${t.kelasAnimasi} ${t.kelasWarna}`}>
+            {loading ? "MEMPROSES…" : "DAFTAR"}
+          </button>
+        </div>
+        <PetunjukTombol id="petunjuk-daftar" sisa={sisaIsian} pesan={pesanTombol} />
       </form>
 
-      <p className="text-center text-sm text-gray-600 mt-6">
-        Sudah punya akun?{" "}
-        <Link href="/auth/login" className="text-green-700 font-medium">
-          Masuk di sini
-        </Link>
+      <p className="text-center text-xs text-slate-400 mt-5">
+        Sudah punya akun? <Link href="/auth/login" className="text-lime-400 font-semibold">Masuk di sini</Link>
       </p>
-    </div>
+    </KerangkaAuth>
   );
 }

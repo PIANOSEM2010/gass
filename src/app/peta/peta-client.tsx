@@ -379,6 +379,10 @@ export default function PetaClient({
   const [showZones, setShowZones] = useState(true);
   const [showLandmarks, setShowLandmarks] = useState(true);
   const [showTraffic, setShowTraffic] = useState(false);
+  // Ubin peta gelap agar selaras dengan tampilan baru. Tetap bisa
+  // dikembalikan ke terang karena di bawah matahari Bulungan peta terang
+  // lebih mudah dibaca - pilihan itu diserahkan ke pengguna.
+  const [petaGelap, setPetaGelap] = useState(true);
   const [filter, setFilter] = useState<keyof typeof TYPE_CONFIG | "all">("all");
   const [mode, setMode] = useState<Mode>("view");
 
@@ -839,8 +843,8 @@ export default function PetaClient({
       {!navigating && (
         <div className="absolute top-2 left-2 right-2 z-[1100]">
           <div className="relative">
-            <div className="flex items-center bg-white rounded-full shadow-lg px-3 py-2">
-              <Search size={18} className="text-gray-400 flex-shrink-0" />
+            <div className="flex items-center bg-[#0C1A15]/95 backdrop-blur border border-lime-400/15 rounded-full shadow-lg px-3 py-2">
+              <Search size={18} className="text-slate-500 flex-shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
@@ -849,30 +853,30 @@ export default function PetaClient({
                 placeholder="Cari tempat tujuan..."
                 className="flex-1 px-2 text-sm outline-none bg-transparent"
               />
-              {searching && <Loader2 size={16} className="animate-spin text-gray-400 flex-shrink-0" />}
+              {searching && <Loader2 size={16} className="animate-spin text-slate-500 flex-shrink-0" />}
               {searchQuery && !searching && (
-                <button onClick={clearSearch} className="text-gray-400 hover:text-gray-700 flex-shrink-0">
+                <button onClick={clearSearch} className="text-slate-500 hover:text-slate-200 flex-shrink-0">
                   <X size={18} />
                 </button>
               )}
             </div>
 
             {showResults && (
-              <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-xl shadow-xl overflow-hidden max-h-72 overflow-y-auto">
+              <div className="absolute top-full mt-1 left-0 right-0 bg-[#0C1A15] border border-white/10 rounded-xl shadow-xl overflow-hidden max-h-72 overflow-y-auto">
                 {searching && searchResults.length === 0 && (
-                  <div className="px-4 py-3 text-sm text-gray-500">Mencari...</div>
+                  <div className="px-4 py-3 text-sm text-slate-400">Mencari...</div>
                 )}
                 {!searching && searchResults.length === 0 && (
-                  <div className="px-4 py-3 text-sm text-gray-500">Tidak ada hasil ditemukan.</div>
+                  <div className="px-4 py-3 text-sm text-slate-400">Tidak ada hasil ditemukan.</div>
                 )}
                 {searchResults.map((r, i) => (
                   <button
                     key={`${r.lat}-${r.lon}-${i}`}
                     onClick={() => selectSearchResult(r)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-0 flex items-start gap-2"
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#0A1512] border-b border-white/5 last:border-0 flex items-start gap-2"
                   >
                     <MapPin size={16} className="text-pink-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-700 leading-snug">{r.display_name}</span>
+                    <span className="text-sm text-slate-200 leading-snug">{r.display_name}</span>
                   </button>
                 ))}
               </div>
@@ -883,10 +887,17 @@ export default function PetaClient({
 
       {/* Top filter chips */}
       {!navigating && (
-        <div className="absolute top-14 left-2 right-2 z-[1000] flex gap-2 overflow-x-auto pb-2">
+        <div className="absolute top-14 left-2 right-2 z-[1000] flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <button
+            onClick={() => setPetaGelap((v) => !v)}
+            title="Ganti peta terang / gelap"
+            className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow bg-[#0C1A15]/95 border border-lime-400/25 text-lime-300 flex-shrink-0"
+          >
+            {petaGelap ? "Gelap" : "Terang"}
+          </button>
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === "all" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === "all" ? "bg-lime-400 text-slate-950" : "bg-[#0C1A15]/95 border border-white/10 text-slate-300"}`}
           >
             Semua ({markers.length})
           </button>
@@ -896,7 +907,7 @@ export default function PetaClient({
               <button
                 key={type}
                 onClick={() => setFilter(type)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === type ? "text-white" : "bg-white text-gray-700"}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === type ? "text-white" : "bg-[#0C1A15]/95 border border-white/10 text-slate-300"}`}
                 style={filter === type ? { background: TYPE_CONFIG[type].color } : {}}
               >
                 {TYPE_CONFIG[type].emoji} {TYPE_CONFIG[type].label} ({count})
@@ -920,7 +931,7 @@ export default function PetaClient({
         </div>
       )}
       {routing && (
-        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-white px-3 py-2 rounded-lg shadow text-sm flex items-center gap-2">
+        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-[#0E1C17] px-3 py-2 rounded-lg shadow text-sm flex items-center gap-2">
           <Loader2 size={16} className="animate-spin" />
           Menyiapkan rute pesepeda...
         </div>
@@ -936,23 +947,23 @@ export default function PetaClient({
       {showLegend && (
         <div className="absolute bottom-36 left-2 z-[1000] flex flex-col gap-2 max-w-[60%]">
           {showTraffic && tomtomKey && (
-            <div className="bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
-              <p className="font-semibold text-gray-700 mb-1">Insiden Jalan</p>
+            <div className="bg-[#0E1C17]/95 rounded-lg shadow-lg px-3 py-2 text-xs">
+              <p className="font-semibold text-slate-200 mb-1">Insiden Jalan</p>
               {TRAFFIC_LEGEND.map((t) => (
                 <div key={t.label} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
                   <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
-                  <span className="text-gray-600">{t.label}</span>
+                  <span className="text-slate-400">{t.label}</span>
                 </div>
               ))}
             </div>
           )}
           {showZones && zones.length > 0 && (
-            <div className="bg-white/95 rounded-lg shadow-lg px-3 py-2 text-xs">
-              <p className="font-semibold text-gray-700 mb-1">Zona Rawan</p>
+            <div className="bg-[#0E1C17]/95 rounded-lg shadow-lg px-3 py-2 text-xs">
+              <p className="font-semibold text-slate-200 mb-1">Zona Rawan</p>
               {(Object.keys(ZONE_CONFIG) as Array<keyof typeof ZONE_CONFIG>).map((cat) => (
                 <div key={cat} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
                   <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: ZONE_CONFIG[cat].color }} />
-                  <span className="text-gray-600">{ZONE_CONFIG[cat].label}</span>
+                  <span className="text-slate-400">{ZONE_CONFIG[cat].label}</span>
                 </div>
               ))}
             </div>
@@ -962,46 +973,46 @@ export default function PetaClient({
 
       {/* Route info card */}
       {routeInfo && !navigating && (
-        <div className="absolute bottom-44 left-2 right-2 z-[1000] bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
+        <div className="absolute bottom-44 left-2 right-2 z-[1000] bg-[#0E1C17] rounded-2xl p-4 shadow-xl border border-white/5">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Navigation size={18} className="text-purple-600" />
               <span className="font-semibold text-sm">Rute Pesepeda</span>
             </div>
-            <button onClick={clearRoute} className="text-gray-400 hover:text-red-600">
+            <button onClick={clearRoute} className="text-slate-500 hover:text-red-600">
               <X size={18} />
             </button>
           </div>
           {routeSource === "search" && searchLabel && (
-            <p className="text-xs text-gray-500 mb-2 truncate">
-              Dari lokasimu → <span className="font-medium text-gray-700">{searchLabel.split(",")[0]}</span>
+            <p className="text-xs text-slate-400 mb-2 truncate">
+              Dari lokasimu → <span className="font-medium text-slate-200">{searchLabel.split(",")[0]}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs text-gray-500">Jarak</p>
+              <p className="text-xs text-slate-400">Jarak</p>
               <p className="font-semibold">{(routeInfo.distance / 1000).toFixed(2)} km</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Estimasi waktu</p>
+              <p className="text-xs text-slate-400">Estimasi waktu</p>
               <p className="font-semibold">{Math.round(routeInfo.duration / 60)} menit</p>
             </div>
           </div>
           <button
             type="button"
             onClick={toggleAvoid}
-            className="w-full mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-gray-200"
+            className="w-full mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-white/10"
           >
-            <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <ShieldCheck size={16} className={avoidDanger ? "text-green-600" : "text-gray-400"} />
+            <span className="flex items-center gap-2 text-sm font-medium text-slate-200">
+              <ShieldCheck size={16} className={avoidDanger ? "text-green-600" : "text-slate-500"} />
               Rute Aman (hindari titik & zona rawan)
             </span>
             <span className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${avoidDanger ? "bg-green-600" : "bg-gray-300"}`}>
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[#0E1C17] rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
             </span>
           </button>
           {routeNote && (
-            <p className={`text-xs mt-2 ${routeNote.type === "safe" ? "text-green-700" : "text-amber-600"}`}>
+            <p className={`text-xs mt-2 ${routeNote.type === "safe" ? "text-lime-300" : "text-amber-600"}`}>
               {routeNote.type === "safe"
                 ? routeNote.count > 0
                   ? `Rute menghindari ${routeNote.count} titik & zona berbahaya di sekitar jalur.`
@@ -1017,7 +1028,7 @@ export default function PetaClient({
               <Play size={18} /> Mulai Navigasi
             </button>
           )}
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-slate-400 mt-2">
             ⚠️ Perhatikan zona rawan & marker merah di sepanjang rute.
           </p>
         </div>
@@ -1027,18 +1038,18 @@ export default function PetaClient({
       {showRecommend && !navigating && (
         <div className="absolute inset-0 z-[1400] flex items-end" onClick={() => setShowRecommend(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative w-full bg-white rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full bg-[#0E1C17] rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center">
                   <Sparkles size={18} />
                 </span>
                 <div>
-                  <p className="font-bold text-gray-900 leading-tight">Rekomendasi Rute Gowes</p>
-                  <p className="text-xs text-gray-500 leading-tight">Rute melingkar, kembali ke titik awalmu</p>
+                  <p className="font-bold text-white leading-tight">Rekomendasi Rute Gowes</p>
+                  <p className="text-xs text-slate-400 leading-tight">Rute melingkar, kembali ke titik awalmu</p>
                 </div>
               </div>
-              <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-gray-400 active:bg-gray-100" aria-label="Tutup">
+              <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[#122019]" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
@@ -1046,7 +1057,7 @@ export default function PetaClient({
             {/* Slider jarak */}
             <div className="mt-4">
               <div className="flex items-baseline justify-between mb-1.5">
-                <span className="text-sm font-medium text-gray-600">Target jarak</span>
+                <span className="text-sm font-medium text-slate-400">Target jarak</span>
                 <span className="display-title text-3xl text-emerald-600 leading-none">{recoTargetKm} <span className="text-lg">km</span></span>
               </div>
               <input
@@ -1054,14 +1065,14 @@ export default function PetaClient({
                 onChange={(e) => setRecoTargetKm(Number(e.target.value))}
                 className="w-full accent-emerald-600"
               />
-              <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+              <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
                 <span>2 km</span><span>25 km</span><span>50 km</span>
               </div>
               {/* Preset cepat */}
               <div className="flex gap-2 mt-3">
                 {[5, 10, 20, 30].map((v) => (
                   <button key={v} onClick={() => setRecoTargetKm(v)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border-2 transition-colors ${recoTargetKm === v ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600"}`}>
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border-2 transition-colors ${recoTargetKm === v ? "border-emerald-600 bg-emerald-400/10 text-emerald-700" : "border-white/10 text-slate-400"}`}>
                     {v} km
                   </button>
                 ))}
@@ -1071,11 +1082,11 @@ export default function PetaClient({
             {/* Hasil */}
             <div className="mt-4">
               {recoLoading ? (
-                <div className="flex items-center justify-center gap-2 py-8 text-gray-500 text-sm">
+                <div className="flex items-center justify-center gap-2 py-8 text-slate-400 text-sm">
                   <Loader2 size={18} className="animate-spin" /> Merancang rute {recoTargetKm} km…
                 </div>
               ) : recoError ? (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 text-center">{recoError}</div>
+                <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-xl p-3 text-center">{recoError}</div>
               ) : recoRoute ? (
                 <div className="bg-gradient-to-br from-emerald-50 to-lime-50 border border-emerald-100 rounded-2xl p-4">
                   <div className="grid grid-cols-2 gap-3 text-center">
@@ -1090,7 +1101,7 @@ export default function PetaClient({
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-sm text-gray-400 py-6">Atur jarak lalu buat rute</div>
+                <div className="text-center text-sm text-slate-500 py-6">Atur jarak lalu buat rute</div>
               )}
             </div>
 
@@ -1099,7 +1110,7 @@ export default function PetaClient({
               <button
                 onClick={() => generateRecommendation(true)}
                 disabled={recoLoading}
-                className="flex-1 bg-white border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition"
+                className="flex-1 bg-[#0E1C17] border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition"
               >
                 <RefreshCw size={16} /> {recoRoute ? "Cari Lagi" : "Buat Rute"}
               </button>
@@ -1112,7 +1123,7 @@ export default function PetaClient({
                 </button>
               )}
             </div>
-            <p className="text-[11px] text-gray-400 text-center mt-3">
+            <p className="text-[11px] text-slate-500 text-center mt-3">
               Rute mengikuti jalan pesepeda dan menghindari zona rawan bila mode aman aktif.
             </p>
           </div>
@@ -1125,7 +1136,7 @@ export default function PetaClient({
 <button
             onClick={toggleTraffic}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-white text-gray-700"
+              showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-[#0E1C17] text-slate-200"
             }`}
             aria-label="Tampilkan insiden jalan"
             title="Insiden & bahaya jalan"
@@ -1135,7 +1146,7 @@ export default function PetaClient({
           <button
             onClick={() => setShowLandmarks((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              showLandmarks ? "bg-indigo-600 text-white" : "bg-white text-gray-700"
+              showLandmarks ? "bg-indigo-600 text-white" : "bg-[#0E1C17] text-slate-200"
             }`}
             aria-label="Tampilkan landmark"
             title="Landmark"
@@ -1145,7 +1156,7 @@ export default function PetaClient({
           <button
             onClick={() => setShowZones((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              showZones ? "bg-orange-500 text-white" : "bg-white text-gray-700"
+              showZones ? "bg-orange-500 text-white" : "bg-[#0E1C17] text-slate-200"
             }`}
             aria-label="Tampilkan zona rawan"
             title="Zona rawan"
@@ -1155,7 +1166,7 @@ export default function PetaClient({
           <button
             onClick={handleLocateClick}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              tracking ? (follow ? "bg-blue-600 text-white" : "bg-white text-blue-600") : "bg-white text-gray-700"
+              tracking ? (follow ? "bg-blue-600 text-white" : "bg-[#0E1C17] text-blue-600") : "bg-[#0E1C17] text-slate-200"
             }`}
             aria-label="Lokasi saya"
             title="Lokasi saya"
@@ -1189,7 +1200,7 @@ export default function PetaClient({
               {userId && (
                 <button
                   onClick={() => setMode("report")}
-                  className="flex-1 bg-white border border-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
+                  className="flex-1 bg-[#0E1C17] border border-white/10 text-slate-200 py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
                 >
                   <MapPin size={16} />
                   Lapor Jalur
@@ -1198,7 +1209,7 @@ export default function PetaClient({
             </>
           )}
           {mode === "report" && (
-            <div className="flex-1 bg-white rounded-lg p-3 shadow text-xs text-gray-700 text-center flex items-center justify-between">
+            <div className="flex-1 bg-[#0E1C17] rounded-lg p-3 shadow text-xs text-slate-200 text-center flex items-center justify-between">
               <span>💡 Tap titik di peta untuk lapor</span>
               <button onClick={() => setMode("view")} className="text-red-600 font-medium">Batal</button>
             </div>
@@ -1210,8 +1221,11 @@ export default function PetaClient({
       <MapContainer center={[2.8450, 117.3680]} zoom={14} style={{ height: "100%", width: "100%" }}>
         <MapSizeFixer />
         <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={petaGelap ? "ubin-gelap" : "ubin-terang"}
+          attribution='&copy; OpenStreetMap &copy; CARTO'
+          url={petaGelap
+            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
         />
         {showTraffic && tomtomKey && (
           <TileLayer
@@ -1264,8 +1278,8 @@ export default function PetaClient({
                 <p className="font-semibold mb-1">
                   <span style={{ color: ZONE_CONFIG[z.category].color }}>●</span> {z.title}
                 </p>
-                <p className="text-xs text-gray-500 mb-1">{ZONE_CONFIG[z.category].label}</p>
-                {z.description && <p className="text-gray-600 text-xs">{z.description}</p>}
+                <p className="text-xs text-slate-400 mb-1">{ZONE_CONFIG[z.category].label}</p>
+                {z.description && <p className="text-slate-400 text-xs">{z.description}</p>}
               </div>
             </Popup>
           </Circle>
@@ -1280,7 +1294,7 @@ export default function PetaClient({
             <Popup>
               <div className="text-sm">
                 <p className="font-semibold mb-1">{TYPE_CONFIG[m.type].emoji} {m.title}</p>
-                {m.description && <p className="text-gray-600 text-xs">{m.description}</p>}
+                {m.description && <p className="text-slate-400 text-xs">{m.description}</p>}
               </div>
             </Popup>
           </Marker>
@@ -1298,7 +1312,7 @@ export default function PetaClient({
             <Popup>
               <div className="text-sm max-w-[200px]">
                 <p className="font-semibold mb-1">📍 Tujuan</p>
-                <p className="text-gray-600 text-xs">{searchLabel}</p>
+                <p className="text-slate-400 text-xs">{searchLabel}</p>
               </div>
             </Popup>
           </Marker>
@@ -1319,19 +1333,19 @@ export default function PetaClient({
       {/* Report form modal */}
       {showForm && pickedCoords && (
         <div className="absolute inset-0 z-[1001] bg-black/50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-[#0E1C17] rounded-2xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <h2 className="font-bold text-lg mb-1">Lapor Jalur Baru</h2>
-            <p className="text-xs text-gray-500 mb-4">📍 {pickedCoords.lat.toFixed(5)}, {pickedCoords.lng.toFixed(5)}</p>
+            <p className="text-xs text-slate-400 mb-4">📍 {pickedCoords.lat.toFixed(5)}, {pickedCoords.lng.toFixed(5)}</p>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jenis</label>
+                <label className="block text-sm font-medium text-slate-200 mb-1">Jenis</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(Object.keys(TYPE_CONFIG) as Array<keyof typeof TYPE_CONFIG>).map((type) => (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setFormType(type)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 ${formType === type ? "border-gray-900 bg-gray-50" : "border-gray-200"}`}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 ${formType === type ? "border-gray-900 bg-[#0A1512]" : "border-white/10"}`}
                     >
                       {TYPE_CONFIG[type].emoji} {TYPE_CONFIG[type].label}
                     </button>
@@ -1339,25 +1353,25 @@ export default function PetaClient({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+                <label className="block text-sm font-medium text-slate-200 mb-1">Judul</label>
                 <input
                   type="text" required value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+                <label className="block text-sm font-medium text-slate-200 mb-1">Catatan (opsional)</label>
                 <textarea
                   value={formDesc} onChange={(e) => setFormDesc(e.target.value)} rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setPickedCoords(null); setMode("view"); }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-medium"
+                  className="flex-1 border border-white/15 text-slate-200 py-2 rounded-lg font-medium"
                 >
                   Batal
                 </button>

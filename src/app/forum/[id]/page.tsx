@@ -37,23 +37,23 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
-      <Link href="/forum" className="inline-flex items-center gap-1 text-sm text-green-700 mb-4">
+      <Link href="/forum" className="inline-flex items-center gap-1 text-sm text-lime-300 mb-4">
         <ArrowLeft size={16} />
         Kembali
       </Link>
 
-      <article className="bg-white rounded-xl p-5 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900 mb-2 leading-tight">{post.title}</h1>
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
+      <article className="bg-[#0E1C17] rounded-xl p-5 shadow-sm">
+        <h1 className="text-xl font-bold text-white mb-2 leading-tight">{post.title}</h1>
+        <div className="flex items-center gap-2 text-xs text-slate-400 mb-4 pb-4 border-b border-white/5">
           <User size={12} />
           <span>{authorProfile?.full_name || "Anonim"}</span>
           {authorProfile?.school && <span>• {authorProfile.school}</span>}
           <span>• {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
         </div>
         {post.image_url && (
-          <img src={post.image_url} alt="Kartu gowes" className="w-full rounded-xl border border-gray-100 mb-4" />
+          <img src={post.image_url} alt="Kartu gowes" className="w-full rounded-xl border border-white/5 mb-4" />
         )}
-        <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{post.body}</p>
+        <p className="text-slate-100 leading-relaxed whitespace-pre-wrap">{post.body}</p>
       </article>
 
       <CommentSection

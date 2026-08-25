@@ -24,8 +24,8 @@ const STATUS_CLS: Record<string, string> = {
   dilaporkan: "bg-amber-500", diverifikasi: "bg-blue-600", diteruskan: "bg-violet-600", ditangani: "bg-green-600",
 };
 const STATUS_BADGE: Record<string, string> = {
-  dilaporkan: "bg-amber-100 text-amber-700", diverifikasi: "bg-blue-100 text-blue-700",
-  diteruskan: "bg-violet-100 text-violet-700", ditangani: "bg-green-100 text-green-700",
+  dilaporkan: "bg-amber-100 text-amber-300", diverifikasi: "bg-blue-100 text-sky-300",
+  diteruskan: "bg-violet-100 text-violet-700", ditangani: "bg-green-100 text-lime-300",
 };
 
 function fmtDate(iso: string | null): string {
@@ -71,44 +71,44 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0A1512]">
       <div className="px-4 pt-6 pb-10 max-w-2xl mx-auto">
-        <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-gray-600 mb-4"><ArrowLeft size={16} /> Admin</Link>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Laporan Infrastruktur</h1>
-        <p className="text-sm text-gray-500 mb-5">{reports.length} laporan. Klik laporan untuk melihat detail & menindaklanjuti.</p>
+        <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-slate-400 mb-4"><ArrowLeft size={16} /> Admin</Link>
+        <h1 className="text-2xl font-bold text-white mb-1">Laporan Infrastruktur</h1>
+        <p className="text-sm text-slate-400 mb-5">{reports.length} laporan. Klik laporan untuk melihat detail & menindaklanjuti.</p>
 
         {reports.length === 0 ? (
-          <p className="text-center text-gray-400 py-16 text-sm">Belum ada laporan masuk.</p>
+          <p className="text-center text-slate-500 py-16 text-sm">Belum ada laporan masuk.</p>
         ) : (
           <div className="space-y-3">
             {reports.map((r) => (
               <button
                 key={r.id}
                 onClick={() => openDetail(r)}
-                className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm p-3 hover:shadow-md hover:border-gray-200 active:scale-[0.995] transition"
+                className="w-full text-left bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-3 hover:shadow-md hover:border-white/10 active:scale-[0.995] transition"
               >
                 <div className="flex gap-3">
                   {r.photo_url ? (
                     <img src={r.photo_url} alt={r.category} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">Tanpa foto</div>
+                    <div className="w-20 h-20 rounded-xl bg-[#122019] flex items-center justify-center text-slate-500 text-xs flex-shrink-0">Tanpa foto</div>
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-gray-900">{CAT_LABEL[r.category] || "Laporan"}</p>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">{fmtDate(r.created_at)}</span>
+                      <p className="font-semibold text-white">{CAT_LABEL[r.category] || "Laporan"}</p>
+                      <span className="text-[10px] text-slate-500 flex-shrink-0">{fmtDate(r.created_at)}</span>
                     </div>
                     {r.description ? (
-                      <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{r.description}</p>
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{r.description}</p>
                     ) : (
-                      <p className="text-xs text-gray-400 italic mt-0.5">Tanpa keterangan</p>
+                      <p className="text-xs text-slate-500 italic mt-0.5">Tanpa keterangan</p>
                     )}
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.status] || "bg-gray-100 text-gray-600"}`}>
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.status] || "bg-[#122019] text-slate-400"}`}>
                         {FLOW.find((f) => f.key === r.status)?.label || r.status}
                       </span>
                       {r.admin_note && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-gray-500">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
                           <MessageSquareText size={11} /> Ada catatan admin
                         </span>
                       )}
@@ -125,10 +125,10 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
       {selected && (
         <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelected(null)} />
-          <div className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-              <p className="font-bold text-gray-900">{CAT_LABEL[selected.category] || "Laporan"}</p>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-full hover:bg-gray-100" aria-label="Tutup">
+          <div className="relative bg-[#0E1C17] w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-[#0E1C17] border-b border-white/5 px-4 py-3 flex items-center justify-between">
+              <p className="font-bold text-white">{CAT_LABEL[selected.category] || "Laporan"}</p>
+              <button onClick={() => setSelected(null)} className="p-1.5 rounded-full hover:bg-[#122019]" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
@@ -140,18 +140,18 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
                   <img src={selected.photo_url} alt={selected.category} className="w-full max-h-80 object-contain bg-gray-950 rounded-xl" />
                 </a>
               ) : (
-                <div className="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">Pelapor tidak menyertakan foto</div>
+                <div className="w-full h-32 rounded-xl bg-[#122019] flex items-center justify-center text-slate-500 text-sm">Pelapor tidak menyertakan foto</div>
               )}
 
               {/* Penjelasan pelapor */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Penjelasan pelapor</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Penjelasan pelapor</p>
                 {selected.description ? (
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{selected.description}</p>
+                  <p className="text-sm text-slate-100 whitespace-pre-wrap">{selected.description}</p>
                 ) : (
-                  <p className="text-sm text-gray-400 italic">Tanpa keterangan</p>
+                  <p className="text-sm text-slate-500 italic">Tanpa keterangan</p>
                 )}
-                <p className="text-[11px] text-gray-400 mt-1">Dilaporkan {fmtDate(selected.created_at)}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Dilaporkan {fmtDate(selected.created_at)}</p>
                 <a href={`https://www.google.com/maps?q=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-blue-600 mt-1">
                   <MapPin size={12} /> {selected.lat.toFixed(5)}, {selected.lng.toFixed(5)} — buka di Google Maps
@@ -160,13 +160,13 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
 
               {/* Ubah status */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Status penanganan</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Status penanganan</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {FLOW.map((f) => {
                     const active = draftStatus === f.key;
                     return (
                       <button key={f.key} onClick={() => setDraftStatus(f.key)}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${active ? `${STATUS_CLS[f.key]} text-white` : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${active ? `${STATUS_CLS[f.key]} text-white` : "bg-[#122019] text-slate-400 hover:bg-[#1A2A22]"}`}>
                         {f.label}
                       </button>
                     );
@@ -176,19 +176,19 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
 
               {/* Catatan perkembangan dari admin */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Catatan perkembangan (terlihat oleh pelapor)</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Catatan perkembangan (terlihat oleh pelapor)</p>
                 <textarea
                   value={draftNote}
                   onChange={(e) => setDraftNote(e.target.value)}
                   rows={3}
                   maxLength={500}
                   placeholder="Contoh: Sudah dicek di lokasi, laporan valid. Diteruskan ke Dinas PUPR, perkiraan perbaikan minggu depan."
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
 
               {saveMsg && (
-                <p className={`text-xs flex items-center gap-1.5 ${saveMsg.startsWith("Gagal") ? "text-red-600" : "text-green-700"}`}>
+                <p className={`text-xs flex items-center gap-1.5 ${saveMsg.startsWith("Gagal") ? "text-red-600" : "text-lime-300"}`}>
                   {!saveMsg.startsWith("Gagal") && <CheckCircle2 size={14} />} {saveMsg}
                 </p>
               )}

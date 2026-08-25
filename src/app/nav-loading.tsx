@@ -125,7 +125,7 @@ function NavLoadingOverlay() {
   });
 
   return (
-    <div className="fixed inset-0 z-[3000] flex flex-col items-center justify-center nav-loading-backdrop">
+    <div className="fixed inset-x-0 top-0 bottom-16 z-[1100] flex flex-col items-center justify-center nav-loading-backdrop">
       <div className="relative flex items-center justify-center">
         {/* Perisai diam sebagai bingkai (motif logo), roda berputar di dalamnya */}
         <svg width="128" height="128" viewBox="0 0 64 64" className="absolute" aria-hidden="true">

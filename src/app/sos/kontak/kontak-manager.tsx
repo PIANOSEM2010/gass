@@ -93,24 +93,24 @@ export default function KontakManager({
       )}
 
       {contacts.map((c) => (
-        <div key={c.id} className="bg-white rounded-xl p-4 shadow-sm flex items-start justify-between">
+        <div key={c.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <p className="font-semibold">{c.name}</p>
               {c.is_primary && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-green-100 text-lime-300 px-2 py-0.5 rounded-full">
                   Utama
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-600">+{c.whatsapp}</p>
-            {c.relation && <p className="text-xs text-gray-500 mt-1">{c.relation}</p>}
+            <p className="text-sm text-slate-400">+{c.whatsapp}</p>
+            {c.relation && <p className="text-xs text-slate-400 mt-1">{c.relation}</p>}
           </div>
           <div className="flex gap-2">
             {!c.is_primary && (
               <button
                 onClick={() => handleSetPrimary(c.id)}
-                className="p-2 text-gray-400 hover:text-yellow-500"
+                className="p-2 text-slate-500 hover:text-yellow-500"
                 title="Jadikan utama"
               >
                 <Star size={18} />
@@ -118,7 +118,7 @@ export default function KontakManager({
             )}
             <button
               onClick={() => handleDelete(c.id)}
-              className="p-2 text-gray-400 hover:text-red-600"
+              className="p-2 text-slate-500 hover:text-red-600"
               title="Hapus"
             >
               <Trash2 size={18} />
@@ -138,36 +138,36 @@ export default function KontakManager({
       )}
 
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-white rounded-xl p-5 shadow-sm space-y-3">
+        <form onSubmit={handleAdd} className="bg-[#0E1C17] rounded-xl p-5 shadow-sm space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+            <label className="block text-sm font-medium text-slate-200 mb-1">Nama</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Misal: Ayah, Ibu, Wali Kelas"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp</label>
+            <label className="block text-sm font-medium text-slate-200 mb-1">Nomor WhatsApp</label>
             <input
               type="tel"
               required
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="08xx atau 628xx"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hubungan (opsional)</label>
+            <label className="block text-sm font-medium text-slate-200 mb-1">Hubungan (opsional)</label>
             <input
               type="text"
               value={relation}
               onChange={(e) => setRelation(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Orang tua, saudara, dll"
             />
           </div>
@@ -176,7 +176,7 @@ export default function KontakManager({
             <button
               type="button"
               onClick={() => { setShowForm(false); setError(""); }}
-              className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-medium"
+              className="flex-1 border border-white/15 text-slate-200 py-2 rounded-lg font-medium"
             >
               Batal
             </button>

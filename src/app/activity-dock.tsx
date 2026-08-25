@@ -54,18 +54,18 @@ export default function ActivityDock() {
           className={`flex items-center gap-1.5 rounded-full bg-gradient-to-br ${primaryColor} text-white shadow-lg pl-1.5 pr-3 py-1.5 active:scale-95 transition`}
           aria-label="Bentangkan panel aktivitas"
         >
-          <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+          <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#0E1C17]/20">
             <Icon size={15} />
             <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0E1C17] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0E1C17]" />
             </span>
           </span>
           <span className="text-xs font-bold tabular-nums">
             {showGowes ? `${(gowes.distance / 1000).toFixed(1)} km` : showNav ? "Navigasi" : "Pantau"}
           </span>
           {activeCount > 1 && (
-            <span className="ml-0.5 text-[10px] font-bold bg-white/25 rounded-full px-1.5 py-0.5">+{activeCount - 1}</span>
+            <span className="ml-0.5 text-[10px] font-bold bg-[#0E1C17]/25 rounded-full px-1.5 py-0.5">+{activeCount - 1}</span>
           )}
           <ChevronUp size={14} className="opacity-80" />
         </button>
@@ -87,7 +87,7 @@ export default function ActivityDock() {
           </span>
           <button
             onClick={() => setMini(true)}
-            className="flex items-center gap-1 text-slate-300 hover:text-white text-[11px] font-medium px-2 py-0.5 rounded-md hover:bg-white/10 active:scale-95 transition"
+            className="flex items-center gap-1 text-slate-300 hover:text-white text-[11px] font-medium px-2 py-0.5 rounded-md hover:bg-[#0E1C17]/10 active:scale-95 transition"
             aria-label="Perkecil"
           >
             <Minus size={13} /> Perkecil
@@ -98,13 +98,13 @@ export default function ActivityDock() {
         {showGowes && (
           <div
             onClick={() => navigate("/catat")}
-            className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-white/5 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-[#0E1C17]/5 transition-colors"
           >
             <span className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white ${gowesTracking ? "bg-gradient-to-br from-green-500 to-emerald-600" : gowesPaused ? "bg-gradient-to-br from-slate-500 to-slate-700" : "bg-gradient-to-br from-orange-500 to-amber-600"}`}>
               {gowesTracking ? (
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0E1C17] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0E1C17]" />
                 </span>
               ) : gowesPaused ? <Pause size={16} /> : <Bike size={16} />}
             </span>
@@ -120,7 +120,7 @@ export default function ActivityDock() {
               <button
                 onClick={(e) => { e.stopPropagation(); if (gowesTracking) gowes.pause(); else gowes.resume(); }}
                 aria-label={gowesTracking ? "Jeda" : "Lanjut"}
-                className="shrink-0 bg-white/10 hover:bg-white/20 rounded-full p-2 active:scale-90 transition"
+                className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
               >
                 {gowesTracking ? <Pause size={16} /> : <Play size={16} />}
               </button>
@@ -129,7 +129,7 @@ export default function ActivityDock() {
               <button
                 onClick={(e) => { e.stopPropagation(); gowes.finish(); }}
                 aria-label="Selesai"
-                className="shrink-0 bg-white/10 hover:bg-white/20 rounded-full p-2 active:scale-90 transition"
+                className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
               >
                 <Square size={16} />
               </button>
@@ -142,7 +142,7 @@ export default function ActivityDock() {
         {showNav && (
           <div
             onClick={() => navigate("/peta")}
-            className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-white/5 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-[#0E1C17]/5 transition-colors"
           >
             <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-white">
               {maneuverIcon(nav.navInfo?.type ?? 11, 18)}
@@ -159,7 +159,7 @@ export default function ActivityDock() {
             <button
               onClick={(e) => { e.stopPropagation(); nav.stop(); }}
               aria-label="Akhiri navigasi"
-              className="shrink-0 bg-white/10 hover:bg-white/20 rounded-full p-2 active:scale-90 transition"
+              className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
             >
               <X size={16} />
             </button>
@@ -169,7 +169,7 @@ export default function ActivityDock() {
         {showPantau && (
           <div
             onClick={() => navigate("/pantau")}
-            className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-white/5 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-[#0E1C17]/5 transition-colors"
           >
             <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white relative">
               <Radio size={16} />
@@ -187,7 +187,7 @@ export default function ActivityDock() {
             <button
               onClick={(e) => { e.stopPropagation(); pantau.stop(); }}
               aria-label="Hentikan berbagi"
-              className="shrink-0 bg-white/10 hover:bg-white/20 rounded-full p-2 active:scale-90 transition"
+              className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
             >
               <Square size={16} />
             </button>

@@ -8,10 +8,13 @@ import { isNativeApp } from "@/lib/native-geo";
 import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import { placeNameFromPath } from "@/lib/place-name";
+import { kirimKartuKeStory } from "@/lib/kirim-story";
+import JejakRute, { type Titik } from "@/components/jejak-rute";
+import RodaLatar from "@/components/roda-latar";
 import {
   Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
-  ImagePlus, X, Download,
+  ImagePlus, X, Download, Sparkles,
 } from "lucide-react";
 
 type BoardItem = { user_id: string; name: string; org: string; km: number; rides: number; streak: number };
@@ -43,6 +46,8 @@ export default function CatatClient({
   const [savedTodayKm, setSavedTodayKm] = useState(0);
   const [savedElev, setSavedElev] = useState<number | null>(null);
   const [sharingForum, setSharingForum] = useState(false);
+  const [sharingStory, setSharingStory] = useState(false);
+  const [storyMsg, setStoryMsg] = useState("");
   const [template, setTemplate] = useState("rute");
   const [palette, setPalette] = useState("hijau");
   // Nama daerah diisi dari GPS (reverse geocoding), bukan nilai tetap,
@@ -177,6 +182,19 @@ export default function CatatClient({
     else if (r.savedTo) alert(`Kartu tersimpan di ${r.savedTo}`);
   }
 
+  // Kartu gowes dikirim sebagai Story yang tayang 24 jam.
+  async function kartuKeStory() {
+    const canvas = cardRef.current;
+    if (!canvas || sharingStory) return;
+    setSharingStory(true); setStoryMsg("");
+    try {
+      await kirimKartuKeStory(canvas, `Gowes ${km} km di Bulungan`);
+      setStoryMsg("Story tayang 24 jam - cek di halaman Umpan.");
+    } catch (err) {
+      setStoryMsg(err instanceof Error ? err.message : "Gagal membuat story.");
+    } finally { setSharingStory(false); }
+  }
+
   function shareCard() {
     const canvas = cardRef.current;
     if (!canvas) return;
@@ -237,124 +255,149 @@ export default function CatatClient({
   const medal = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="px-4 pt-6 max-w-md mx-auto pb-8">
-      {/* Hero streak */}
-      <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-orange-500 via-red-500 to-red-700 text-white shadow-lg mb-4 speed-lines">
-        <div className="flex items-center justify-between relative">
-          <div>
-            <p className="eyebrow !text-[10px] text-white/85 flex items-center gap-1"><Flame size={14} /> Streak kamu</p>
-            <p className="display-num text-6xl leading-none mt-1">{myStreak}<span className="display-title text-xl ml-1.5">hari</span></p>
-          </div>
-          <Flame size={64} className="opacity-25" />
+    <div className="min-h-screen bg-[#071310] px-4 pt-5 max-w-md mx-auto pb-8">
+      {/* Ringkasan beruntun: ringkas, tidak mencuri perhatian dari angka jarak */}
+      <div className="rounded-2xl border border-white/8 bg-[#0C1A15] px-4 py-3 mb-3 flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Flame size={18} className="text-amber-400" />
+          <p className="display-num text-2xl leading-none text-white">{myStreak}<span className="display-title text-[11px] text-slate-500 ml-1">hari</span></p>
         </div>
-        <div className="grid grid-cols-3 gap-2 mt-4 text-center relative">
-          <div className="bg-white/15 rounded-xl py-2"><p className="eyebrow !text-[9px] text-white/75">Rekor</p><p className="display-num text-lg leading-tight">{longest} hari</p></div>
-          <div className="bg-white/15 rounded-xl py-2"><p className="eyebrow !text-[9px] text-white/75">Total</p><p className="display-num text-lg leading-tight">{totalKm.toFixed(1)} km</p></div>
-          <div className="bg-white/15 rounded-xl py-2"><p className="eyebrow !text-[9px] text-white/75">Ride</p><p className="display-num text-lg leading-tight">{totalRides}x</p></div>
+        <div className="ml-auto flex gap-4 text-right">
+          <div><p className="display-num text-base leading-none text-slate-200">{longest}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">rekor</p></div>
+          <div><p className="display-num text-base leading-none text-slate-200">{totalKm.toFixed(1)}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">km total</p></div>
+          <div><p className="display-num text-base leading-none text-slate-200">{totalRides}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">perjalanan</p></div>
         </div>
       </div>
 
-      <Link href="/catat/riwayat" className="flex items-center justify-center gap-2 w-full mb-4 bg-white border border-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm active:scale-[0.98] transition-transform">
+      <Link href="/catat/riwayat" className="flex items-center justify-center gap-2 w-full mb-3 border border-white/10 text-slate-300 py-2.5 rounded-xl font-semibold text-sm active:scale-[0.98] transition-transform">
         <History size={16} /> Riwayat Perjalanan
       </Link>
 
       {/* Toggle */}
-      <div className="flex bg-slate-200/70 rounded-xl p-1 mb-4">
-        <button onClick={() => setTab("catat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "catat" ? "bg-white shadow text-green-700" : "text-gray-500"}`}><Bike size={16} /> Catat</button>
-        <button onClick={() => setTab("papan")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "papan" ? "bg-white shadow text-green-700" : "text-gray-500"}`}><Trophy size={16} /> Peringkat</button>
+      <div className="flex bg-[#0C1A15] border border-white/8 rounded-xl p-1 mb-4">
+        <button onClick={() => setTab("catat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "catat" ? "bg-lime-400/15 text-lime-300" : "text-slate-500"}`}><Bike size={16} /> Catat</button>
+        <button onClick={() => setTab("papan")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "papan" ? "bg-lime-400/15 text-lime-300" : "text-slate-500"}`}><Trophy size={16} /> Peringkat</button>
       </div>
 
       {tab === "catat" ? (
         <>
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-green-900 rounded-3xl p-6 text-white shadow-lg mb-4 speed-lines">
-            <div className="absolute right-4 top-0 h-full w-5 bg-gradient-to-b from-lime-400 to-green-500 opacity-70" style={{ transform: "skewX(-16deg)" }} />
-            <div className="text-center relative">
-              <p className="eyebrow !text-[10px] text-lime-300/90 mb-1">Jarak</p>
-              <p className="display-num text-7xl tabular-nums leading-none">{km}</p>
-              <p className="eyebrow !text-[10px] text-white/60 mt-2">kilometer</p>
-              {status === "paused" && (
-                <span className="inline-flex items-center gap-1.5 mt-3 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-amber-300">
-                  <Pause size={12} /> Dijeda
+          {/* Kartu jarak: angka besar di atas geometri jeruji roda */}
+          <div className="relative overflow-hidden rounded-3xl border border-lime-400/15 bg-[#0A1714] p-6 mb-4">
+            <RodaLatar className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] opacity-60 pointer-events-none" putar={status === "tracking"} />
+
+            <div className="relative flex items-center justify-between mb-4">
+              <div>
+                <p className="eyebrow !text-[9px] text-slate-500">
+                  {status === "tracking" ? "Sedang merekam" : status === "paused" ? "Perekaman dijeda" : "Siap merekam"}
+                </p>
+                <p className="display-title text-[15px] text-white mt-0.5">GOWES DI BULUNGAN</p>
+              </div>
+              {status === "tracking" && (
+                <span className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="eyebrow !text-[9px] text-red-400">Live</span>
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-6 relative">
-              <div className="bg-white/10 border border-white/10 rounded-2xl py-3 text-center"><p className="eyebrow !text-[9px] text-white/60">Waktu</p><p className="display-num text-2xl tabular-nums leading-tight">{fmtDuration(duration)}</p></div>
-              <div className="bg-white/10 border border-white/10 rounded-2xl py-3 text-center"><p className="eyebrow !text-[9px] text-white/60">{status === "tracking" ? "Kec." : "Rata2"}</p><p className="display-num text-2xl tabular-nums leading-tight">{displaySpeed}</p></div>
-              <div className="bg-white/10 border border-white/10 rounded-2xl py-3 text-center"><p className="eyebrow !text-[9px] text-white/60">Elevasi</p><p className="display-num text-2xl tabular-nums leading-tight">{elev}m</p></div>
+
+            <div className="relative text-center py-3">
+              <p className="eyebrow !text-[9px] text-slate-500 mb-1">Jarak tempuh</p>
+              <p className="display-num text-[68px] tabular-nums leading-none text-white">
+                {km.split(".")[0]}<span className="text-lime-400">.{km.split(".")[1] ?? "00"}</span>
+              </p>
+              <p className="eyebrow !text-[9px] text-slate-500 mt-2">kilometer</p>
+            </div>
+
+            <div className="relative grid grid-cols-3 gap-2 mt-5">
+              {[
+                { l: "Waktu", v: fmtDuration(duration) },
+                { l: status === "tracking" ? "Kec." : "Kec. rata", v: displaySpeed },
+                { l: "Elevasi", v: `${elev}m` },
+              ].map((b) => (
+                <div key={b.l} className="rounded-2xl border border-white/8 bg-[#08120F] py-3 text-center">
+                  <p className="eyebrow !text-[8px] text-slate-500">{b.l}</p>
+                  <p className="display-num text-xl tabular-nums leading-tight text-white mt-0.5">{b.v}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Jejak hari ini, dari titik GPS yang sudah terekam */}
+            <div className="relative mt-3 rounded-2xl border border-white/8 bg-[#08120F] py-2 flex flex-col items-center">
+              <JejakRute path={(getPath() as Titik[] | null)} width={250} height={64} tebal={2.2} />
+              <p className="eyebrow !text-[8px] text-slate-600 pb-1">jalur hari ini</p>
             </div>
           </div>
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 mb-4 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
+          {error && <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-lg px-3 py-2 mb-4 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
           {status === "idle" && (
-            <button onClick={start} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={22} /> Mulai Bersepeda</button>
+            <button onClick={start} className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(180,255,58,.25)] active:scale-95 transition-transform"><Play size={22} /> Mulai Bersepeda</button>
           )}
           {status === "tracking" && (
             <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 text-green-700 text-sm font-medium">
+              <div className="flex items-center justify-center gap-2 text-lime-300 text-sm font-medium">
                 <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-600"></span></span>
                 Merekam perjalanan...
               </div>
               {wasHidden && !nativeApp && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl px-3 py-2 flex items-start gap-2">
+                <div className="bg-amber-400/10 border border-amber-400/25 text-amber-300 text-xs rounded-xl px-3 py-2 flex items-start gap-2">
                   <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
                   Layar sempat mati / aplikasi di latar belakang — sistem HP menjeda GPS selama itu, jadi sebagian jarak mungkin tidak terekam. Biarkan aplikasi tetap terbuka di layar selama gowes.
                 </div>
               )}
               <div className="flex gap-2">
-                <button onClick={pause} className="flex-1 bg-slate-700 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Pause size={20} /> Jeda</button>
+                <button onClick={pause} className="flex-1 border border-white/15 text-slate-200 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"><Pause size={20} /> Jeda</button>
                 <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
               </div>
-              <p className="text-xs text-gray-400 text-center">{nativeApp ? "Perekaman tetap berjalan walau layar mati — notifikasi BUG tampil selama merekam." : "Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis — jangan kunci layar selama merekam."}</p>
+              <p className="text-xs text-slate-500 text-center">{nativeApp ? "Perekaman tetap berjalan walau layar mati — notifikasi BUG tampil selama merekam." : "Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis — jangan kunci layar selama merekam."}</p>
             </div>
           )}
           {status === "paused" && (
             <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 text-slate-600 text-sm font-medium">
+              <div className="flex items-center justify-center gap-2 text-slate-400 text-sm font-medium">
                 <Pause size={14} /> Perekaman dijeda. Waktu & jarak berhenti dihitung.
               </div>
               <div className="flex gap-2">
-                <button onClick={resume} className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={20} /> Lanjut</button>
+                <button onClick={resume} className="flex-1 bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={20} /> Lanjut</button>
                 <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
               </div>
-              <p className="text-xs text-gray-400 text-center">Perpindahan selama jeda tidak dihitung sebagai jarak gowes.</p>
+              <p className="text-xs text-slate-500 text-center">Perpindahan selama jeda tidak dihitung sebagai jarak gowes.</p>
             </div>
           )}
           {status === "finished" && (
             <div className="space-y-4">
-              <div className="rounded-2xl px-4 py-3 text-sm flex items-center gap-2 bg-orange-50 text-orange-700 border border-orange-200">
+              <div className="rounded-2xl px-4 py-3 text-sm flex items-center gap-2 bg-amber-400/10 text-amber-300 border border-amber-400/25">
                 <Flame size={18} /> Streak dihitung dari total jarakmu hari ini (minimal 1 km). Simpan untuk memperbaruinya.
               </div>
               <div className="flex gap-2">
-                <button onClick={handleDiscard} className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2"><Trash2 size={18} /> Buang</button>
-                <button onClick={save} className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><Save size={18} /> Simpan</button>
+                <button onClick={handleDiscard} className="flex-1 border border-white/15 text-slate-200 py-3 rounded-xl font-medium flex items-center justify-center gap-2"><Trash2 size={18} /> Buang</button>
+                <button onClick={save} className="flex-1 bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><Save size={18} /> Simpan</button>
               </div>
             </div>
           )}
-          {status === "saving" && <button disabled className="w-full bg-gray-400 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2"><Loader2 size={20} className="animate-spin" /> Menyimpan...</button>}
+          {status === "saving" && <button disabled className="w-full bg-white/10 text-slate-300 py-4 rounded-2xl font-bold flex items-center justify-center gap-2"><Loader2 size={20} className="animate-spin" /> Menyimpan...</button>}
           {status === "saved" && (
             <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
-                <CheckCircle2 size={40} className="text-green-600 mx-auto mb-2" />
-                <h2 className="display-title text-xl text-green-800">Perjalanan Tersimpan!</h2>
+              <div className="bg-lime-400/10 border border-lime-400/25 rounded-2xl p-5 text-center">
+                <CheckCircle2 size={40} className="text-lime-400 mx-auto mb-2" />
+                <h2 className="display-title text-xl text-lime-300">Perjalanan Tersimpan!</h2>
                 {savedQualifies && savedStreak !== null ? (
                   <>
-                    <p className="text-orange-600 display-num text-3xl flex items-center justify-center gap-1 my-1"><Flame size={24} /> {savedStreak} hari beruntun</p>
-                    <p className="text-sm text-green-700">Total hari ini {savedTodayKm} km. Streak aman!</p>
+                    <p className="text-amber-400 display-num text-3xl flex items-center justify-center gap-1 my-1"><Flame size={24} /> {savedStreak} hari beruntun</p>
+                    <p className="text-sm text-lime-300">Total hari ini {savedTodayKm} km. Streak aman!</p>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-600 my-1">Total hari ini {savedTodayKm} km. Kurang {Math.max(0, Math.round((1 - savedTodayKm) * 100) / 100)} km lagi untuk streak hari ini.</p>
+                  <p className="text-sm text-slate-400 my-1">Total hari ini {savedTodayKm} km. Kurang {Math.max(0, Math.round((1 - savedTodayKm) * 100) / 100)} km lagi untuk streak hari ini.</p>
                 )}
               </div>
 
               {/* Kartu untuk dibagikan: pilih template + warna */}
               <div>
-                <p className="text-xs text-gray-500 mb-2 font-medium">Pilih tampilan kartu</p>
+                <p className="text-xs text-slate-400 mb-2 font-medium">Pilih tampilan kartu</p>
                 <div className="flex gap-2 mb-3">
                   {TEMPLATES.map((t) => (
                     <button key={t.key} onClick={() => setTemplate(t.key)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"}`}>
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                       {t.name}
                     </button>
                   ))}
@@ -362,43 +405,48 @@ export default function CatatClient({
                 <div className="flex gap-2.5 mb-3">
                   {PALETTE_KEYS.map((k) => (
                     <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
-                      className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-gray-800" : "ring-1 ring-gray-200"}`}
+                      className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-offset-[#071310] ring-lime-400" : "ring-1 ring-white/15"}`}
                       style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
                   ))}
                 </div>
                 <div className="flex gap-2 mb-3">
-                  <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
+                  <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-white/15 text-slate-400 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
                     <ImagePlus size={15} /> {cardPhoto ? "Ganti Foto" : "Tambah Foto"}
                     <input type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
                   </label>
                   {cardPhoto && (
-                    <button onClick={() => setCardPhoto(null)} className="px-3 rounded-xl border-2 border-gray-200 text-gray-500 active:scale-95 transition-transform" aria-label="Hapus foto">
+                    <button onClick={() => setCardPhoto(null)} className="px-3 rounded-xl border-2 border-white/10 text-slate-400 active:scale-95 transition-transform" aria-label="Hapus foto">
                       <X size={16} />
                     </button>
                   )}
                   <button onClick={() => setCardTransparent((v) => !v)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${cardTransparent ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"}`}>
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${cardTransparent ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                     Latar transparan
                   </button>
                 </div>
-                <canvas ref={cardRef} className={`w-full h-auto rounded-2xl shadow border border-gray-200 ${cardTransparent ? "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:22px_22px]" : ""}`} />
+                <canvas ref={cardRef} className={`w-full h-auto rounded-2xl shadow border border-white/10 ${cardTransparent ? "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:22px_22px]" : ""}`} />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <button onClick={shareCard} className="bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
+                <button onClick={shareCard} className="bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
                   <Share2 size={16} /> Bagikan
                 </button>
-                <button onClick={downloadCard} className="bg-gray-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
+                <button onClick={downloadCard} className="border border-white/15 text-slate-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
                   <Download size={16} /> Unduh
                 </button>
-                <button onClick={shareToForum} disabled={sharingForum} className="bg-violet-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:bg-gray-400 active:scale-95 transition-transform">
+                <button onClick={shareToForum} disabled={sharingForum} className="border border-violet-400/40 text-violet-300 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
                   {sharingForum ? <Loader2 size={16} className="animate-spin" /> : <MessageSquarePlus size={16} />} Ke Forum
                 </button>
               </div>
+              <button onClick={kartuKeStory} disabled={sharingStory}
+                className="w-full border border-lime-400/35 text-lime-300 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm disabled:opacity-50 active:scale-95 transition-transform">
+                {sharingStory ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} Bagikan ke Story (24 jam)
+              </button>
+              {storyMsg && <p className="text-[11px] text-slate-400 -mt-2">{storyMsg}</p>}
 
               <div className="flex gap-2">
-                <button onClick={handleDiscard} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"><Bike size={18} /> Catat Lagi</button>
-                <button onClick={() => setTab("papan")} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5"><Trophy size={16} /> Peringkat</button>
+                <button onClick={handleDiscard} className="flex-1 border border-white/15 text-slate-200 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"><Bike size={18} /> Catat Lagi</button>
+                <button onClick={() => setTab("papan")} className="flex-1 border border-white/10 text-slate-200 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5"><Trophy size={16} /> Peringkat</button>
               </div>
             </div>
           )}
@@ -406,15 +454,15 @@ export default function CatatClient({
       ) : (
         <div className="space-y-2">
           {board.length === 0 ? (
-            <p className="text-center text-gray-400 py-12 text-sm">Belum ada peserta. Catat perjalanan pertamamu!</p>
+            <p className="text-center text-slate-500 py-12 text-sm">Belum ada peserta. Catat perjalanan pertamamu!</p>
           ) : board.map((r, i) => {
             const me = r.user_id === userId;
             return (
-              <div key={r.user_id} className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-green-50 border border-green-300" : "bg-white border border-gray-100"}`}>
-                <div className="w-7 text-center display-num text-lg text-gray-500">{i < 3 ? medal[i] : i + 1}</div>
+              <div key={r.user_id} className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-lime-400/40" : "bg-[#0E1C17] border border-white/5"}`}>
+                <div className="w-7 text-center display-num text-lg text-slate-400">{i < 3 ? medal[i] : i + 1}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{r.name}{me ? " (kamu)" : ""}</p>
-                  <p className="text-xs text-gray-500 truncate">{r.org} · {r.km.toFixed(1)} km · {r.rides}x</p>
+                  <p className="font-semibold text-white truncate">{r.name}{me ? " (kamu)" : ""}</p>
+                  <p className="text-xs text-slate-400 truncate">{r.org} · {r.km.toFixed(1)} km · {r.rides}x</p>
                 </div>
                 <div className="flex items-center gap-1 text-orange-600 display-num text-xl"><Flame size={18} /> {r.streak}</div>
               </div>

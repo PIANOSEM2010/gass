@@ -35,7 +35,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body className={`${inter.variable} ${barlow.variable} font-body bg-gray-50 min-h-screen`}>
+      <body className={`${inter.variable} ${barlow.variable} font-body bg-[#071310] text-slate-200 min-h-screen`}>
         <GowesProvider>
           <PantauProvider>
             <NavProvider>

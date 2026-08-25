@@ -126,7 +126,7 @@ export default function PushEnroll() {
     const ok = nativeStatus === "terdaftar";
     const failed = nativeStatus.startsWith("gagal") || nativeStatus.startsWith("error") || nativeStatus.startsWith("izin:");
     return (
-      <div className={`${ok ? "bg-green-50 border-green-200 text-green-700" : failed ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-gray-50 border-gray-200 text-gray-600"} border rounded-xl p-3 text-xs text-center flex items-center justify-center gap-2`}>
+      <div className={`${ok ? "bg-lime-400/10 border-lime-400/25 text-lime-300" : failed ? "bg-amber-400/10 border-amber-400/25 text-amber-300" : "bg-[#0A1512] border-white/10 text-slate-400"} border rounded-xl p-3 text-xs text-center flex items-center justify-center gap-2`}>
         <BellRing size={14} className="flex-shrink-0" />
         <span>
           {ok
@@ -139,7 +139,7 @@ export default function PushEnroll() {
 
   if (state === "unsupported") {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-500 text-center">
+      <div className="bg-[#0A1512] border border-white/10 rounded-xl p-3 text-xs text-slate-400 text-center">
         Browser ini belum mendukung notifikasi push.
       </div>
     );
@@ -147,7 +147,7 @@ export default function PushEnroll() {
 
   if (state === "denied") {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 text-center flex items-center justify-center gap-2">
+      <div className="bg-amber-400/10 border border-amber-400/25 rounded-xl p-3 text-xs text-amber-300 text-center flex items-center justify-center gap-2">
         <BellOff size={14} /> Notifikasi diblokir. Aktifkan lewat pengaturan situs di browser.
       </div>
     );
@@ -155,11 +155,11 @@ export default function PushEnroll() {
 
   if (state === "granted") {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between">
-        <span className="text-sm text-green-700 font-medium flex items-center gap-2">
+      <div className="bg-lime-400/10 border border-lime-400/25 rounded-xl p-3 flex items-center justify-between">
+        <span className="text-sm text-lime-300 font-medium flex items-center gap-2">
           <BellRing size={16} /> Notifikasi darurat aktif
         </span>
-        <button onClick={disable} className="text-xs text-green-700 underline">
+        <button onClick={disable} className="text-xs text-lime-300 underline">
           Matikan
         </button>
       </div>
@@ -167,14 +167,14 @@ export default function PushEnroll() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
+    <div className="bg-[#0E1C17] border border-white/10 rounded-xl p-4">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
           <Bell size={18} className="text-red-600" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-gray-900">Aktifkan Notifikasi Darurat</p>
-          <p className="text-xs text-gray-500 mt-0.5 mb-3">
+          <p className="text-sm font-semibold text-white">Aktifkan Notifikasi Darurat</p>
+          <p className="text-xs text-slate-400 mt-0.5 mb-3">
             Dapatkan peringatan SOS dari pesepeda lain walau aplikasi sedang tertutup.
           </p>
           <button

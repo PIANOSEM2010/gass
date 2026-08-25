@@ -44,8 +44,8 @@ function SoketMeniskus() {
       className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
       style={{ top: -40 }}
     >
-      <path d={`${JALUR_MENISKUS} L 220,46 L 0,46 Z`} fill="#020617" />
-      <path d={JALUR_MENISKUS} fill="none" stroke="#1e293b" strokeWidth="1" />
+      <path d={`${JALUR_MENISKUS} L 220,46 L 0,46 Z`} fill="#050D0B" />
+      <path d={JALUR_MENISKUS} fill="none" stroke="rgba(180,255,58,.14)" strokeWidth="1" />
     </svg>
   );
 }
@@ -115,7 +115,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[1200] bg-[#020617] border-t border-slate-800 shadow-[0_-6px_20px_rgba(0,0,0,0.25)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-[1200] bg-[#050D0B] border-t border-lime-400/12 shadow-[0_-6px_20px_rgba(0,0,0,0.25)]">
       <div ref={wadahRef} className="relative max-w-md mx-auto h-16">
         <SoketMeniskus />
 

@@ -59,46 +59,46 @@ export default function CommentSection({
 
   return (
     <div className="mt-6">
-      <h2 className="font-semibold text-gray-900 mb-3">
+      <h2 className="font-semibold text-white mb-3">
         Komentar ({comments.length})
       </h2>
 
       <div className="space-y-3 mb-4">
         {comments.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">Belum ada komentar. Jadilah yang pertama!</p>
+          <p className="text-sm text-slate-400 italic">Belum ada komentar. Jadilah yang pertama!</p>
         ) : (
           comments.map((c) => (
-            <div key={c.id} className="bg-white rounded-xl p-4 shadow-sm">
+            <div key={c.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
               <div className="flex items-start justify-between mb-1">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-slate-400">
                   <User size={12} />
-                  <span className="font-medium text-gray-700">{c.author_name}</span>
+                  <span className="font-medium text-slate-200">{c.author_name}</span>
                   <span>•</span>
                   <span>{new Date(c.created_at).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 {userId === c.user_id && (
                   <button
                     onClick={() => handleDelete(c.id)}
-                    className="text-gray-400 hover:text-red-600"
+                    className="text-slate-500 hover:text-red-600"
                   >
                     <Trash2 size={14} />
                   </button>
                 )}
               </div>
-              <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{c.body}</p>
+              <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{c.body}</p>
             </div>
           ))
         )}
       </div>
 
       {userId ? (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-3 shadow-sm">
+        <form onSubmit={handleSubmit} className="bg-[#0E1C17] rounded-xl p-3 shadow-sm">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Tulis komentarmu..."
             rows={2}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none text-sm"
+            className="w-full px-3 py-2 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none text-sm"
           />
           <div className="flex justify-end mt-2">
             <button

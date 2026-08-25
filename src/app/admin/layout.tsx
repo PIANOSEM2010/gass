@@ -17,8 +17,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (profile?.role !== "admin") {
     return (
       <div className="px-4 pt-12 max-w-md mx-auto text-center">
-        <h1 className="text-2xl font-bold text-red-700 mb-2">Akses Ditolak</h1>
-        <p className="text-gray-600 mb-6">Halaman ini khusus untuk admin BUG.</p>
+        <h1 className="text-2xl font-bold text-red-300 mb-2">Akses Ditolak</h1>
+        <p className="text-slate-400 mb-6">Halaman ini khusus untuk admin BUG.</p>
         <Link href="/" className="inline-block bg-green-600 text-white px-5 py-2 rounded-lg font-medium">
           Kembali ke Beranda
         </Link>
@@ -47,13 +47,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/" className="text-xs underline opacity-80">Keluar dari Admin</Link>
       </div>
 
-      <div className="bg-white border-b border-gray-200 px-2 py-2 overflow-x-auto">
+      <div className="bg-[#0E1C17] border-b border-white/10 px-2 py-2 overflow-x-auto">
         <div className="flex gap-1">
           {nav.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-100 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:bg-[#122019] whitespace-nowrap"
             >
               <Icon size={14} />
               {label}

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Siren, MapPin, Loader2, CheckCircle2, WifiOff, Phone, MessageSquare } from "lucide-react";
 import { getPositionOnce } from "@/lib/native-geo";
@@ -217,14 +218,14 @@ export default function SosButton({
   if (status === "offline-ready") {
     const smsUrl = `sms:${telNumber}?body=${encodeURIComponent(sosMessage)}`;
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+      <div className="bg-amber-400/10 border border-amber-400/25 rounded-2xl p-6 text-center">
         <WifiOff size={44} className="text-amber-600 mx-auto mb-3" />
-        <h2 className="font-bold text-amber-800 text-lg mb-1">Mode Offline</h2>
-        <p className="text-sm text-amber-700 mb-4">
+        <h2 className="font-bold text-amber-300 text-lg mb-1">Mode Offline</h2>
+        <p className="text-sm text-amber-300 mb-4">
           Tidak ada koneksi internet. Lokasimu sudah didapat — kirim lewat SMS atau telepon langsung lewat jaringan seluler.
         </p>
         {coords && (
-          <div className="bg-white rounded-lg p-3 text-xs text-gray-600 inline-flex items-center gap-2 mb-4">
+          <div className="bg-[#0E1C17] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">
             <MapPin size={14} />
             {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
           </div>
@@ -244,12 +245,12 @@ export default function SosButton({
           </button>
           <button
             onClick={() => { window.location.href = `tel:${telNumber}`; }}
-            className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2"
+            className="w-full bg-[#0E1C17] border border-white/15 text-slate-200 py-3 rounded-xl font-medium flex items-center justify-center gap-2"
           >
             <Phone size={18} /> Telepon {primaryContact?.name}
           </button>
         </div>
-        <button onClick={reset} className="block w-full mt-4 text-sm text-amber-700 underline">
+        <button onClick={reset} className="block w-full mt-4 text-sm text-amber-300 underline">
           Kembali ke tombol SOS
         </button>
       </div>
@@ -259,27 +260,27 @@ export default function SosButton({
   // Layar TERKIRIM (online)
 if (status === "sent") {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
-        <CheckCircle2 size={48} className="text-green-600 mx-auto mb-3" />
-        <h2 className="font-bold text-green-800 text-lg mb-2">SOS Terkirim</h2>
-        <p className="text-sm text-green-700 mb-3">
+      <div className="bg-lime-400/10 border border-lime-400/25 rounded-2xl p-6 text-center">
+        <CheckCircle2 size={48} className="text-lime-400 mx-auto mb-3" />
+        <h2 className="font-bold text-lime-300 text-lg mb-2">SOS Terkirim</h2>
+        <p className="text-sm text-lime-300 mb-3">
           Pesan SOS otomatis telah dikirim ke kontak daruratmu & admin. WhatsApp juga terbuka ke kontak utama — kamu bisa menekan kirim untuk mengirim dari nomormu sendiri.
         </p>
         {coords && (
-          <div className="bg-white rounded-lg p-3 text-xs text-gray-600 inline-flex items-center gap-2 mb-4">
+          <div className="bg-[#0E1C17] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">
             <MapPin size={14} />
             {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
           </div>
         )}
-        <button
-          onClick={() => { window.location.href = "tel:110"; }}
+        <Link
+          href="/sos/panggil"
           className="w-full bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 animate-pulse"
         >
-          <Phone size={18} /> Telepon 110 Sekarang
-        </button>
+          <Phone size={18} /> Telepon 110 (dengan panduan)
+        </Link>
         <button
           onClick={reset}
-          className="block w-full mt-3 text-sm text-green-700 underline"
+          className="block w-full mt-3 text-sm text-lime-300 underline"
         >
           Kembali ke tombol SOS
         </button>
@@ -290,7 +291,7 @@ if (status === "sent") {
   return (
     <div className="flex flex-col items-center">
       {!online && (
-        <div className="mb-4 w-full max-w-xs bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 flex items-center justify-center gap-2 text-center">
+        <div className="mb-4 w-full max-w-xs bg-amber-400/10 border border-amber-400/25 text-amber-300 text-xs rounded-lg px-3 py-2 flex items-center justify-center gap-2 text-center">
           <WifiOff size={14} /> Mode offline — SOS akan dikirim via SMS / telepon
         </div>
       )}
@@ -325,21 +326,21 @@ if (status === "sent") {
         )}
       </button>
 
-      <button
-        onClick={() => { window.location.href = "tel:110"; }}
-        className="mt-4 text-sm font-semibold text-red-600 underline underline-offset-2 flex items-center gap-1.5"
+      <Link
+        href="/sos/panggil"
+        className="mt-4 text-sm font-semibold text-red-400 underline underline-offset-2 flex items-center gap-1.5"
       >
-        <Phone size={14} /> Hubungkan dengan 110
-      </button>
+        <Phone size={14} /> Panggilan terpandu ke 110
+      </Link>
 
-      <p className="text-xs text-gray-500 mt-3 text-center">
-        Akan menghubungi: <span className="font-medium text-gray-700">{primaryContact?.name}</span>
+      <p className="text-xs text-slate-400 mt-3 text-center">
+        Akan menghubungi: <span className="font-medium text-slate-200">{primaryContact?.name}</span>
         <br />
-        <span className="text-gray-400">{telNumber}</span>
+        <span className="text-slate-500">{telNumber}</span>
       </p>
 
       {status === "error" && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 max-w-xs text-center">
+        <div className="mt-4 bg-red-500/10 border border-red-400/25 rounded-lg p-3 text-sm text-red-300 max-w-xs text-center">
           {errorMsg}
         </div>
       )}

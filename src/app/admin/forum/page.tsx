@@ -18,8 +18,8 @@ export default async function AdminForumPage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Moderasi Forum</h1>
-      <p className="text-sm text-gray-600 mb-6">Tinjau dan kelola post forum.</p>
+      <h1 className="text-2xl font-bold text-white mb-1">Moderasi Forum</h1>
+      <p className="text-sm text-slate-400 mb-6">Tinjau dan kelola post forum.</p>
       <ForumModeration initialPosts={enriched} />
     </div>
   );

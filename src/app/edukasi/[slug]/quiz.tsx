@@ -129,6 +129,11 @@ export default function ModuleQuiz({
   const [answers, setAnswers] = useState<(number | null)[]>(new Array(questions.length).fill(null));
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Kuis interaktif: satu soal per layar, umpan balik langsung setelah
+  // menjawab, dan hitungan jawaban benar beruntun (sesuai rancangan).
+  const [ke, setKe] = useState(0);
+  const [terkunci, setTerkunci] = useState(false);
+  const [beruntun, setBeruntun] = useState(0);
 
   if (questions.length === 0) return null;
 
@@ -159,6 +164,7 @@ export default function ModuleQuiz({
     setAnswers(new Array(questions.length).fill(null));
     setSubmitted(false);
     setStarted(true);
+    setKe(0); setTerkunci(false); setBeruntun(0);
   }
 
   const score = submitted ? answers.reduce((acc: number, a, i) => (a === questions[i].correct ? acc + 1 : acc), 0) : 0;
@@ -166,20 +172,20 @@ export default function ModuleQuiz({
 
   if (!started && !submitted) {
     return (
-      <div className="mt-6 rounded-2xl p-6 text-center bg-gradient-to-br from-green-600 to-emerald-700 text-white shadow-lg">
-        <Award size={38} className="mx-auto mb-2 opacity-90" />
-        <h3 className="font-bold text-lg mb-1">Uji Pemahamanmu</h3>
-        <p className="text-sm opacity-90 mb-4">
+      <div className="mt-6 rounded-2xl p-6 text-center border border-lime-400/20 bg-[#0C1A15]">
+        <Award size={38} className="mx-auto mb-2 text-lime-400" />
+        <h3 className="display-title text-lg text-white mb-1">UJI PEMAHAMANMU</h3>
+        <p className="text-[13px] text-slate-400 mb-4">
           {questions.length} pertanyaan singkat untuk memastikan kamu memahami modul ini.
         </p>
         {existingProgress?.completed && (
-          <p className="text-xs bg-white/20 rounded-full px-3 py-1 inline-block mb-4">
+          <p className="text-[11px] border border-white/10 text-slate-400 rounded-full px-3 py-1 inline-block mb-4">
             Skor terakhir: <strong>{existingProgress.score}/{questions.length}</strong>
           </p>
         )}
         <button
           onClick={() => setStarted(true)}
-          className="block w-full bg-white text-green-700 px-6 py-3 rounded-xl font-bold active:scale-95 transition-transform"
+          className="block w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 px-6 py-3 rounded-xl display-title text-base active:scale-95 transition-transform"
         >
           {existingProgress?.completed ? "Coba Lagi" : "Mulai Kuis"}
         </button>
@@ -191,11 +197,11 @@ export default function ModuleQuiz({
     const passed = score === questions.length;
     return (
       <div className="mt-6 space-y-4">
-        <div className={`rounded-2xl p-6 text-center text-white shadow-lg ${passed ? "bg-gradient-to-br from-green-600 to-emerald-700" : "bg-gradient-to-br from-amber-500 to-orange-600"}`}>
-          <Award size={44} className="mx-auto mb-2" />
-          <p className="text-sm opacity-90">Skor kamu</p>
-          <h3 className="font-extrabold text-4xl my-1">{score}/{questions.length}</h3>
-          <p className="text-sm opacity-95">
+        <div className={`rounded-2xl p-6 text-center ${passed ? "border border-lime-400/30 bg-lime-400/8" : "border border-amber-400/30 bg-amber-400/8"}`}>
+          <Award size={44} className="mx-auto mb-2 text-lime-400" />
+          <p className="eyebrow !text-[9px] text-slate-500">Skor kamu</p>
+          <h3 className="display-num text-5xl my-1 text-white">{score}/{questions.length}</h3>
+          <p className="text-[13px] text-slate-300">
             {passed ? "Sempurna! Kamu menguasai modul ini." : "Lumayan! Baca ulang bagian yang kamu salah."}
           </p>
         </div>
@@ -204,19 +210,19 @@ export default function ModuleQuiz({
           const userAns = answers[qIdx];
           const isCorrect = userAns === q.correct;
           return (
-            <div key={qIdx} className={`bg-white rounded-2xl p-4 shadow-sm border ${isCorrect ? "border-green-200" : "border-red-200"}`}>
+            <div key={qIdx} className={`bg-[#0C1A15] rounded-2xl p-4 border ${isCorrect ? "border-lime-400/25" : "border-red-400/25"}`}>
               <div className="flex items-start gap-2 mb-2">
-                {isCorrect ? <CheckCircle2 size={20} className="text-green-600 flex-shrink-0 mt-0.5" /> : <XCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />}
-                <p className="text-sm font-semibold text-gray-900">{qIdx + 1}. {q.question}</p>
+                {isCorrect ? <CheckCircle2 size={20} className="text-lime-400 flex-shrink-0 mt-0.5" /> : <XCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />}
+                <p className="text-sm font-semibold text-white">{qIdx + 1}. {q.question}</p>
               </div>
               <div className="ml-7 space-y-1">
                 <p className="text-xs">
-                  Jawabanmu: <span className={isCorrect ? "text-green-700 font-medium" : "text-red-600 font-medium"}>{q.options[userAns!]}</span>
+                  Jawabanmu: <span className={isCorrect ? "text-lime-300 font-medium" : "text-red-600 font-medium"}>{q.options[userAns!]}</span>
                 </p>
                 {!isCorrect && (
-                  <p className="text-xs text-green-700">Jawaban benar: <strong>{q.options[q.correct]}</strong></p>
+                  <p className="text-xs text-lime-300">Jawaban benar: <strong>{q.options[q.correct]}</strong></p>
                 )}
-                <p className="text-xs text-gray-600 italic pt-1">{q.explanation}</p>
+                <p className="text-xs text-slate-400 italic pt-1">{q.explanation}</p>
               </div>
             </div>
           );
@@ -224,7 +230,7 @@ export default function ModuleQuiz({
 
         <button
           onClick={reset}
-          className="w-full border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="w-full border-2 border-white/15 text-slate-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform"
         >
           <RotateCcw size={16} /> Coba Lagi
         </button>
@@ -232,43 +238,125 @@ export default function ModuleQuiz({
     );
   }
 
+  // ---- Tampilan pengerjaan: satu soal per layar ----
+  const soal = questions[ke];
+  const jawab = answers[ke];
+  const benar = jawab === soal.correct;
+  const persen = Math.round(((ke + (terkunci ? 1 : 0)) / questions.length) * 100);
+  const soalTerakhir = ke === questions.length - 1;
+
+  function pilih(idx: number) {
+    if (terkunci) return;
+    const salinan = [...answers];
+    salinan[ke] = idx;
+    setAnswers(salinan);
+    setTerkunci(true);
+    setBeruntun((b) => (idx === soal.correct ? b + 1 : 0));
+  }
+
+  function lanjut() {
+    if (soalTerakhir) { handleSubmit(); return; }
+    setKe((v) => v + 1);
+    setTerkunci(false);
+  }
+
   return (
-    <div className="mt-6 space-y-4">
-      <div className="flex items-center justify-between px-1">
-        <h3 className="font-bold text-gray-800">Kuis</h3>
-        <span className="text-xs text-gray-500">{answered}/{questions.length} terjawab</span>
+    <div className="mt-6">
+      {/* Kepala: cincin kemajuan + hitungan beruntun */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative w-11 h-11 flex-shrink-0">
+          <svg viewBox="0 0 44 44" className="w-11 h-11 -rotate-90">
+            <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,.10)" strokeWidth="4" />
+            <circle cx="22" cy="22" r="18" fill="none" stroke="#B4FF3A" strokeWidth="4" strokeLinecap="round"
+              strokeDasharray={`${(persen / 100) * 113} 113`}
+              style={{ transition: "stroke-dasharray .45s cubic-bezier(.22,1,.36,1)" }} />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center display-num text-sm text-white">{ke + 1}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="eyebrow !text-[9px] text-slate-500 truncate">Kuis modul</p>
+          <p className="display-title text-[15px] text-white">SOAL {ke + 1} DARI {questions.length}</p>
+        </div>
+        <div className="text-right">
+          <p className="display-num text-2xl leading-none text-lime-400">{beruntun}</p>
+          <p className="eyebrow !text-[8px] text-slate-500 mt-1">beruntun</p>
+        </div>
       </div>
 
-      {questions.map((q, qIdx) => (
-        <div key={qIdx} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="font-semibold text-gray-900 mb-3"><span className="text-green-600">{qIdx + 1}.</span> {q.question}</p>
-          <div className="space-y-2">
-            {q.options.map((opt, optIdx) => {
-              const sel = answers[qIdx] === optIdx;
-              return (
-                <button
-                  key={optIdx}
-                  onClick={() => selectAnswer(qIdx, optIdx)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm border-2 transition-colors flex items-center gap-2 ${sel ? "border-green-600 bg-green-50 text-green-800 font-medium" : "border-gray-200 text-gray-700"}`}
-                >
-                  <span className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-[10px] ${sel ? "border-green-600 bg-green-600 text-white" : "border-gray-300"}`}>
-                    {sel ? "✓" : ""}
-                  </span>
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+      <div className="h-1 rounded-full bg-white/8 overflow-hidden mb-4">
+        <div className="h-full bg-gradient-to-r from-lime-400 to-emerald-500"
+          style={{ width: `${persen}%`, transition: "width .45s cubic-bezier(.22,1,.36,1)" }} />
+      </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={answers.some((a) => a === null) || saving}
-        className="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold disabled:bg-gray-300 disabled:text-gray-500 active:scale-95 transition-transform"
-      >
-        {saving ? "Menyimpan..." : "Kumpulkan Jawaban"}
-      </button>
+      {/* Situasi di jalan */}
+      <div className="rounded-2xl border border-lime-400/12 bg-[#0C1A15] p-4">
+        <p className="eyebrow !text-[9px] text-slate-500 mb-2">Situasi di jalan</p>
+        <p className="text-[14px] leading-relaxed text-slate-100">{soal.question}</p>
+        <div className="mt-3 rounded-xl bg-[#08120F] border border-white/5 py-3">
+          <IlustrasiJalan />
+        </div>
+      </div>
+
+      {/* Pilihan jawaban */}
+      <div className="space-y-2 mt-3">
+        {soal.options.map((opt, idx) => {
+          const dipilih = jawab === idx;
+          const iniKunci = idx === soal.correct;
+          let gaya = "border-white/10 bg-[#0C1A15] text-slate-200";
+          if (terkunci && iniKunci) gaya = "border-lime-400/60 bg-lime-400/12 text-lime-200";
+          else if (terkunci && dipilih) gaya = "border-red-400/50 bg-red-500/10 text-red-200";
+          else if (terkunci) gaya = "border-white/5 bg-[#0A1512] text-slate-500";
+          return (
+            <button key={idx} onClick={() => pilih(idx)} disabled={terkunci}
+              className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] border transition-colors flex items-center gap-2.5 ${gaya}`}>
+              <span className={`w-6 h-6 rounded-full border flex-shrink-0 flex items-center justify-center text-[11px] display-title ${terkunci && iniKunci ? "border-lime-400 bg-lime-400 text-slate-950" : terkunci && dipilih ? "border-red-400 text-red-300" : "border-white/20 text-slate-400"}`}>
+                {String.fromCharCode(65 + idx)}
+              </span>
+              <span className="flex-1">{opt}</span>
+              {terkunci && iniKunci && <span className="display-title text-[11px] text-lime-400">+10</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {terkunci && (
+        <>
+          <button onClick={lanjut} disabled={saving}
+            className="w-full mt-3 bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-3.5 rounded-xl display-title text-base tracking-wide active:scale-[.98] transition-transform disabled:opacity-60">
+            {saving ? "MENYIMPAN…" : soalTerakhir ? "LIHAT HASIL" : `LANJUT KE SOAL ${ke + 2}`}
+          </button>
+          <div className={`mt-2.5 rounded-xl border px-3.5 py-3 text-[12px] leading-relaxed ${benar ? "border-lime-400/25 bg-lime-400/8 text-lime-100" : "border-amber-400/25 bg-amber-400/8 text-amber-100"}`}>
+            <span className="display-title text-[11px] mr-1.5">{benar ? "TEPAT!" : "BELUM TEPAT."}</span>
+            {soal.explanation}
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+// Ilustrasi marka jalan sederhana: truk, titik buta, dan posisi pesepeda.
+// Digambar sendiri agar sejalan dengan bahasa visual marka jalan BUG.
+function IlustrasiJalan() {
+  return (
+    <svg viewBox="0 0 280 62" className="w-full h-[62px]" aria-hidden="true">
+      <rect x="0" y="24" width="280" height="20" fill="rgba(255,255,255,.03)" />
+      <line x1="0" y1="24" x2="280" y2="24" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
+      <line x1="0" y1="44" x2="280" y2="44" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
+      <line x1="0" y1="34" x2="280" y2="34" stroke="#FFB020" strokeWidth="1.5" strokeDasharray="12 10" opacity=".7" />
+      {/* zona titik buta */}
+      <rect x="150" y="16" width="70" height="36" fill="rgba(248,113,113,.10)" stroke="rgba(248,113,113,.35)" strokeDasharray="4 4" />
+      <text x="185" y="12" textAnchor="middle" fontSize="7" fill="rgba(248,113,113,.8)" letterSpacing="1">TITIK BUTA</text>
+      {/* truk */}
+      <rect x="196" y="22" width="34" height="16" rx="2" fill="rgba(255,255,255,.22)" />
+      <rect x="230" y="26" width="12" height="12" rx="2" fill="rgba(255,255,255,.14)" />
+      {/* pesepeda */}
+      <g stroke="#B4FF3A" strokeWidth="1.8" fill="none">
+        <circle cx="96" cy="38" r="6" />
+        <circle cx="114" cy="38" r="6" />
+        <path d="M96 38 L106 30 L114 38 M106 30 L104 38" />
+        <circle cx="108" cy="25" r="2.6" />
+      </g>
+    </svg>
   );
 }

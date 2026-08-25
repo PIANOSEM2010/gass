@@ -89,18 +89,18 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-3 right-3 z-[2000] max-w-md mx-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 flex items-center gap-3">
+      <div className="bg-[#0E1C17] rounded-2xl shadow-2xl border border-white/5 p-3 flex items-center gap-3">
         <img src="/icon-192.png" alt="BUG" className="w-11 h-11 rounded-xl flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 leading-tight">Pasang Aplikasi BUG</p>
+          <p className="text-sm font-semibold text-white leading-tight">Pasang Aplikasi BUG</p>
           {iosHint ? (
-            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
               Ketuk <Share size={12} className="inline" /> Bagikan → "Tambahkan ke Layar Utama"
             </p>
           ) : androidApk ? (
-            <p className="text-xs text-gray-500 mt-0.5">Catat gowes & Teman Pantau tetap jalan walau layar mati</p>
+            <p className="text-xs text-slate-400 mt-0.5">Catat gowes & Teman Pantau tetap jalan walau layar mati</p>
           ) : (
-            <p className="text-xs text-gray-500 mt-0.5">Akses lebih cepat, langsung dari layar HP</p>
+            <p className="text-xs text-slate-400 mt-0.5">Akses lebih cepat, langsung dari layar HP</p>
           )}
         </div>
         {androidApk ? (
@@ -120,7 +120,7 @@ export default function InstallPrompt() {
             <Download size={16} /> Pasang
           </button>
         )}
-        <button onClick={close} className="text-gray-400 hover:text-gray-700 flex-shrink-0 p-1" aria-label="Tutup">
+        <button onClick={close} className="text-slate-500 hover:text-slate-200 flex-shrink-0 p-1" aria-label="Tutup">
           <X size={18} />
         </button>
       </div>

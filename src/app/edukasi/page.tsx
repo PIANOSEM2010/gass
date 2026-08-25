@@ -3,9 +3,9 @@ import Link from "next/link";
 import { BookOpen, CheckCircle2, Users, Bike, ShieldCheck, ChevronRight } from "lucide-react";
 
 const AUDIENCE_CONFIG = {
-  pesepeda:   { icon: Bike,        grad: "from-green-500 to-emerald-600", badge: "bg-green-100 text-green-700",   label: "Untuk Pesepeda" },
+  pesepeda:   { icon: Bike,        grad: "from-green-500 to-emerald-600", badge: "bg-green-100 text-lime-300",   label: "Untuk Pesepeda" },
   pengendara: { icon: ShieldCheck, grad: "from-orange-500 to-amber-500",  badge: "bg-orange-100 text-orange-700", label: "Untuk Pengendara Motor" },
-  semua:      { icon: Users,       grad: "from-blue-500 to-cyan-500",     badge: "bg-blue-100 text-blue-700",     label: "Untuk Semua" },
+  semua:      { icon: Users,       grad: "from-blue-500 to-cyan-500",     badge: "bg-blue-100 text-sky-300",     label: "Untuk Semua" },
 };
 
 export default async function EdukasiPage() {
@@ -38,7 +38,7 @@ export default async function EdukasiPage() {
         {/* Header gradient + progress */}
         <div className="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-3xl p-5 shadow-lg mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"><BookOpen size={26} /></div>
+            <div className="w-12 h-12 rounded-2xl bg-[#0E1C17]/20 flex items-center justify-center flex-shrink-0"><BookOpen size={26} /></div>
             <div className="min-w-0">
               <h1 className="text-xl font-extrabold leading-none">Modul Edukasi</h1>
               <p className="text-xs opacity-90 mt-1">Etika berbagi jalan untuk pesepeda & pengendara di Bulungan</p>
@@ -50,8 +50,8 @@ export default async function EdukasiPage() {
                 <span>Progress belajar</span>
                 <span className="font-semibold">{completedCount}/{total} modul</span>
               </div>
-              <div className="h-2.5 bg-white/25 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full transition-all" style={{ width: `${pct}%` }} />
+              <div className="h-2.5 bg-[#0E1C17]/25 rounded-full overflow-hidden">
+                <div className="h-full bg-[#0E1C17] rounded-full transition-all" style={{ width: `${pct}%` }} />
               </div>
               {completedCount === total && total > 0 && (
                 <p className="text-xs mt-2 font-medium flex items-center gap-1"><CheckCircle2 size={14} /> Selamat! Semua modul selesai.</p>
@@ -70,7 +70,7 @@ export default async function EdukasiPage() {
               <Link
                 key={m.id}
                 href={`/edukasi/${m.slug}`}
-                className="block bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-gray-100"
+                className="block bg-[#0E1C17] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-white/5"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${aud.grad} text-white shadow-sm`}>
@@ -85,10 +85,10 @@ export default async function EdukasiPage() {
                         </span>
                       )}
                     </div>
-                    <h2 className="font-bold text-gray-900 leading-tight">{m.title}</h2>
-                    <p className="text-xs text-gray-500 mt-1">{m.summary}</p>
+                    <h2 className="font-bold text-white leading-tight">{m.title}</h2>
+                    <p className="text-xs text-slate-400 mt-1">{m.summary}</p>
                     {progress?.completed && progress.score !== null && (
-                      <p className="text-xs text-green-700 mt-2 font-semibold">Skor: {progress.score}/3</p>
+                      <p className="text-xs text-lime-300 mt-2 font-semibold">Skor: {progress.score}/3</p>
                     )}
                   </div>
                   <ChevronRight className="text-gray-300 flex-shrink-0 mt-1" size={18} />

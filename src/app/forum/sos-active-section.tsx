@@ -101,8 +101,8 @@ export default function SosActiveSection() {
     <div className="mb-6 space-y-3">
       <div className="flex items-center gap-2 mb-3">
         <Siren size={22} className="text-red-600 animate-pulse" />
-        <h2 className="text-lg font-bold text-red-700">SOS Aktif</h2>
-        <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+        <h2 className="text-lg font-bold text-red-300">SOS Aktif</h2>
+        <span className="text-xs bg-red-100 text-red-300 px-2 py-0.5 rounded-full font-medium">
           {sosList.length} darurat
         </span>
       </div>
@@ -110,16 +110,16 @@ export default function SosActiveSection() {
       {sosList.map((sos) => (
         <div
           key={sos.id}
-          className="bg-white rounded-xl shadow-md border-l-4 border-red-600 p-4"
+          className="bg-[#0E1C17] rounded-xl shadow-md border-l-4 border-red-600 p-4"
         >
           <div className="flex items-start gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
               <Siren size={20} className="text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-red-700 text-sm">SOS Darurat</p>
+              <p className="font-bold text-red-300 text-sm">SOS Darurat</p>
               <div className="space-y-1 text-xs mt-1">
-                <p className="flex items-center gap-1 text-gray-900 font-medium">
+                <p className="flex items-center gap-1 text-white font-medium">
                   <User size={12} />
                   {sos.author_name}
                 </p>
@@ -127,12 +127,12 @@ export default function SosActiveSection() {
                   href={`https://www.google.com/maps?q=${sos.lat},${sos.lng}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-green-700 hover:underline"
+                  className="flex items-center gap-1 text-lime-300 hover:underline"
                 >
                   <MapPin size={12} />
                   {sos.lat.toFixed(5)}, {sos.lng.toFixed(5)}
                 </a>
-                <p className="flex items-center gap-1 text-gray-500">
+                <p className="flex items-center gap-1 text-slate-400">
                   <Clock size={12} />
                   {new Date(sos.created_at).toLocaleTimeString("id-ID")}
                 </p>

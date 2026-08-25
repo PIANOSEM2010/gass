@@ -26,7 +26,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
-        <Link href="/edukasi" className="inline-flex items-center gap-1 text-sm text-green-700 font-medium mb-4">
+        <Link href="/edukasi" className="inline-flex items-center gap-1 text-sm text-lime-300 font-medium mb-4">
           <ArrowLeft size={16} /> Kembali ke daftar
         </Link>
 
@@ -36,17 +36,17 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
           <p className="text-sm opacity-90 italic mt-1">{module.summary}</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-[#0E1C17] rounded-2xl p-5 shadow-sm border border-white/5">
           {module.content.split("\n\n").map((para: string, i: number) => (
-            <p key={i} className="text-gray-800 mb-4 leading-relaxed whitespace-pre-line last:mb-0">{para}</p>
+            <p key={i} className="text-slate-100 mb-4 leading-relaxed whitespace-pre-line last:mb-0">{para}</p>
           ))}
         </div>
 
         {user ? (
           <ModuleQuiz moduleId={module.id} moduleSlug={module.slug} userId={user.id} existingProgress={existingProgress} />
         ) : (
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
-            <p className="text-sm text-amber-800 mb-3">Masuk dulu untuk mengerjakan kuis dan menyimpan progres.</p>
+          <div className="mt-6 bg-amber-400/10 border border-amber-400/25 rounded-2xl p-5 text-center">
+            <p className="text-sm text-amber-300 mb-3">Masuk dulu untuk mengerjakan kuis dan menyimpan progres.</p>
             <Link href="/auth/login" className="inline-block bg-green-600 text-white px-5 py-2 rounded-lg font-medium">Masuk</Link>
           </div>
         )}

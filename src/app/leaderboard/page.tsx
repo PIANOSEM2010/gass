@@ -33,12 +33,12 @@ export default async function LeaderboardPage() {
     <div className="px-4 pt-8 max-w-md mx-auto pb-8">
       <div className="flex items-center gap-2 mb-1">
         <Trophy className="text-yellow-500" size={24} />
-        <h1 className="text-2xl font-bold text-gray-900">Papan Peringkat</h1>
+        <h1 className="text-2xl font-bold text-white">Papan Peringkat</h1>
       </div>
-      <p className="text-sm text-gray-500 mb-6">Lomba streak bersepeda 🔥 - gowes ≥1 km per hari untuk menjaga streakmu. Ada toleransi: streak baru putus bila kamu absen 2 hari berturut-turut.</p>
+      <p className="text-sm text-slate-400 mb-6">Lomba streak bersepeda 🔥 - gowes ≥1 km per hari untuk menjaga streakmu. Ada toleransi: streak baru putus bila kamu absen 2 hari berturut-turut.</p>
 
       {board.length === 0 ? (
-        <p className="text-center text-gray-400 py-12">Belum ada peserta. Jadilah yang pertama - catat perjalananmu di tab Gowes!</p>
+        <p className="text-center text-slate-500 py-12">Belum ada peserta. Jadilah yang pertama - catat perjalananmu di tab Gowes!</p>
       ) : (
         <div className="space-y-2">
           {board.map((r, i) => {
@@ -46,14 +46,14 @@ export default async function LeaderboardPage() {
             return (
               <div
                 key={r.user_id}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-green-50 border border-green-300" : "bg-white border border-gray-100"}`}
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-green-300" : "bg-[#0E1C17] border border-white/5"}`}
               >
-                <div className="w-7 text-center font-bold text-gray-500">{i < 3 ? medal[i] : i + 1}</div>
+                <div className="w-7 text-center font-bold text-slate-400">{i < 3 ? medal[i] : i + 1}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
+                  <p className="font-semibold text-white truncate">
                     {r.full_name || "Pesepeda"}{me ? " (kamu)" : ""}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-slate-400 truncate">
                     {r.organization || "-"} · {(Number(r.total_distance_m) / 1000).toFixed(1)} km · {r.total_rides}x
                   </p>
                 </div>

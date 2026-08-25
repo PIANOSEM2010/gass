@@ -21,12 +21,12 @@ type Landmark = {
 };
 
 const CATEGORY_CONFIG: Record<Category, { label: string; emoji: string; color: string; chip: string }> = {
-  belanja:   { label: "Perbelanjaan",     emoji: "🛒", color: "#2563eb", chip: "bg-blue-100 text-blue-700" },
+  belanja:   { label: "Perbelanjaan",     emoji: "🛒", color: "#2563eb", chip: "bg-blue-100 text-sky-300" },
   kuliner:   { label: "Kafe & Kuliner",   emoji: "☕", color: "#c2410c", chip: "bg-orange-100 text-orange-700" },
-  kantor:    { label: "Kantor & Layanan", emoji: "🏢", color: "#475569", chip: "bg-slate-100 text-slate-700" },
-  kesehatan: { label: "Kesehatan",        emoji: "🏥", color: "#dc2626", chip: "bg-red-100 text-red-700" },
+  kantor:    { label: "Kantor & Layanan", emoji: "🏢", color: "#475569", chip: "bg-[#122019] text-slate-700" },
+  kesehatan: { label: "Kesehatan",        emoji: "🏥", color: "#dc2626", chip: "bg-red-100 text-red-300" },
   bengkel:   { label: "Bengkel Sepeda",   emoji: "🔧", color: "#0d9488", chip: "bg-teal-100 text-teal-700" },
-  lainnya:   { label: "Lainnya",          emoji: "📌", color: "#64748b", chip: "bg-gray-100 text-gray-700" },
+  lainnya:   { label: "Lainnya",          emoji: "📌", color: "#64748b", chip: "bg-[#122019] text-slate-200" },
 };
 
 function makePinIcon(category: Category) {
@@ -113,18 +113,18 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
   return (
     <div className="space-y-6">
       {/* Form tambah landmark */}
-      <div className="bg-white rounded-xl p-4 shadow-sm">
+      <div className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <LandmarkIcon size={18} className="text-blue-600" />
-          <h2 className="font-semibold text-gray-900">Tambah Landmark Baru</h2>
+          <h2 className="font-semibold text-white">Tambah Landmark Baru</h2>
         </div>
 
-        <p className="text-xs text-gray-500 mb-2">
+        <p className="text-xs text-slate-400 mb-2">
           {picked
             ? `📍 Titik dipilih: ${picked.lat.toFixed(5)}, ${picked.lng.toFixed(5)}`
             : "Tap titik di peta untuk menandai lokasi landmark."}
         </p>
-        <div className="h-64 rounded-lg overflow-hidden border border-gray-200 mb-4">
+        <div className="h-64 rounded-lg overflow-hidden border border-white/10 mb-4">
           <MapContainer center={[2.8450, 117.3680]} zoom={13} style={{ height: "100%", width: "100%" }}>
             <TileLayer
               attribution='&copy; OpenStreetMap'
@@ -136,7 +136,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
         </div>
 
         {/* Kategori */}
-        <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+        <label className="block text-sm font-medium text-slate-200 mb-1">Kategori</label>
         <div className="grid grid-cols-3 gap-2 mb-3">
           {(Object.keys(CATEGORY_CONFIG) as Category[]).map((cat) => (
             <button
@@ -144,7 +144,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
               type="button"
               onClick={() => setCategory(cat)}
               className={`px-2 py-2 rounded-lg text-xs font-medium border-2 leading-tight ${
-                category === cat ? "border-gray-900" : "border-gray-200"
+                category === cat ? "border-gray-900" : "border-white/10"
               }`}
               style={category === cat ? { background: CATEGORY_CONFIG[cat].color + "22" } : {}}
             >
@@ -155,27 +155,27 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
         </div>
 
         {/* Nama */}
-        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Landmark</label>
+        <label className="block text-sm font-medium text-slate-200 mb-1">Nama Landmark</label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Contoh: Toko Sepeda Maju Jaya"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-white/15 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         {/* Deskripsi */}
-        <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan (opsional)</label>
+        <label className="block text-sm font-medium text-slate-200 mb-1">Keterangan (opsional)</label>
         <textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           rows={2}
           placeholder="Contoh: Buka 08.00-21.00, melayani servis sepeda."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-white/15 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {error && <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg mb-3">{error}</div>}
-        {success && <div className="bg-green-50 text-green-700 text-sm px-3 py-2 rounded-lg mb-3">{success}</div>}
+        {error && <div className="bg-red-500/10 text-red-300 text-sm px-3 py-2 rounded-lg mb-3">{error}</div>}
+        {success && <div className="bg-lime-400/10 text-lime-300 text-sm px-3 py-2 rounded-lg mb-3">{success}</div>}
 
         <button
           onClick={handleSave}
@@ -188,25 +188,25 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
 
       {/* Daftar landmark */}
       <div>
-        <h2 className="font-semibold text-gray-900 mb-3">Daftar Landmark ({items.length})</h2>
+        <h2 className="font-semibold text-white mb-3">Daftar Landmark ({items.length})</h2>
         {items.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center text-gray-500">Belum ada landmark.</div>
+          <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada landmark.</div>
         ) : (
           <div className="space-y-3">
             {items.map((it) => {
               const cfg = CATEGORY_CONFIG[it.category];
               return (
-                <div key={it.id} className="bg-white rounded-xl p-4 shadow-sm">
+                <div key={it.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${cfg.chip}`}>{cfg.emoji} {cfg.label}</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900">{it.title}</h3>
-                  {it.description && <p className="text-sm text-gray-600 mt-1">{it.description}</p>}
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-2 mb-3">
+                  <h3 className="font-semibold text-white">{it.title}</h3>
+                  {it.description && <p className="text-sm text-slate-400 mt-1">{it.description}</p>}
+                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-2 mb-3">
                     <MapPin size={12} />
                     <button
                       onClick={() => window.open(`https://www.google.com/maps?q=${it.lat},${it.lng}`, "_blank")}
-                      className="text-blue-700 hover:underline"
+                      className="text-sky-300 hover:underline"
                     >
                       {it.lat.toFixed(5)}, {it.lng.toFixed(5)}
                     </button>
@@ -215,7 +215,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
                   </div>
                   <button
                     onClick={() => remove(it.id)}
-                    className="px-3 bg-white border border-red-300 text-red-600 py-1.5 rounded-lg text-sm flex items-center gap-1"
+                    className="px-3 bg-[#0E1C17] border border-red-300 text-red-600 py-1.5 rounded-lg text-sm flex items-center gap-1"
                   >
                     <Trash2 size={14} /> Hapus
                   </button>

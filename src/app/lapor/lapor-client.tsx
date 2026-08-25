@@ -12,7 +12,7 @@ import { getPositionOnce } from "@/lib/native-geo";
 
 const InfraMap = dynamic(() => import("./infra-map"), {
   ssr: false,
-  loading: () => <div className="h-full flex items-center justify-center bg-gray-100 text-gray-400 text-sm">Memuat peta...</div>,
+  loading: () => <div className="h-full flex items-center justify-center bg-[#122019] text-slate-500 text-sm">Memuat peta...</div>,
 });
 
 type Report = {
@@ -32,10 +32,10 @@ const CATEGORIES = [
 const CAT_LABEL: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
 const CAT_EMOJI: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.emoji]));
 const STATUS_META: Record<string, { label: string; cls: string }> = {
-  dilaporkan: { label: "Dilaporkan", cls: "bg-amber-100 text-amber-700" },
-  diverifikasi: { label: "Diverifikasi", cls: "bg-blue-100 text-blue-700" },
+  dilaporkan: { label: "Dilaporkan", cls: "bg-amber-100 text-amber-300" },
+  diverifikasi: { label: "Diverifikasi", cls: "bg-blue-100 text-sky-300" },
   diteruskan: { label: "Diteruskan ke Dinas", cls: "bg-violet-100 text-violet-700" },
-  ditangani: { label: "Ditangani", cls: "bg-green-100 text-green-700" },
+  ditangani: { label: "Ditangani", cls: "bg-green-100 text-lime-300" },
 };
 
 function fmtDate(iso: string | null): string {
@@ -134,7 +134,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
-        <Link href="/" className="inline-flex items-center gap-1 text-sm text-amber-700 mb-4"><ArrowLeft size={16} /> Beranda</Link>
+        <Link href="/" className="inline-flex items-center gap-1 text-sm text-amber-300 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
         <div className="rounded-3xl p-5 bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg mb-4">
           <div className="flex items-center gap-3">
@@ -147,37 +147,37 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
           <p className="text-sm opacity-90 mt-3">Laporkan lubang, lampu mati, marka pudar, atau bahaya lain. Laporanmu diteruskan ke Dishub.</p>
         </div>
 
-        {success && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-3 py-2 mb-4 flex items-center gap-2"><CheckCircle2 size={16} /> {success}</div>}
+        {success && <div className="bg-lime-400/10 border border-lime-400/25 text-lime-300 text-sm rounded-xl px-3 py-2 mb-4 flex items-center gap-2"><CheckCircle2 size={16} /> {success}</div>}
 
-        <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
-          <button onClick={() => setTab("lapor")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lapor" ? "bg-white shadow text-amber-700" : "text-gray-500"}`}><Camera size={16} /> Buat Laporan</button>
-          <button onClick={() => setTab("lihat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lihat" ? "bg-white shadow text-amber-700" : "text-gray-500"}`}><ListChecks size={16} /> Laporan ({reports.length})</button>
+        <div className="flex bg-[#122019] rounded-xl p-1 mb-4">
+          <button onClick={() => setTab("lapor")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lapor" ? "bg-[#0E1C17] shadow text-amber-300" : "text-slate-400"}`}><Camera size={16} /> Buat Laporan</button>
+          <button onClick={() => setTab("lihat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lihat" ? "bg-[#0E1C17] shadow text-amber-300" : "text-slate-400"}`}><ListChecks size={16} /> Laporan ({reports.length})</button>
         </div>
 
         {tab === "lapor" ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Jenis masalah</label>
+              <label className="block text-sm font-semibold text-slate-200 mb-2">Jenis masalah</label>
               <div className="grid grid-cols-3 gap-2">
                 {CATEGORIES.map((c) => (
                   <button key={c.key} type="button" onClick={() => setCategory(c.key)}
-                    className={`py-3 rounded-xl border-2 text-center ${category === c.key ? "border-amber-500 bg-amber-50" : "border-gray-200 bg-white"}`}>
+                    className={`py-3 rounded-xl border-2 text-center ${category === c.key ? "border-amber-500 bg-amber-400/10" : "border-white/10 bg-[#0E1C17]"}`}>
                     <div className="text-2xl leading-none">{c.emoji}</div>
-                    <div className="text-[11px] font-medium text-gray-700 mt-1">{c.label}</div>
+                    <div className="text-[11px] font-medium text-slate-200 mt-1">{c.label}</div>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Foto (disarankan)</label>
+              <label className="block text-sm font-semibold text-slate-200 mb-2">Foto (disarankan)</label>
               {photoPreview ? (
                 <div className="relative">
-                  <img src={photoPreview} alt="Pratinjau" className="w-full rounded-2xl border border-gray-200" />
+                  <img src={photoPreview} alt="Pratinjau" className="w-full rounded-2xl border border-white/10" />
                   <button onClick={removePhoto} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5"><X size={16} /></button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-amber-300 rounded-2xl py-8 cursor-pointer bg-white text-amber-600">
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-amber-300 rounded-2xl py-8 cursor-pointer bg-[#0E1C17] text-amber-600">
                   <Camera size={28} />
                   <span className="text-sm font-medium">Ambil atau pilih foto</span>
                   <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="hidden" />
@@ -186,16 +186,16 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Lokasi</label>
-              <div className="rounded-2xl border border-gray-200 bg-white p-3 flex items-center gap-3">
-                <MapPin size={20} className={coords ? "text-green-600" : "text-gray-400"} />
+              <label className="block text-sm font-semibold text-slate-200 mb-2">Lokasi</label>
+              <div className="rounded-2xl border border-white/10 bg-[#0E1C17] p-3 flex items-center gap-3">
+                <MapPin size={20} className={coords ? "text-green-600" : "text-slate-500"} />
                 <div className="flex-1 min-w-0 text-sm">
                   {locating ? (
-                    <span className="text-gray-500 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Mendeteksi lokasi...</span>
+                    <span className="text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Mendeteksi lokasi...</span>
                   ) : coords ? (
                     <>
-                      <p className="text-gray-800 font-medium">{coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</p>
-                      <p className="text-xs text-gray-500">Akurasi sekitar {Math.round(coords.accuracy)} m</p>
+                      <p className="text-slate-100 font-medium">{coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</p>
+                      <p className="text-xs text-slate-400">Akurasi sekitar {Math.round(coords.accuracy)} m</p>
                     </>
                   ) : (
                     <span className="text-red-600 text-xs">{gpsError || "Lokasi belum tersedia"}</span>
@@ -206,13 +206,13 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Keterangan (opsional)</label>
+              <label className="block text-sm font-semibold text-slate-200 mb-2">Keterangan (opsional)</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={300}
                 placeholder="Contoh: Lubang besar di tengah jalan dekat simpang, berbahaya untuk pesepeda."
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y" />
+                className="w-full px-3 py-2 border border-white/15 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y" />
             </div>
 
-            {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
+            {error && <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-xl px-3 py-2 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
             <button onClick={submit} disabled={submitting || !coords}
               className="w-full bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow disabled:bg-gray-400 active:scale-95 transition-transform">
@@ -221,31 +221,31 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="h-64 rounded-2xl overflow-hidden border border-gray-200">
-              {reports.length > 0 ? <InfraMap reports={reports} /> : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Belum ada laporan</div>}
+            <div className="h-64 rounded-2xl overflow-hidden border border-white/10">
+              {reports.length > 0 ? <InfraMap reports={reports} /> : <div className="h-full flex items-center justify-center text-slate-500 text-sm">Belum ada laporan</div>}
             </div>
             <div className="space-y-2">
               {reports.length === 0 ? (
-                <p className="text-center text-gray-400 py-6 text-sm">Belum ada laporan. Jadilah yang pertama melapor!</p>
+                <p className="text-center text-slate-500 py-6 text-sm">Belum ada laporan. Jadilah yang pertama melapor!</p>
               ) : reports.map((r) => {
-                const sm = STATUS_META[r.status] || { label: r.status, cls: "bg-gray-100 text-gray-600" };
+                const sm = STATUS_META[r.status] || { label: r.status, cls: "bg-[#122019] text-slate-400" };
                 return (
-                  <div key={r.id} className="flex gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
+                  <div key={r.id} className="flex gap-3 bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-3">
                     {r.photo_url ? (
                       <img src={r.photo_url} alt={r.category} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-16 h-16 rounded-xl bg-amber-50 flex items-center justify-center text-2xl flex-shrink-0">{CAT_EMOJI[r.category] || "⚠️"}</div>
+                      <div className="w-16 h-16 rounded-xl bg-amber-400/10 flex items-center justify-center text-2xl flex-shrink-0">{CAT_EMOJI[r.category] || "⚠️"}</div>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{CAT_LABEL[r.category] || "Laporan"}{r.mine ? " (kamu)" : ""}</p>
-                        <span className="text-[10px] text-gray-400 flex-shrink-0">{fmtDate(r.created_at)}</span>
+                        <p className="font-semibold text-white text-sm truncate">{CAT_LABEL[r.category] || "Laporan"}{r.mine ? " (kamu)" : ""}</p>
+                        <span className="text-[10px] text-slate-500 flex-shrink-0">{fmtDate(r.created_at)}</span>
                       </div>
-                      {r.description ? <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{r.description}</p> : null}
+                      {r.description ? <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{r.description}</p> : null}
                       <span className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${sm.cls}`}>{sm.label}</span>
                       {r.admin_note && (
-                        <div className="mt-1.5 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5">
-                          <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wide">Catatan petugas</p>
+                        <div className="mt-1.5 bg-sky-400/10 border border-blue-100 rounded-lg px-2 py-1.5">
+                          <p className="text-[10px] font-semibold text-sky-300 uppercase tracking-wide">Catatan petugas</p>
                           <p className="text-xs text-blue-900 whitespace-pre-wrap">{r.admin_note}</p>
                         </div>
                       )}

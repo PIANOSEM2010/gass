@@ -28,7 +28,7 @@ export default async function SosPage() {
         {/* Header */}
         <div className="bg-gradient-to-br from-red-600 to-rose-700 text-white rounded-3xl p-5 shadow-lg mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"><Siren size={26} /></div>
+            <div className="w-12 h-12 rounded-2xl bg-[#0E1C17]/20 flex items-center justify-center flex-shrink-0"><Siren size={26} /></div>
             <div className="min-w-0">
               <h1 className="text-xl font-extrabold leading-none">Tombol Darurat</h1>
               <p className="text-xs opacity-90 mt-1">Kirim lokasimu otomatis saat darurat</p>
@@ -37,10 +37,10 @@ export default async function SosPage() {
         </div>
 
         {(!contacts || contacts.length === 0) ? (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+          <div className="bg-amber-400/10 border border-amber-400/25 rounded-2xl p-6 text-center">
             <AlertTriangle size={32} className="text-amber-500 mx-auto mb-2" />
-            <p className="text-amber-800 font-bold mb-1">Belum ada kontak darurat</p>
-            <p className="text-sm text-amber-700 mb-4">Tambahkan minimal satu nomor WhatsApp sebelum fitur ini bisa digunakan.</p>
+            <p className="text-amber-300 font-bold mb-1">Belum ada kontak darurat</p>
+            <p className="text-sm text-amber-300 mb-4">Tambahkan minimal satu nomor WhatsApp sebelum fitur ini bisa digunakan.</p>
             <Link href="/sos/kontak" className="inline-block bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold">Atur Kontak Darurat</Link>
           </div>
         ) : (
@@ -56,15 +56,15 @@ export default async function SosPage() {
 
         {/* Pintasan */}
         <div className="grid grid-cols-2 gap-3 mt-8">
-          <Link href="/sos/kontak" className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+          <Link href="/sos/kontak" className="bg-[#0E1C17] rounded-2xl p-4 shadow-sm border border-white/5 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
             <div className="w-11 h-11 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-2"><Users size={22} /></div>
-            <p className="text-sm font-bold text-gray-900">Kelola Kontak</p>
-            <p className="text-xs text-gray-500 mt-0.5">{contacts?.length || 0} kontak</p>
+            <p className="text-sm font-bold text-white">Kelola Kontak</p>
+            <p className="text-xs text-slate-400 mt-0.5">{contacts?.length || 0} kontak</p>
           </Link>
-          <Link href="/sos/riwayat" className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
-            <div className="w-11 h-11 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center mb-2"><History size={22} /></div>
-            <p className="text-sm font-bold text-gray-900">Riwayat</p>
-            <p className="text-xs text-gray-500 mt-0.5">SOS sebelumnya</p>
+          <Link href="/sos/riwayat" className="bg-[#0E1C17] rounded-2xl p-4 shadow-sm border border-white/5 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+            <div className="w-11 h-11 rounded-xl bg-[#122019] text-slate-400 flex items-center justify-center mb-2"><History size={22} /></div>
+            <p className="text-sm font-bold text-white">Riwayat</p>
+            <p className="text-xs text-slate-400 mt-0.5">SOS sebelumnya</p>
           </Link>
         </div>
 
@@ -79,7 +79,7 @@ export default async function SosPage() {
         </Link>
 
         {/* Cara kerja */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-800">
+        <div className="mt-6 bg-sky-400/10 border border-sky-400/25 rounded-2xl p-4 text-xs text-blue-800">
           <p className="font-bold mb-2">Cara kerja tombol SOS</p>
           <ol className="list-decimal list-inside space-y-1.5">
             <li>Tekan tombol merah selama 2 detik</li>

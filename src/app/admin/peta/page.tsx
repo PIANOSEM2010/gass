@@ -22,8 +22,8 @@ export default async function AdminPetaPage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Moderasi Peta</h1>
-      <p className="text-sm text-gray-600 mb-6">
+      <h1 className="text-2xl font-bold text-white mb-1">Moderasi Peta</h1>
+      <p className="text-sm text-slate-400 mb-6">
         Setujui atau tolak laporan jalur dari pengguna. Laporan yang disetujui akan muncul di peta publik.
       </p>
       <MarkerModeration initialMarkers={enriched} />

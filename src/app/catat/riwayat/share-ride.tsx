@@ -4,8 +4,9 @@
 // lengkap: 4 template (termasuk Momen), 5 warna, foto latar, dan
 // mode latar transparan. Tanggal di kartu memakai tanggal perjalanan asli.
 import { useEffect, useRef, useState } from "react";
-import { Share2, Download, ImagePlus, X, Loader2 } from "lucide-react";
+import { Share2, Download, ImagePlus, X, Loader2, Sparkles } from "lucide-react";
 import { drawCard, loadImage, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
+import { kirimKartuKeStory } from "@/lib/kirim-story";
 import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { placeNameFromPath } from "@/lib/place-name";
 
@@ -22,6 +23,7 @@ type Ride = {
 
 export default function ShareRide({ ride }: { ride: Ride }) {
   const [open, setOpen] = useState(false);
+  const [pesanStory, setPesanStory] = useState("");
   const [template, setTemplate] = useState("rute");
   const [palette, setPalette] = useState("hijau");
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
@@ -86,6 +88,19 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     } catch { /* abaikan */ }
   }
 
+  async function keStory() {
+    const canvas = canvasRef.current;
+    if (!canvas || busy) return;
+    setBusy(true); setPesanStory("");
+    try {
+      const km = (ride.distance_m / 1000).toFixed(2).replace(".", ",");
+      await kirimKartuKeStory(canvas, place ? `Gowes ${km} km di ${place}` : `Gowes ${km} km`, ride.id);
+      setPesanStory("Story tayang 24 jam — cek di halaman Umpan.");
+    } catch (err) {
+      setPesanStory(err instanceof Error ? err.message : "Gagal membuat story.");
+    } finally { setBusy(false); }
+  }
+
   async function share() {
     const canvas = canvasRef.current;
     if (!canvas || busy) return;
@@ -115,17 +130,17 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-full bg-green-600 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
+        className="w-full border border-lime-400/30 text-lime-300 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
       >
         <Share2 size={16} /> Bagikan Kartu
       </button>
 
       {open && (
         <div className="fixed inset-0 z-[2000] bg-black/60 flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#0C1A15] border border-lime-400/15 rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <p className="font-bold text-gray-900">Kartu Perjalanan</p>
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-gray-400 active:bg-gray-100" aria-label="Tutup">
+              <p className="display-title text-base text-white">KARTU PERJALANAN</p>
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[#122019]" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
@@ -133,7 +148,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
             <div className="flex gap-2 mb-3">
               {TEMPLATES.map((t) => (
                 <button key={t.key} onClick={() => setTemplate(t.key)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"}`}>
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                   {t.name}
                 </button>
               ))}
@@ -141,36 +156,40 @@ export default function ShareRide({ ride }: { ride: Ride }) {
             <div className="flex gap-2.5 mb-3">
               {PALETTE_KEYS.map((k) => (
                 <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
-                  className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-gray-800" : "ring-1 ring-gray-200"}`}
+                  className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-offset-[#0C1A15] ring-lime-400" : "ring-1 ring-white/15"}`}
                   style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
               ))}
             </div>
             <div className="flex gap-2 mb-3">
-              <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
+              <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-white/15 text-slate-400 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
                 <ImagePlus size={15} /> {photo ? "Ganti Foto" : "Tambah Foto"}
                 <input type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
               </label>
               {photo && (
-                <button onClick={() => setPhoto(null)} className="px-3 rounded-xl border-2 border-gray-200 text-gray-500 active:scale-95 transition-transform" aria-label="Hapus foto">
+                <button onClick={() => setPhoto(null)} className="px-3 rounded-xl border-2 border-white/10 text-slate-400 active:scale-95 transition-transform" aria-label="Hapus foto">
                   <X size={16} />
                 </button>
               )}
               <button onClick={() => setTransparent((v) => !v)}
-                className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${transparent ? "border-green-600 bg-green-50 text-green-700" : "border-gray-200 text-gray-600"}`}>
+                className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${transparent ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                 Latar transparan
               </button>
             </div>
 
-            <canvas ref={canvasRef} className={`w-full h-auto rounded-2xl shadow border border-gray-200 ${transparent ? "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:22px_22px]" : ""}`} />
+            <canvas ref={canvasRef} className={`w-full h-auto rounded-2xl shadow border border-white/10 ${transparent ? "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:22px_22px]" : ""}`} />
 
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <button onClick={share} disabled={busy} className="bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:bg-gray-400 active:scale-95 transition-transform">
-                {busy ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Bagikan
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <button onClick={share} disabled={busy} className="bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
+                {busy ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} Bagikan
               </button>
-              <button onClick={download} className="bg-gray-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                <Download size={18} /> Unduh
+              <button onClick={download} className="border border-white/15 text-slate-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
+                <Download size={16} /> Unduh
+              </button>
+              <button onClick={keStory} disabled={busy} className="border border-lime-400/35 text-lime-300 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
+                <Sparkles size={16} /> Ke Story
               </button>
             </div>
+            {pesanStory && <p className="text-[11px] text-slate-400 mt-2">{pesanStory}</p>}
           </div>
         </div>
       )}

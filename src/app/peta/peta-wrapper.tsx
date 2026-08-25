@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 const PetaClient = dynamic(() => import("./peta-client"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-[calc(100vh-4rem)] -mb-20 text-gray-500">
+    <div className="flex items-center justify-center h-[calc(100vh-4rem)] -mb-20 text-slate-400">
       Memuat peta...
     </div>
   ),

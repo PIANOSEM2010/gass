@@ -37,43 +37,43 @@ export default function NewPostPage() {
 
   return (
     <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
-      <Link href="/forum" className="inline-flex items-center gap-1 text-sm text-green-700 mb-4">
+      <Link href="/forum" className="inline-flex items-center gap-1 text-sm text-lime-300 mb-4">
         <ArrowLeft size={16} />
         Kembali ke forum
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Tulis Post Baru</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">Tulis Post Baru</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl p-5 shadow-sm space-y-4">
+      <form onSubmit={handleSubmit} className="bg-[#0E1C17] rounded-xl p-5 shadow-sm space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+          <label className="block text-sm font-medium text-slate-200 mb-1">Judul</label>
           <input
             type="text"
             required
             maxLength={120}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             placeholder="Ceritakan secara singkat..."
           />
-          <p className="text-xs text-gray-500 mt-1">{title.length}/120</p>
+          <p className="text-xs text-slate-400 mt-1">{title.length}/120</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Isi</label>
+          <label className="block text-sm font-medium text-slate-200 mb-1">Isi</label>
           <textarea
             required
             rows={8}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
+            className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
             placeholder="Bagikan cerita, pertanyaan, atau ide kamu tentang bersepeda di Bulungan..."
           />
         </div>
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+        <div className="bg-sky-400/10 border border-sky-400/25 rounded-lg p-3 text-xs text-blue-800">
           💬 <strong>Etika forum:</strong> Hormati pengguna lain, hindari ujaran kasar, tidak share informasi pribadi orang lain tanpa izin. Post yang melanggar akan dihapus admin.
         </div>
 

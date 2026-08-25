@@ -45,11 +45,11 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
           </div>
         </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2 mb-4 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
+        {error && <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-xl px-3 py-2 mb-4 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
         {!sharing ? (
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-sm text-gray-600 space-y-3">
+            <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-5 text-sm text-slate-400 space-y-3">
               <p className="flex items-start gap-2"><ShieldCheck size={18} className="text-teal-600 flex-shrink-0 mt-0.5" /> Lokasimu hanya bisa dilihat oleh orang yang kamu beri link. Link berisi kode acak yang sulit ditebak.</p>
               <p className="flex items-start gap-2"><Bike size={18} className="text-teal-600 flex-shrink-0 mt-0.5" /> Berbagi tetap berjalan walau kamu membuka fitur lain di BUG (Catat Gowes, Peta, Forum). Pop-up kecil akan menunjukkan statusnya.</p>
               <p className="flex items-start gap-2"><EyeOff size={18} className="text-amber-600 flex-shrink-0 mt-0.5" /> Yang menghentikan GPS hanya jika kamu keluar dari aplikasi/browser sepenuhnya. Selama BUG terbuka, lokasi terus terkirim.</p>
@@ -62,18 +62,18 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
         ) : (
           <div className="space-y-4">
             {hidden && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-3 py-2 flex items-center gap-2">
+              <div className="bg-amber-400/10 border border-amber-400/25 text-amber-300 text-sm rounded-xl px-3 py-2 flex items-center gap-2">
                 <EyeOff size={16} className="flex-shrink-0" /> Aplikasi di latar belakang, lokasi berhenti terkirim. Buka lagi BUG.
               </div>
             )}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4">
               <div className="flex items-center gap-2 text-teal-700 text-sm font-semibold mb-3">
                 <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-500 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-teal-600"></span></span>
                 Sedang berbagi lokasi
               </div>
-              <p className="text-xs text-gray-500 mb-1">Bagikan link ini ke keluarga:</p>
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-                <span className="flex-1 min-w-0 text-xs text-gray-700 truncate">{shareUrl}</span>
+              <p className="text-xs text-slate-400 mb-1">Bagikan link ini ke keluarga:</p>
+              <div className="flex items-center gap-2 bg-[#0A1512] border border-white/10 rounded-xl px-3 py-2">
+                <span className="flex-1 min-w-0 text-xs text-slate-200 truncate">{shareUrl}</span>
                 <button onClick={copy} className="text-teal-600 flex-shrink-0" title="Salin">{copied ? <Check size={18} /> : <Copy size={18} />}</button>
               </div>
               <button onClick={share} className="w-full mt-3 bg-teal-600 text-white py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
@@ -81,17 +81,17 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
               </button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-700">
-                <MapPin size={18} className={coords ? "text-green-600" : "text-gray-400"} />
+            <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 text-sm">
+              <div className="flex items-center gap-2 text-slate-200">
+                <MapPin size={18} className={coords ? "text-green-600" : "text-slate-500"} />
                 {coords ? (
                   <span className="font-medium">{coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</span>
                 ) : (
-                  <span className="text-gray-500 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Menunggu sinyal GPS...</span>
+                  <span className="text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Menunggu sinyal GPS...</span>
                 )}
               </div>
               {coords && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Akurasi sekitar {Math.round(coords.accuracy)} m
                   {lastSentAgo !== null ? ` - terkirim ${lastSentAgo} detik lalu` : ""}
                 </p>
@@ -106,7 +106,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
             <button onClick={stop} className="w-full bg-red-600 text-white py-3.5 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow active:scale-95 transition-transform">
               <Square size={20} /> Hentikan Berbagi
             </button>
-            <p className="text-xs text-gray-400 text-center">Layar dijaga tetap menyala selama berbagi aktif.</p>
+            <p className="text-xs text-slate-500 text-center">Layar dijaga tetap menyala selama berbagi aktif.</p>
           </div>
         )}
       </div>

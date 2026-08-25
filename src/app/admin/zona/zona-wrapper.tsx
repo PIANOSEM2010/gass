@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 const ZonaManager = dynamic(() => import("./zona-manager"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-64 text-gray-500">
+    <div className="flex items-center justify-center h-64 text-slate-400">
       Memuat peta...
     </div>
   ),

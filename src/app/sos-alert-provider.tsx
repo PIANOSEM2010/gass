@@ -212,15 +212,15 @@ export default function SosAlertProvider() {
     <div className="fixed inset-0 z-[3000] bg-red-700 text-white flex flex-col items-center justify-center px-6 py-10 text-center">
       <button
         onClick={() => dismiss(current.id)}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30"
+        className="absolute top-4 right-4 p-2 rounded-full bg-[#0E1C17]/20 hover:bg-[#0E1C17]/30"
         aria-label="Tutup"
       >
         <X size={22} />
       </button>
 
       <div className="relative mb-6">
-        <span className="absolute inset-0 rounded-full bg-white/30 animate-ping" />
-        <div className="relative w-24 h-24 rounded-full bg-white/20 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full bg-[#0E1C17]/30 animate-ping" />
+        <div className="relative w-24 h-24 rounded-full bg-[#0E1C17]/20 flex items-center justify-center">
           <Siren size={52} className="animate-pulse" />
         </div>
       </div>
@@ -232,7 +232,7 @@ export default function SosAlertProvider() {
       </p>
       <p className="text-sm opacity-90 mb-6">{new Date(current.created_at).toLocaleString("id-ID")}</p>
 
-      <div className="bg-white/15 rounded-xl px-4 py-3 mb-6 text-sm">
+      <div className="bg-[#0E1C17]/15 rounded-xl px-4 py-3 mb-6 text-sm">
         <div className="flex items-center justify-center gap-2">
           <MapPin size={16} />
           <span>{current.lat.toFixed(5)}, {current.lng.toFixed(5)}</span>
@@ -242,7 +242,7 @@ export default function SosAlertProvider() {
       <div className="w-full max-w-xs space-y-3">
         <button
           onClick={() => window.open(`https://www.google.com/maps?q=${current.lat},${current.lng}`, "_blank")}
-          className="w-full bg-white text-red-700 font-bold py-3 rounded-xl"
+          className="w-full bg-[#0E1C17] text-red-300 font-bold py-3 rounded-xl"
         >
           Buka Lokasi di Peta
         </button>
@@ -261,7 +261,7 @@ export default function SosAlertProvider() {
       </div>
 
       {moreCount > 0 && (
-        <p className="mt-5 text-sm bg-white/20 px-3 py-1 rounded-full">
+        <p className="mt-5 text-sm bg-[#0E1C17]/20 px-3 py-1 rounded-full">
           +{moreCount} peringatan lainnya
         </p>
       )}

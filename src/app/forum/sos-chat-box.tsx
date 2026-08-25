@@ -113,22 +113,22 @@ export default function SosChatBox({ sosLogId }: { sosLogId: string }) {
 
   if (!currentUserId) {
     return (
-      <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 text-center">
+      <div className="bg-[#0A1512] rounded-lg p-3 text-xs text-slate-400 text-center">
         Login untuk ikut koordinasi bantuan
       </div>
     );
   }
 
   return (
-    <div className="border-t border-gray-200 pt-3 mt-2">
-      <p className="text-xs font-semibold text-gray-700 mb-2">Koordinasi Bantuan</p>
+    <div className="border-t border-white/10 pt-3 mt-2">
+      <p className="text-xs font-semibold text-slate-200 mb-2">Koordinasi Bantuan</p>
 
       <div
         ref={scrollRef}
-        className="bg-gray-50 rounded-lg p-2 mb-2 max-h-40 overflow-y-auto space-y-1.5"
+        className="bg-[#0A1512] rounded-lg p-2 mb-2 max-h-40 overflow-y-auto space-y-1.5"
       >
         {messages.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-2">
+          <p className="text-xs text-slate-500 text-center py-2">
             Belum ada pesan. Mulai koordinasi di sini.
           </p>
         ) : (
@@ -137,8 +137,8 @@ export default function SosChatBox({ sosLogId }: { sosLogId: string }) {
               key={m.id}
               className={`text-xs ${m.user_id === currentUserId ? "text-right" : ""}`}
             >
-              <span className="font-semibold text-gray-700">{m.author_name}: </span>
-              <span className="text-gray-900">{m.message}</span>
+              <span className="font-semibold text-slate-200">{m.author_name}: </span>
+              <span className="text-white">{m.message}</span>
             </div>
           ))
         )}
@@ -157,7 +157,7 @@ export default function SosChatBox({ sosLogId }: { sosLogId: string }) {
           }}
           maxLength={500}
           placeholder="Ketik pesan koordinasi..."
-          className="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-red-500"
+          className="flex-1 px-3 py-1.5 text-xs border border-white/15 rounded-lg focus:outline-none focus:border-red-500"
           disabled={sending}
         />
         <button
