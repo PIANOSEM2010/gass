@@ -217,3 +217,185 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .muncul, .jenjang > *, .halaman-masuk { animation: none !important; }
 }
+
+
+/* ==========================================================================
+   Dua tema. Seluruh permukaan memakai variabel, jadi pergantian tema tidak
+   perlu menyentuh berkas komponen satu per satu.
+   ========================================================================== */
+:root, [data-tema="gelap"] {
+  --latar: #071310;
+  --kartu: #0C1A15;
+  --kartu-2: #0A1512;
+  --relung: #08120F;
+  --isian: #0B1F18;
+  --navbar: #050D0B;
+  --garis: rgba(255,255,255,.08);
+}
+[data-tema="terang"] {
+  --latar: #F2F6F1;
+  --kartu: #FFFFFF;
+  --kartu-2: #E9EFE7;
+  --relung: #F6FAF5;
+  --isian: #FFFFFF;
+  --navbar: #FFFFFF;
+  --garis: rgba(6,32,20,.12);
+  --background: #F2F6F1;
+  --foreground: #0B1F18;
+}
+
+/* Warna teks & garis pada tema terang. Nilainya dipetakan sekali di sini
+   agar kelas yang sudah dipakai di seluruh halaman tetap terbaca. */
+[data-tema="terang"] .text-white { color: #08201A !important; }
+[data-tema="terang"] .text-slate-100 { color: #12312A !important; }
+[data-tema="terang"] .text-slate-200 { color: #1C3B33 !important; }
+[data-tema="terang"] .text-slate-300 { color: #2C4A41 !important; }
+[data-tema="terang"] .text-slate-400 { color: #4A6259 !important; }
+[data-tema="terang"] .text-slate-500 { color: #5E7469 !important; }
+[data-tema="terang"] .text-slate-600 { color: #7A8C83 !important; }
+[data-tema="terang"] .text-lime-100,
+[data-tema="terang"] .text-lime-200,
+[data-tema="terang"] .text-lime-300 { color: #35660F !important; }
+[data-tema="terang"] .text-lime-400 { color: #3F7A12 !important; }
+[data-tema="terang"] .border-white\/5,
+[data-tema="terang"] .border-white\/8,
+[data-tema="terang"] .border-white\/10,
+[data-tema="terang"] .border-white\/12,
+[data-tema="terang"] .border-white\/15 { border-color: rgba(6,32,20,.13) !important; }
+[data-tema="terang"] .divide-white\/5 > :not([hidden]) ~ :not([hidden]),
+[data-tema="terang"] .divide-white\/10 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(6,32,20,.10) !important; }
+[data-tema="terang"] .kartu-bug {
+  background: #FFFFFF;
+  border-color: rgba(6,32,20,.12);
+  box-shadow: 0 1px 2px rgba(6,32,20,.05), 0 8px 24px rgba(6,32,20,.05);
+}
+[data-tema="terang"] .kartu-bug::after { background: linear-gradient(90deg, transparent, rgba(63,122,18,.35), transparent); }
+[data-tema="terang"] .butiran::before { opacity: .10; }
+[data-tema="terang"] .cahaya-sudut::before { background: radial-gradient(circle at center, rgba(63,122,18,.10) 0%, transparent 68%); }
+
+/* ==========================================================================
+   Penyesuaian ukuran di ponsel. Angka px kecil yang nyaman di layar 15 inci
+   terasa terlalu rapat di layar 6 inci, jadi dinaikkan sedikit di bawah 430px.
+   ========================================================================== */
+@media (max-width: 430px) {
+  .text-\[9px\]     { font-size: 10.5px; }
+  .text-\[10px\]    { font-size: 11.5px; }
+  .text-\[10\.5px\] { font-size: 12px; }
+  .text-\[11px\]    { font-size: 12.5px; }
+  .text-\[11\.5px\] { font-size: 13px; }
+  .text-\[12px\]    { font-size: 13.5px; }
+  .text-\[12\.5px\] { font-size: 14px; }
+  .text-\[13px\]    { font-size: 14.5px; }
+  .text-\[13\.5px\] { font-size: 15px; }
+  .text-\[14px\]    { font-size: 15.5px; }
+  .eyebrow          { font-size: 10px; letter-spacing: .16em; }
+}
+
+
+/* ---- Layar muat ---- */
+@keyframes muat-putar-balik { to { transform: rotate(-360deg); } }
+@keyframes muat-putar-maju  { to { transform: rotate(360deg); } }
+@keyframes muat-denyut { 0%,100% { opacity:.45; transform:scale(.9);} 50% { opacity:1; transform:scale(1.06);} }
+@keyframes muat-geser { 0% { transform: translateX(-110%);} 100% { transform: translateX(310%);} }
+.muat-marka  { animation: muat-putar-maju 5.5s linear infinite; }
+.muat-busur  { animation: muat-putar-balik 1.15s cubic-bezier(.5,.1,.5,.9) infinite; }
+.muat-denyut { animation: muat-denyut 1.9s ease-in-out infinite; }
+.muat-batang { animation: muat-geser 1.25s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .muat-marka, .muat-busur, .muat-denyut, .muat-batang { animation: none !important; }
+}
+
+/* ---- Kuis: umpan balik bergerak ---- */
+@keyframes kuis-benar {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+@keyframes kuis-salah {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  55% { transform: translateX(5px); }
+  80% { transform: translateX(-2px); }
+}
+@keyframes kuis-poin {
+  0%   { opacity: 0; transform: translateY(6px) scale(.8); }
+  35%  { opacity: 1; transform: translateY(-10px) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-26px) scale(1); }
+}
+.kuis-benar { animation: kuis-benar .45s cubic-bezier(.22,1.5,.36,1) both; }
+.kuis-salah { animation: kuis-salah .4s ease-in-out both; }
+.kuis-poin  { animation: kuis-poin 1.1s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .kuis-benar, .kuis-salah, .kuis-poin { animation: none !important; }
+}
+
+[data-tema="terang"] .text-amber-100,
+[data-tema="terang"] .text-amber-200,
+[data-tema="terang"] .text-amber-300 { color: #7A4A05 !important; }
+[data-tema="terang"] .text-red-200,
+[data-tema="terang"] .text-red-300 { color: #9B1C1C !important; }
+[data-tema="terang"] .text-sky-200,
+[data-tema="terang"] .text-sky-300 { color: #075985 !important; }
+[data-tema="terang"] .text-teal-300 { color: #0F766E !important; }
+[data-tema="terang"] .text-violet-300 { color: #5B21B6 !important; }
+[data-tema="terang"] .nav-loading-backdrop { background: rgba(242,246,241,.86) !important; }
+
+
+/* ==========================================================================
+   Penanda peta yang hidup
+   ========================================================================== */
+/* Zona rawan: inti tetap, dua gelombang keluar bergiliran */
+.pin-bahaya { position: relative; width: 32px; height: 32px; }
+.pin-inti {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--pin); border: 3px solid #fff; border-radius: 50%;
+  font-size: 16px; box-shadow: 0 2px 7px rgba(0,0,0,.35); z-index: 2;
+}
+.pin-gelombang {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--pin); animation: pin-riak 2.1s ease-out infinite;
+}
+.pin-tunda { animation-delay: 1.05s; }
+@keyframes pin-riak {
+  0%   { transform: scale(.62); opacity: .85; }
+  75%  { transform: scale(2.05); opacity: 0; }
+  100% { transform: scale(2.05); opacity: 0; }
+}
+
+/* Landmark: tetes air yang jatuh lalu mengapung */
+.pin-landmark { position: relative; width: 30px; height: 38px; animation: pin-jatuh .62s cubic-bezier(.3,1.5,.5,1) both; }
+.pin-tetes {
+  position: absolute; top: 0; left: 0; width: 30px; height: 30px;
+  background: var(--pin); border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  box-shadow: 0 3px 8px rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+  animation: pin-apung 3.4s ease-in-out infinite;
+}
+.pin-emoji { transform: rotate(45deg); font-size: 14px; line-height: 1; }
+.pin-bayang {
+  position: absolute; bottom: 0; left: 50%; margin-left: -7px;
+  width: 14px; height: 4px; border-radius: 50%;
+  background: rgba(0,0,0,.32); filter: blur(1px);
+  animation: pin-bayang 3.4s ease-in-out infinite;
+}
+.pin-rute { width: 36px; height: 44px; }
+.pin-rute .pin-tetes { width: 36px; height: 36px; }
+@keyframes pin-jatuh {
+  0%   { opacity: 0; transform: translateY(-26px) scale(.7); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pin-apung {
+  0%,100% { transform: rotate(-45deg) translate(0, 0); }
+  50%     { transform: rotate(-45deg) translate(2.2px, -2.2px); }
+}
+@keyframes pin-bayang {
+  0%,100% { transform: scaleX(1); opacity: .32; }
+  50%     { transform: scaleX(.78); opacity: .18; }
+}
+/* Penanda yang sedang dipilih naik sedikit dan berpendar */
+.leaflet-marker-icon:focus .pin-tetes,
+.pin-landmark:hover .pin-tetes { box-shadow: 0 6px 16px rgba(0,0,0,.4), 0 0 0 4px color-mix(in srgb, var(--pin) 30%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .pin-gelombang, .pin-landmark, .pin-tetes, .pin-bayang { animation: none !important; }
+}

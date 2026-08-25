@@ -46,7 +46,7 @@ export default async function LeaderboardPage() {
             return (
               <div
                 key={r.user_id}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-green-300" : "bg-[#0E1C17] border border-white/5"}`}
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-green-300" : "bg-[var(--kartu)] border border-white/5"}`}
               >
                 <div className="w-7 text-center font-bold text-slate-400">{i < 3 ? medal[i] : i + 1}</div>
                 <div className="flex-1 min-w-0">

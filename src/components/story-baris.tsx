@@ -65,13 +65,13 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
         {grup.map((g, i) => (
           <button key={g.user_id} onClick={() => setBuka(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
             <span className="rounded-full p-[2px]" style={{ background: `linear-gradient(135deg, ${warnaDari(g.nama)}, #4ADE80)` }}>
-              <span className="block rounded-full p-[2px] bg-[#071310]"><Avatar nama={g.nama} ukuran={48} /></span>
+              <span className="block rounded-full p-[2px] bg-[var(--latar)]"><Avatar nama={g.nama} ukuran={48} /></span>
             </span>
             <span className="eyebrow !text-[9px] text-slate-500 max-w-14 truncate">{g.nama.split(" ")[0]}</span>
           </button>
         ))}
         {grup.length === 0 && (
-          <p className="self-center text-[11px] text-slate-600">Belum ada story hari ini — bagikan momen gowesmu.</p>
+          <p className="self-center text-[11px] text-slate-600">Belum ada story hari ini, bagikan momen gowesmu.</p>
         )}
       </div>
       {pesan && <p className="px-5 pb-2 text-[11px] text-red-400">{pesan}</p>}

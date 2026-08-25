@@ -53,18 +53,18 @@ export default function MarkerModeration({ initialMarkers }: { initialMarkers: M
   return (
     <div>
       <div className="flex gap-2 mb-4">
-        <button onClick={() => setFilter("pending")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "pending" ? "bg-yellow-500 text-white" : "bg-[#0E1C17] text-slate-200 border border-white/15"}`}>Pending ({pendingCount})</button>
-        <button onClick={() => setFilter("approved")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "approved" ? "bg-green-600 text-white" : "bg-[#0E1C17] text-slate-200 border border-white/15"}`}>Disetujui ({markers.length - pendingCount})</button>
-        <button onClick={() => setFilter("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "all" ? "bg-gray-900 text-white" : "bg-[#0E1C17] text-slate-200 border border-white/15"}`}>Semua ({markers.length})</button>
+        <button onClick={() => setFilter("pending")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "pending" ? "bg-yellow-500 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"}`}>Pending ({pendingCount})</button>
+        <button onClick={() => setFilter("approved")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "approved" ? "bg-green-600 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"}`}>Disetujui ({markers.length - pendingCount})</button>
+        <button onClick={() => setFilter("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "all" ? "bg-gray-900 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"}`}>Semua ({markers.length})</button>
       </div>
       {filtered.length === 0 ? (
-        <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Tidak ada data.</div>
+        <div className="bg-[var(--kartu)] rounded-xl p-8 text-center text-slate-400">Tidak ada data.</div>
       ) : (
         <div className="space-y-3">
           {filtered.map((m) => {
-            const typeCfg = TYPE_LABEL[m.type] || { label: m.type, color: "bg-[#122019] text-slate-200" };
+            const typeCfg = TYPE_LABEL[m.type] || { label: m.type, color: "bg-[var(--kartu-2)] text-slate-200" };
             return (
-              <div key={m.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+              <div key={m.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${typeCfg.color}`}>{typeCfg.label}</span>
                   {m.approved ? (<span className="text-xs bg-lime-400/15 text-lime-300 px-2 py-0.5 rounded-full">Aktif</span>) : (<span className="text-xs bg-yellow-400/15 text-yellow-700 px-2 py-0.5 rounded-full">Pending</span>)}
@@ -83,7 +83,7 @@ export default function MarkerModeration({ initialMarkers }: { initialMarkers: M
                   ) : (
                     <button onClick={() => unapprove(m.id)} className="flex-1 bg-yellow-500 text-white py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1"><X size={14} /> Sembunyikan</button>
                   )}
-                  <button onClick={() => remove(m.id)} className="px-3 bg-[#0E1C17] border border-red-300 text-red-600 py-1.5 rounded-lg"><Trash2 size={14} /></button>
+                  <button onClick={() => remove(m.id)} className="px-3 bg-[var(--kartu)] border border-red-300 text-red-600 py-1.5 rounded-lg"><Trash2 size={14} /></button>
                 </div>
               </div>
             );

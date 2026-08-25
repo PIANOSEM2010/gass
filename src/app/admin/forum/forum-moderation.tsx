@@ -29,18 +29,18 @@ export default function ForumModeration({ initialPosts }: { initialPosts: Post[]
   }
 
   if (posts.length === 0) {
-    return <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada post.</div>;
+    return <div className="bg-[var(--kartu)] rounded-xl p-8 text-center text-slate-400">Belum ada post.</div>;
   }
 
   return (
     <div className="space-y-3">
       {posts.map((p) => (
-        <div key={p.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+        <div key={p.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             {p.approved ? (
               <span className="text-xs bg-lime-400/15 text-lime-300 px-2 py-0.5 rounded-full">✓ Tampil</span>
             ) : (
-              <span className="text-xs bg-[#122019] text-slate-200 px-2 py-0.5 rounded-full">⊘ Tersembunyi</span>
+              <span className="text-xs bg-[var(--kartu-2)] text-slate-200 px-2 py-0.5 rounded-full">⊘ Tersembunyi</span>
             )}
           </div>
           <h3 className="font-semibold text-white mb-1">{p.title}</h3>
@@ -54,11 +54,11 @@ export default function ForumModeration({ initialPosts }: { initialPosts: Post[]
           <div className="flex gap-2">
             <button
               onClick={() => toggleApprove(p.id, p.approved)}
-              className="flex-1 bg-[#0E1C17] border border-white/15 text-slate-200 py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
+              className="flex-1 bg-[var(--kartu)] border border-white/15 text-slate-200 py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
             >
               {p.approved ? <><EyeOff size={14} /> Sembunyikan</> : <><Eye size={14} /> Tampilkan</>}
             </button>
-            <button onClick={() => remove(p.id)} className="px-3 bg-[#0E1C17] border border-red-300 text-red-600 py-1.5 rounded-lg">
+            <button onClick={() => remove(p.id)} className="px-3 bg-[var(--kartu)] border border-red-300 text-red-600 py-1.5 rounded-lg">
               <Trash2 size={14} />
             </button>
           </div>

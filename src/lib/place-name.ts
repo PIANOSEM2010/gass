@@ -16,7 +16,7 @@ function keyOf(lat: number, lng: number): string {
 export function pickName(a: Record<string, string>): string {
   // Di Indonesia, tingkat kabupaten/kota hampir selalu diberi label eksplisit
   // ("Kabupaten Bulungan", "Kota Tarakan", "Kabupaten Malinau"). Itu penanda
-  // paling bisa dipercaya, jadi dicari lebih dulu di SELURUH field alamat —
+  // paling bisa dipercaya, jadi dicari lebih dulu di SELURUH field alamat -
   // sebelum jatuh ke urutan umum di bawahnya.
   const values = Object.values(a || {}).filter((v) => typeof v === "string");
   const kabKota = values.find((v) => /^(Kabupaten|Kota)\s+/i.test(v));

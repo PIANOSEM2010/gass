@@ -15,8 +15,8 @@ export default async function AdminUsersPage() {
 
       <div className="space-y-2">
         {profiles?.map((p) => (
-          <div key={p.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.role === "admin" ? "bg-purple-400/15 text-purple-700" : "bg-[#122019] text-slate-400"}`}>
+          <div key={p.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.role === "admin" ? "bg-purple-400/15 text-purple-700" : "bg-[var(--kartu-2)] text-slate-400"}`}>
               {p.role === "admin" ? <Shield size={18} /> : <User size={18} />}
             </div>
             <div className="flex-1 min-w-0">

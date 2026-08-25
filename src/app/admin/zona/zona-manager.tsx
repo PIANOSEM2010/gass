@@ -111,7 +111,7 @@ export default function ZonaManager({ initialZones }: { initialZones: Zone[] }) 
   return (
     <div className="space-y-6">
       {/* Form tambah zona */}
-      <div className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+      <div className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <TriangleAlert size={18} className="text-orange-500" />
           <h2 className="font-semibold text-white">Tambah Zona Baru</h2>
@@ -220,13 +220,13 @@ export default function ZonaManager({ initialZones }: { initialZones: Zone[] }) 
       <div>
         <h2 className="font-semibold text-white mb-3">Daftar Zona ({zones.length})</h2>
         {zones.length === 0 ? (
-          <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada zona.</div>
+          <div className="bg-[var(--kartu)] rounded-xl p-8 text-center text-slate-400">Belum ada zona.</div>
         ) : (
           <div className="space-y-3">
             {zones.map((z) => {
               const cfg = CATEGORY_CONFIG[z.category];
               return (
-                <div key={z.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+                <div key={z.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${cfg.chip}`}>{cfg.label}</span>
                     <span className="text-xs text-slate-500">radius {z.radius} m</span>
@@ -246,7 +246,7 @@ export default function ZonaManager({ initialZones }: { initialZones: Zone[] }) 
                   </div>
                   <button
                     onClick={() => remove(z.id)}
-                    className="px-3 bg-[#0E1C17] border border-red-300 text-red-600 py-1.5 rounded-lg text-sm flex items-center gap-1"
+                    className="px-3 bg-[var(--kartu)] border border-red-300 text-red-600 py-1.5 rounded-lg text-sm flex items-center gap-1"
                   >
                     <Trash2 size={14} /> Hapus
                   </button>

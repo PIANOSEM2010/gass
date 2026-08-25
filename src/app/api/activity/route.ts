@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     if (!url || !key) return Response.json({ ok: false, error: "Supabase env belum lengkap" }, { status: 500 });
 
     const b = await req.json().catch(() => ({}));
-    // Utamakan identitas dari SESI server (aman) — nilai dari badan permintaan
+    // Utamakan identitas dari SESI server (aman), nilai dari badan permintaan
     // hanya dipakai sebagai cadangan agar penyimpanan tidak gagal.
     let userId: string | null = null;
     try {

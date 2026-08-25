@@ -187,7 +187,7 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
         (p) => sendPosition(p, false),
         (msg) => setError(msg),
         {
-          title: "BUG — Teman Pantau",
+          title: "BUG, Teman Pantau",
           message: "Membagikan lokasimu ke keluarga…",
           // 0 = laporkan SETIAP fix GPS (~1 detik) walau diam, supaya keluarga
           // melihat pembaruan rutin saat layar mati; pengiriman tetap dihemat
@@ -239,9 +239,9 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
       watchRef.current = startWatch(
         (p) => sendPosition(p, false),
         (msg) => setError(msg),
-        { title: "BUG — Teman Pantau", message: "Membagikan lokasimu ke keluarga…", distanceFilter: 0 }
+        { title: "BUG, Teman Pantau", message: "Membagikan lokasimu ke keluarga…", distanceFilter: 0 }
       );
-    } catch { /* GPS belum siap — pengiriman berikutnya tetap dicoba */ }
+    } catch { /* GPS belum siap, pengiriman berikutnya tetap dicoba */ }
     restoreDoneRef.current = true;
 
     // Verifikasi di belakang: hentikan hanya bila server bilang sudah tidak aktif
@@ -262,7 +262,7 @@ export default function PantauProvider({ children }: { children: ReactNode }) {
           sessionRef.current = null;
           try { window.localStorage.removeItem(PANTAU_SESSION_KEY); } catch { /* abaikan */ }
         }
-      } catch { /* gagal memeriksa — biarkan berbagi tetap jalan */ }
+      } catch { /* gagal memeriksa, biarkan berbagi tetap jalan */ }
     })();
   }, [acquireWake, sendPosition]);
 

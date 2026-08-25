@@ -68,7 +68,7 @@ export default function CommentSection({
           <p className="text-sm text-slate-400 italic">Belum ada komentar. Jadilah yang pertama!</p>
         ) : (
           comments.map((c) => (
-            <div key={c.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+            <div key={c.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
               <div className="flex items-start justify-between mb-1">
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <User size={12} />
@@ -92,7 +92,7 @@ export default function CommentSection({
       </div>
 
       {userId ? (
-        <form onSubmit={handleSubmit} className="bg-[#0E1C17] rounded-xl p-3 shadow-sm">
+        <form onSubmit={handleSubmit} className="bg-[var(--kartu)] rounded-xl p-3 shadow-sm">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}

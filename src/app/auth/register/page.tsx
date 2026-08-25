@@ -41,11 +41,15 @@ export default function RegisterPage() {
     urutan.find(([sah]) => !sah)?.[1].current?.focus();
   }
 
-  const pesanTombol = sisaIsian === 0
-    ? "Terkunci. Silakan daftar."
-    : sisaIsian === 1
-      ? "Tinggal satu isian — tombolnya mulai melambat."
-      : `Masih ${sisaIsian} isian sebelum tombol ini diam.`;
+  const belum = [
+    !namaSah ? "nama lengkap" : null,
+    !asalSah ? (isPelajar ? "asal sekolah" : "asal instansi") : null,
+    !emailSah ? (email.trim() ? "email belum benar" : "email") : null,
+    !sandiSah ? (password ? "kata sandi minimal 6 huruf" : "kata sandi") : null,
+  ].filter(Boolean) as string[];
+  const pesanTombol = belum.length === 0
+    ? "Semua sudah terisi. Silakan daftar."
+    : `Belum diisi: ${belum.join(", ")}.`;
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -132,7 +136,7 @@ export default function RegisterPage() {
               <button key={m} type="button" onClick={() => setMemberType(m)}
                 className={`rounded-xl py-3 text-sm font-semibold border transition-colors ${aktif
                   ? "border-lime-400/60 bg-lime-400/15 text-lime-300"
-                  : "border-lime-400/15 bg-[#0B1F18] text-slate-400"}`}>
+                  : "border-lime-400/15 bg-[var(--isian)] text-slate-400"}`}>
                 {m === "pelajar" ? "Pelajar" : "Pekerja"}
               </button>
             );

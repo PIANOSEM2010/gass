@@ -64,11 +64,11 @@ export default async function AdminDashboard() {
             </>
           );
           return s.href ? (
-            <Link key={s.label} href={s.href} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+            <Link key={s.label} href={s.href} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
               {content}
             </Link>
           ) : (
-            <div key={s.label} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+            <div key={s.label} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
               {content}
             </div>
           );

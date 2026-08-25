@@ -201,7 +201,7 @@ async function requestORS(
 }
 
 // Rute pesepeda: DUA profil diminta BERSAMAAN (bukan berurutan) dengan batas
-// waktu, lalu diambil yang berhasil — prioritas cycling-road (jalan utama, cepat).
+// waktu, lalu diambil yang berhasil, prioritas cycling-road (jalan utama, cepat).
 // Sebelumnya berurutan tanpa timeout, sehingga satu permintaan yang menggantung
 // membuat pengguna menunggu bermenit-menit.
 export async function fetchRoute(a: Pt, b: Pt, avoidPolygons?: AvoidGeometry | null): Promise<RouteResult> {

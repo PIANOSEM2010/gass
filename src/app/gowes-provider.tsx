@@ -7,7 +7,7 @@ export type GowesStatus = "idle" | "tracking" | "paused" | "finished" | "saving"
 export type GowesStats = { distanceM: number; durationS: number; elevM: number; startedAt: number; endedAt: number };
 type WakeLockLike = { release: () => Promise<void> };
 
-// Kunci penyimpanan sesi: dipakai agar pencatatan TAHAN PUTUS — bila halaman
+// Kunci penyimpanan sesi: dipakai agar pencatatan TAHAN PUTUS, bila halaman
 // ter-restart (WebView kehabisan memori, aplikasi dimuat ulang, dsb), sesi
 // dipulihkan otomatis dan pencatatan lanjut tanpa kehilangan data.
 const GOWES_SESSION_KEY = "bug-gowes-session";
@@ -174,7 +174,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
         if (inst >= 0) setSpeed(inst > 120 ? 0 : inst);
       },
       (msg) => setError(msg),
-      { title: "BUG — Catat Gowes", message: "Merekam perjalanan gowesmu…", distanceFilter: 4 }
+      { title: "BUG, Catat Gowes", message: "Merekam perjalanan gowesmu…", distanceFilter: 4 }
     );
   }, []);
 
@@ -261,7 +261,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
         })
       );
     } catch {
-      /* penyimpanan penuh / tidak tersedia — jangan ganggu pencatatan */
+      /* penyimpanan penuh / tidak tersedia, jangan ganggu pencatatan */
     }
   }, []);
 
@@ -324,7 +324,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
         beginWatch();
       }
     } catch {
-      /* data rusak — abaikan */
+      /* data rusak, abaikan */
     } finally {
       restoreDoneRef.current = true;
     }

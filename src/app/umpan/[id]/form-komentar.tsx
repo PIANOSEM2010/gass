@@ -31,7 +31,7 @@ export default function FormKomentar({ activityId }: { activityId: string }) {
       <div className="flex gap-2">
         <input value={teks} onChange={(e) => setTeks(e.target.value)} maxLength={500}
           placeholder="Tulis komentar…"
-          className="flex-1 bg-[#0B1F18] border border-lime-400/15 rounded-xl px-4 py-3 text-sm placeholder:text-slate-500 focus:outline-none focus:border-lime-400/50" />
+          className="flex-1 bg-[var(--isian)] border border-lime-400/15 rounded-xl px-4 py-3 text-sm placeholder:text-slate-500 focus:outline-none focus:border-lime-400/50" />
         <button type="submit" disabled={sibuk || !teks.trim()}
           className="rounded-xl px-4 bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 display-title text-sm disabled:opacity-40">
           Kirim

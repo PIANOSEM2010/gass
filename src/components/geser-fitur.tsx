@@ -2,20 +2,21 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
-  IkonPeta, IkonEdukasi, IkonKampanye, IkonForum, IkonPantau, IkonRute, IkonLapor, IkonTrofi,
-} from "@/components/bug-icons";
+  IkonPetaJalur, IkonModul, IkonTemanPantau, IkonRuteLingkar,
+  IkonLaporJalan, IkonPapanPeringkat, IkonKampanyeJalan, IkonForumGowes,
+} from "@/components/fitur-ikon";
 
 // Geser fitur di puncak halaman Umpan. Semua fitur BUG tetap satu ketukan
 // tanpa memakan slot navbar - digulir mendatar, bukan ditumpuk ke bawah.
 const FITUR = [
-  { href: "/peta", label: "Peta Jalur", ket: "Jalur aman & zona rawan", ikon: IkonPeta, warna: "#38BDF8" },
-  { href: "/edukasi", label: "Edukasi", ket: "Etika berbagi jalan", ikon: IkonEdukasi, warna: "#B4FF3A" },
-  { href: "/pantau", label: "Teman Pantau", ket: "Keluarga memantau langsung", ikon: IkonPantau, warna: "#2DD4BF" },
-  { href: "/peta?rekomendasi=1", label: "Rekomendasi Rute", ket: "Rute melingkar otomatis", ikon: IkonRute, warna: "#A78BFA" },
-  { href: "/lapor", label: "Lapor Jalan", ket: "Laporkan jalan rusak", ikon: IkonLapor, warna: "#FBBF24" },
-  { href: "/leaderboard", label: "Papan Peringkat", ket: "Peringkat goweser Bulungan", ikon: IkonTrofi, warna: "#FB7185" },
-  { href: "/kampanye", label: "Kampanye", ket: "Berbagi jalan untuk pesepeda", ikon: IkonKampanye, warna: "#FB923C" },
-  { href: "/forum", label: "Forum", ket: "Komunitas pesepeda", ikon: IkonForum, warna: "#60A5FA" },
+  { href: "/peta", label: "Peta Jalur", ket: "Jalur aman & zona rawan", ikon: IkonPetaJalur, warna: "#38BDF8" },
+  { href: "/edukasi", label: "Edukasi", ket: "Etika berbagi jalan", ikon: IkonModul, warna: "#B4FF3A" },
+  { href: "/pantau", label: "Teman Pantau", ket: "Keluarga memantau langsung", ikon: IkonTemanPantau, warna: "#2DD4BF" },
+  { href: "/peta?rekomendasi=1", label: "Rekomendasi Rute", ket: "Rute melingkar otomatis", ikon: IkonRuteLingkar, warna: "#A78BFA" },
+  { href: "/lapor", label: "Lapor Jalan", ket: "Laporkan jalan rusak", ikon: IkonLaporJalan, warna: "#FBBF24" },
+  { href: "/leaderboard", label: "Papan Peringkat", ket: "Peringkat goweser Bulungan", ikon: IkonPapanPeringkat, warna: "#FB7185" },
+  { href: "/kampanye", label: "Kampanye", ket: "Berbagi jalan untuk pesepeda", ikon: IkonKampanyeJalan, warna: "#FB923C" },
+  { href: "/forum", label: "Forum", ket: "Komunitas pesepeda", ikon: IkonForumGowes, warna: "#60A5FA" },
 ];
 
 export default function GeserFitur() {
@@ -45,7 +46,7 @@ export default function GeserFitur() {
           <Link key={f.href} href={f.href}
             className="snap-start flex-shrink-0 w-[158px] relative rounded-2xl overflow-hidden p-3.5 active:scale-[.97] transition-transform"
             style={{
-              background: `linear-gradient(160deg, ${f.warna}14 0%, #0A1613 58%)`,
+              background: `linear-gradient(160deg, ${f.warna}14 0%, var(--kartu) 58%)`,
               border: `1px solid ${f.warna}2E`,
             }}>
             {/* cahaya aksen di sudut kartu */}
@@ -55,7 +56,7 @@ export default function GeserFitur() {
               style={{ background: `linear-gradient(90deg, transparent, ${f.warna}88, transparent)` }} />
             <span className="relative inline-flex items-center justify-center w-11 h-11 rounded-xl mb-3"
               style={{ background: `${f.warna}22`, color: f.warna, boxShadow: `0 0 18px ${f.warna}22` }}>
-              <f.ikon size={21} />
+              <f.ikon size={21} aksen={f.warna} />
             </span>
             <p className="relative display-title text-[13px] text-white leading-tight">{f.label}</p>
             <p className="relative text-[10.5px] text-slate-400 mt-1 leading-snug">{f.ket}</p>

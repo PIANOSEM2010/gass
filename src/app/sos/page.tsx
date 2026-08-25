@@ -25,7 +25,7 @@ export default async function SosPage() {
     .single();
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-8">
+    <div className="min-h-screen bg-[var(--latar)] pb-8">
       <KepalaHalaman
         ikon={<IkonSos size={22} />}
         judul="TOMBOL DARURAT"
@@ -54,13 +54,13 @@ export default async function SosPage() {
 
         {/* Pintasan */}
         <div className="grid grid-cols-2 gap-3 mt-8 jenjang">
-          <Link href="/sos/kontak" className="bg-[#0E1C17] rounded-2xl p-4 shadow-sm border border-white/5 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+          <Link href="/sos/kontak" className="bg-[var(--kartu)] rounded-2xl p-4 shadow-sm border border-white/5 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
             <div className="w-11 h-11 rounded-xl bg-lime-400/15 text-green-600 flex items-center justify-center mb-2"><Users size={22} /></div>
             <p className="text-sm font-bold text-white">Kelola Kontak</p>
             <p className="text-xs text-slate-400 mt-0.5">{contacts?.length || 0} kontak</p>
           </Link>
-          <Link href="/sos/riwayat" className="bg-[#0E1C17] rounded-2xl p-4 shadow-sm border border-white/5 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
-            <div className="w-11 h-11 rounded-xl bg-[#122019] text-slate-400 flex items-center justify-center mb-2"><History size={22} /></div>
+          <Link href="/sos/riwayat" className="bg-[var(--kartu)] rounded-2xl p-4 shadow-sm border border-white/5 flex flex-col items-center text-center active:scale-[0.98] transition-transform">
+            <div className="w-11 h-11 rounded-xl bg-[var(--kartu-2)] text-slate-400 flex items-center justify-center mb-2"><History size={22} /></div>
             <p className="text-sm font-bold text-white">Riwayat</p>
             <p className="text-xs text-slate-400 mt-0.5">SOS sebelumnya</p>
           </Link>

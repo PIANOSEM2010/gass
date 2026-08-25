@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { id, author_name, lat, lng } = body || {};
 
-    // 3. Konfigurasi VAPID — OPSIONAL. Kalau tidak ada, web-push dilewati
+    // 3. Konfigurasi VAPID, OPSIONAL. Kalau tidak ada, web-push dilewati
     //    tapi FCM (aplikasi Android) TETAP dikirim.
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     }
     const admin = createAdminClient(supabaseUrl, serviceKey);
 
-    // 5. Web-push (browser/PWA) — best effort. Kalau tidak ada VAPID atau
+    // 5. Web-push (browser/PWA), best effort. Kalau tidak ada VAPID atau
     //    tidak ada langganan, bagian ini dilewati dan lanjut ke FCM.
     let sent = 0;
     const toDelete: string[] = [];

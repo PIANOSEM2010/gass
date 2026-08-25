@@ -30,7 +30,7 @@ export default async function ForumPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-8">
+    <div className="min-h-screen bg-[var(--latar)] pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header gradient */}
         <div className="rounded-2xl border border-violet-400/20 bg-violet-400/8 text-white p-5 mb-5">
@@ -43,7 +43,7 @@ export default async function ForumPage() {
               </div>
             </div>
             {user && (
-              <Link href="/forum/baru" className="bg-[#0E1C17] text-purple-700 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-1 flex-shrink-0 shadow-sm active:scale-95 transition-transform">
+              <Link href="/forum/baru" className="bg-[var(--kartu)] text-purple-700 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-1 flex-shrink-0 shadow-sm active:scale-95 transition-transform">
                 <Plus size={16} /> Tulis
               </Link>
             )}
@@ -60,7 +60,7 @@ export default async function ForumPage() {
         )}
 
         {!posts || posts.length === 0 ? (
-          <div className="bg-[#0E1C17] rounded-2xl p-10 text-center text-slate-500 shadow-sm">
+          <div className="bg-[var(--kartu)] rounded-2xl p-10 text-center text-slate-500 shadow-sm">
             <MessageSquare size={40} className="mx-auto mb-3 opacity-40" />
             Belum ada post di forum. Jadilah yang pertama!
           </div>
@@ -70,7 +70,7 @@ export default async function ForumPage() {
               <Link
                 key={post.id}
                 href={`/forum/${post.id}`}
-                className="block bg-[#0E1C17] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-white/5"
+                className="block bg-[var(--kartu)] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-white/5"
               >
                 <h2 className="font-bold text-white mb-1 leading-tight">{post.title}</h2>
                 {post.image_url && (

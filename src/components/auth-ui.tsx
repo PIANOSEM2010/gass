@@ -53,7 +53,7 @@ export function TandaSah({ tampil, kanan = 14 }: { tampil: boolean; kanan?: numb
 
 // Kelas dasar kolom isian bertema gelap.
 export function kelasIsian(sah: boolean, extra = "") {
-  return `w-full bg-[#0B1F18] border rounded-xl px-4 py-3.5 text-sm placeholder:text-slate-500 focus:outline-none transition-colors ${sah ? "border-lime-400/60" : "border-lime-400/15 focus:border-lime-400/50"} ${extra}`;
+  return `w-full bg-[var(--isian)] border rounded-xl px-4 py-3.5 text-sm placeholder:text-slate-500 focus:outline-none transition-colors ${sah ? "border-lime-400/60" : "border-lime-400/15 focus:border-lime-400/50"} ${extra}`;
 }
 
 // Kerangka halaman: judul besar, strip marka, latar roda, dan pita jalan
@@ -62,7 +62,7 @@ export function KerangkaAuth({ baris, sorot, keterangan, children }: {
   baris: string[]; sorot: string; keterangan: string; children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#071310] text-white relative overflow-hidden -mb-20">
+    <div className="min-h-screen bg-[var(--latar)] text-white relative overflow-hidden -mb-20">
       <RodaJeruji className="absolute -top-16 -right-28 w-[330px] h-[300px] opacity-50 pointer-events-none" />
 
       <div className="relative px-6 pt-14">
@@ -78,7 +78,7 @@ export function KerangkaAuth({ baris, sorot, keterangan, children }: {
       <div className="relative px-5 mt-8 pb-16">{children}</div>
 
       <div className="absolute bottom-0 left-0 right-0 h-2"
-        style={{ background: "repeating-linear-gradient(115deg,#FFB020 0 10px,#071310 10px 20px)" }} />
+        style={{ background: "repeating-linear-gradient(115deg,#FFB020 0 10px,var(--latar) 10px 20px)" }} />
     </div>
   );
 }

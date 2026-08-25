@@ -36,10 +36,10 @@ export default function SessionKeeper() {
         });
         if (!error) {
           // setSession sudah memulihkan sesi di memori + menulis ulang cookie.
-          // Reload hanya perlu agar Server Component ikut mengenali login —
+          // Reload hanya perlu agar Server Component ikut mengenali login -
           // tapi reload mematikan pencatatan yang sedang berjalan. Jadi lewati
           // reload bila ada aktivitas aktif (ditandai flag di bawah).
-          // Jangan muat ulang bila ada aktivitas berjalan (gowes atau pantau) —
+          // Jangan muat ulang bila ada aktivitas berjalan (gowes atau pantau) -
           // masing-masing punya penandanya sendiri.
           const busy =
             typeof window !== "undefined" &&
@@ -47,7 +47,7 @@ export default function SessionKeeper() {
               window.sessionStorage.getItem("bug-pantau-active") === "1");
           if (!busy) window.location.reload();
         } else {
-          // Cadangan sudah tidak berlaku (mis. user memang logout) — buang.
+          // Cadangan sudah tidak berlaku (mis. user memang logout), buang.
           localStorage.removeItem(KEY);
         }
       } catch {

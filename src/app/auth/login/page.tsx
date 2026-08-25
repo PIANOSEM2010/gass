@@ -28,11 +28,15 @@ export default function LoginPage() {
     (!emailSah ? emailRef : sandiRef).current?.focus();
   }
 
-  const pesanTombol = sisaIsian === 2
-    ? "Dua isian lagi sebelum tombol ini diam."
-    : sisaIsian === 1
-      ? (emailSah ? "Tinggal kata sandi — tombolnya mulai melambat." : "Tinggal email — tombolnya mulai melambat.")
-      : "Terkunci. Silakan masuk.";
+  // Sebutkan isian yang belum beres, bukan sekadar jumlahnya, supaya
+  // pengguna tahu apa yang harus dikerjakan tanpa menebak.
+  const belum = [
+    !emailSah ? (email.trim() ? "email belum benar" : "email") : null,
+    !sandiSah ? (password ? "kata sandi minimal 6 huruf" : "kata sandi") : null,
+  ].filter(Boolean) as string[];
+  const pesanTombol = belum.length === 0
+    ? "Semua sudah terisi. Silakan masuk."
+    : `Belum diisi: ${belum.join(" dan ")}.`;
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();

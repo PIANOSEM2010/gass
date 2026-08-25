@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
 import { IkonStreak, IkonForum, IkonKartu } from "@/components/bug-icons";
+import { meter } from "@/lib/angka";
 
 export type Aktivitas = {
   id: string;
@@ -98,7 +99,7 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
       {a.catatan && <p className="px-4 pt-3 text-[13px] leading-relaxed text-slate-300">{a.catatan}</p>}
 
       <div className="mt-3 px-2">
-        <div className="relative rounded-xl border border-lime-400/10 py-3 flex justify-center overflow-hidden" style={{ background: "radial-gradient(120% 100% at 50% 0%, rgba(180,255,58,.07) 0%, #08120F 62%)" }}>
+        <div className="relative rounded-xl border border-lime-400/10 py-3 flex justify-center overflow-hidden" style={{ background: "radial-gradient(120% 100% at 50% 0%, rgba(180,255,58,.07) 0%, var(--relung) 62%)" }}>
           <JejakRute path={a.path} width={280} height={92} />
         </div>
       </div>
@@ -115,7 +116,7 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
           <p className="eyebrow !text-[9px] text-slate-500 mt-1">waktu</p>
         </div>
         <div>
-          <p className="display-num text-[22px] leading-none text-white">{Math.round(a.elevation_gain_m)} m</p>
+          <p className="display-num text-[22px] leading-none text-white">{meter(a.elevation_gain_m)} m</p>
           <p className="eyebrow !text-[9px] text-slate-500 mt-1">elevasi</p>
         </div>
       </div>

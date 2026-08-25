@@ -2,7 +2,7 @@
 // Mengirim pesan SOS otomatis ke kontak darurat pengguna + admin.
 //
 // Pengirim utama: TELNYX (SMS atau WhatsApp, lihat src/lib/telnyx.ts).
-// Fonnte hanya dipakai sebagai jaring pengaman bila Telnyx belum siap/gagal —
+// Fonnte hanya dipakai sebagai jaring pengaman bila Telnyx belum siap/gagal -
 // karena ini fitur darurat, pesan tidak boleh gagal terkirim total.
 //
 // Pilih pengirim lewat env SOS_PROVIDER: "telnyx" (bawaan) | "fonnte" | "both".

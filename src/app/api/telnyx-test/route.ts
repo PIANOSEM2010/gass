@@ -62,8 +62,8 @@ export async function GET(req: Request) {
       errors: result.errors,
       catatan:
         result.sent > 0
-          ? "Telnyx menerima permintaan. Cek HP tujuan — bila belum masuk, biasanya soal rute operator/regulasi negara tujuan."
-          : "Pengiriman gagal — baca 'errors' untuk penyebab pastinya.",
+          ? "Telnyx menerima permintaan. Cek HP tujuan, bila belum masuk, biasanya soal rute operator/regulasi negara tujuan."
+          : "Pengiriman gagal, baca 'errors' untuk penyebab pastinya.",
     });
   } catch (e) {
     return Response.json(

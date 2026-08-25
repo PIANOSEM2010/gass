@@ -47,13 +47,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/" className="text-xs underline opacity-80">Keluar dari Admin</Link>
       </div>
 
-      <div className="bg-[#0E1C17] border-b border-white/10 px-2 py-2 overflow-x-auto">
+      <div className="bg-[var(--kartu)] border-b border-white/10 px-2 py-2 overflow-x-auto">
         <div className="flex gap-1">
           {nav.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:bg-[#122019] whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:bg-[var(--kartu-2)] whitespace-nowrap"
             >
               <Icon size={14} />
               {label}

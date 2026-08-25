@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { meter } from "@/lib/angka";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, Clock, Mountain, ChevronDown, Bike } from "lucide-react";
@@ -8,7 +9,7 @@ import ShareRide from "./share-ride";
 const RouteMap = dynamic(() => import("../route-map"), {
   ssr: false,
   loading: () => (
-    <div className="h-full flex items-center justify-center bg-[#122019] text-slate-500 text-sm">Memuat peta...</div>
+    <div className="h-full flex items-center justify-center bg-[var(--kartu-2)] text-slate-500 text-sm">Memuat peta...</div>
   ),
 });
 
@@ -44,7 +45,7 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#071310]">
+    <div className="min-h-screen bg-[var(--latar)]">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/catat" className="inline-flex items-center gap-1 text-sm text-orange-300 mb-4">
           <ArrowLeft size={16} /> Kembali
@@ -66,10 +67,10 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
             {rides.map((r) => {
               const open = openId === r.id;
               return (
-                <div key={r.id} className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm overflow-hidden">
+                <div key={r.id} className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm overflow-hidden">
                   <button
                     onClick={() => setOpenId(open ? null : r.id)}
-                    className="w-full text-left p-4 active:bg-[#0A1512] transition-colors"
+                    className="w-full text-left p-4 active:bg-[var(--kartu-2)] transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-slate-400">{fmtDate(r.started_at)}</p>
@@ -81,7 +82,7 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
                         <span className="text-sm font-semibold text-slate-500 ml-1">km</span>
                       </p>
                       <span className="flex items-center gap-1 text-sm text-slate-400 pb-0.5"><Clock size={14} /> {fmtDur(r.duration_s)}</span>
-                      <span className="flex items-center gap-1 text-sm text-slate-400 pb-0.5"><Mountain size={14} /> {Math.round(r.elevation_gain_m)} m</span>
+                      <span className="flex items-center gap-1 text-sm text-slate-400 pb-0.5"><Mountain size={14} /> {meter(r.elevation_gain_m)} m</span>
                     </div>
                   </button>
                   {open && (

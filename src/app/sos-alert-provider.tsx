@@ -212,14 +212,14 @@ export default function SosAlertProvider() {
     <div className="fixed inset-0 z-[3000] bg-red-700 text-white flex flex-col items-center justify-center px-6 py-10 text-center">
       <button
         onClick={() => dismiss(current.id)}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-[#0E1C17]/30"
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-[var(--kartu)]/30"
         aria-label="Tutup"
       >
         <X size={22} />
       </button>
 
       <div className="relative mb-6">
-        <span className="absolute inset-0 rounded-full bg-[#0E1C17]/30 animate-ping" />
+        <span className="absolute inset-0 rounded-full bg-[var(--kartu)]/30 animate-ping" />
         <div className="relative w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
           <Siren size={52} className="animate-pulse" />
         </div>
@@ -242,7 +242,7 @@ export default function SosAlertProvider() {
       <div className="w-full max-w-xs space-y-3">
         <button
           onClick={() => window.open(`https://www.google.com/maps?q=${current.lat},${current.lng}`, "_blank")}
-          className="w-full bg-[#0E1C17] text-red-300 font-bold py-3 rounded-xl"
+          className="w-full bg-[var(--kartu)] text-red-300 font-bold py-3 rounded-xl"
         >
           Buka Lokasi di Peta
         </button>

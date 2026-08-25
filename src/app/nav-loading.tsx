@@ -3,7 +3,7 @@
 //
 // Cara kerja: saat pengguna menekan menu (atau Link mana pun yang memanggil
 // startNavigation), overlay berlogo BUG muncul. Begitu halaman tujuan selesai
-// dimuat (dideteksi dari perubahan pathname), overlay disembunyikan — dengan
+// dimuat (dideteksi dari perubahan pathname), overlay disembunyikan, dengan
 // durasi minimum singkat agar tidak berkedip saat halaman terbuka instan.
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,7 +22,7 @@ export function useNavLoading(): NavLoadingValue {
 }
 
 // Navigasi terprogram (router.push) TIDAK terdeteksi oleh pemantau klik link,
-// jadi tombol yang memakainya — mis. pop-up mini aktivitas — harus memakai
+// jadi tombol yang memakainya, mis. pop-up mini aktivitas, harus memakai
 // hook ini agar loading screen tetap muncul.
 export function useNavigateWithLoading(): (href: string) => void {
   const router = useRouter();
@@ -125,73 +125,50 @@ function NavLoadingOverlay() {
   });
 
   return (
-    <div className="fixed inset-x-0 top-0 bottom-16 z-[1100] flex flex-col items-center justify-center nav-loading-backdrop">
-      <div className="relative flex items-center justify-center">
-        {/* Perisai diam sebagai bingkai (motif logo), roda berputar di dalamnya */}
-        <svg width="128" height="128" viewBox="0 0 64 64" className="absolute" aria-hidden="true">
-          <path d="M32 5 L56 14 V31 C56 45.5 45.5 55.5 32 60 C18.5 55.5 8 45.5 8 31 V14 Z"
-            fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="2.2" strokeLinejoin="round" />
+    <div className="fixed inset-x-0 top-0 bottom-[56px] z-[1100] flex flex-col items-center justify-center nav-loading-backdrop">
+      <div className="relative w-[150px] h-[150px] flex items-center justify-center">
+        {/* Cahaya yang berdenyut di belakang roda */}
+        <span className="absolute inset-0 rounded-full pointer-events-none muat-denyut"
+          style={{ background: "radial-gradient(circle at center, rgba(180,255,58,.22) 0%, transparent 62%)" }} />
+
+        {/* Lintasan marka jalan yang berputar: kesan jalan bergerak, bukan
+            sekadar cincin berputar */}
+        <svg width="150" height="150" viewBox="0 0 120 120" className="absolute muat-marka" aria-hidden="true">
+          <circle cx="60" cy="60" r="56" fill="none" stroke="rgba(255,176,32,.5)"
+            strokeWidth="2.5" strokeLinecap="round" strokeDasharray="9 13" />
         </svg>
-        {/* Roda sepeda berputar (perlahan & mulus) */}
+
+        {/* Roda berjeruji yang berputar */}
         <svg width="128" height="128" viewBox="0 0 120 120" className="nav-wheel" aria-hidden="true">
-          <defs>
-            <linearGradient id="bugArc" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#bef264" />
-              <stop offset="100%" stopColor="#4ade80" />
-            </linearGradient>
-          </defs>
-          {/* ban luar */}
-          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="6" />
-          {/* pelek */}
-          <circle cx="60" cy="60" r="47" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="2" />
-          {/* jeruji */}
-          <g stroke="rgba(255,255,255,0.28)" strokeWidth="1.5">
+          <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(255,255,255,.09)" strokeWidth="6" />
+          <circle cx="60" cy="60" r="41" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="1.5" />
+          <g stroke="rgba(180,255,58,.34)" strokeWidth="1.4">
             {spokes.map((s, i) => (
               <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />
             ))}
           </g>
-          {/* hub */}
-          <circle cx="60" cy="60" r="11" fill="none" stroke="rgba(255,255,255,0.32)" strokeWidth="2" />
-          <circle cx="60" cy="60" r="4" fill="#bef264" />
-          {/* pentil — penanda agar putaran terlihat */}
-          <circle cx="60" cy="8" r="3.5" fill="#4ade80" />
+          <circle cx="60" cy="60" r="7" fill="#B4FF3A" />
         </svg>
 
-        {/* Busur progres hijau (berputar lebih cepat, terpisah dari roda) */}
-        <svg width="128" height="128" viewBox="0 0 120 120" className="absolute nav-arc" aria-hidden="true">
-          <circle
-            cx="60" cy="60" r="52" fill="none"
-            stroke="url(#bugArc)" strokeWidth="4" strokeLinecap="round"
-            strokeDasharray="70 260"
-          />
+        {/* Busur terang yang mengejar, arah berlawanan supaya terasa hidup */}
+        <svg width="150" height="150" viewBox="0 0 120 120" className="absolute muat-busur" aria-hidden="true">
+          <defs>
+            <linearGradient id="bugBusur" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#D9FF7A" />
+              <stop offset="100%" stopColor="#22C55E" stopOpacity="0.15" />
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="url(#bugBusur)" strokeWidth="4"
+            strokeLinecap="round" strokeDasharray="74 215" />
         </svg>
       </div>
 
-      {/* Wordmark elegan */}
-      <div className="mt-8 flex flex-col items-center nav-wordmark">
-        <span className="display-title text-2xl text-white tracking-[0.15em]">BUG</span>
-        <span className="eyebrow mt-1 text-lime-300/70 !text-[9px] tracking-[0.3em]">BULUNGAN UNTUK GOWESER</span>
+      <p className="display-title text-xl text-white mt-6 tracking-[0.22em]">BUG</p>
+      <div className="mt-2.5 h-[3px] w-24 rounded-sm overflow-hidden bg-white/8">
+        <span className="block h-full w-1/3 muat-batang"
+          style={{ background: "linear-gradient(90deg,transparent,#B4FF3A,transparent)" }} />
       </div>
-
-      <style>{`
-        /* Latar solid + gradasi radial saja. TANPA backdrop-filter: efek blur
-           layar penuh sangat berat bagi WebView (bisa membuat halaman
-           ter-restart saat peta & GPS aktif). Cahaya hijau dibuat lewat
-           gradasi, bukan filter blur, agar murah. */
-        .nav-loading-backdrop {
-          background:
-            radial-gradient(38% 26% at 50% 42%, rgba(163,230,53,0.16), rgba(163,230,53,0) 70%),
-            radial-gradient(120% 120% at 50% 40%, #0a1410, #020604);
-          animation: navFade 200ms ease-out;
-        }
-        .nav-wheel { animation: navSpin 2.4s linear infinite; transform-origin: 50% 50%; }
-        .nav-arc { animation: navSpin 1s cubic-bezier(0.5,0,0.5,1) infinite; transform-origin: 50% 50%; }
-        .nav-wordmark { animation: navPulse 1.8s ease-in-out infinite; }
-        @keyframes navSpin { to { transform: rotate(360deg); } }
-        @keyframes navFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes navPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
-      `}</style>
+      <p className="eyebrow !text-[8.5px] text-slate-500 mt-3">Menyiapkan jalur</p>
     </div>
   );
 }
-

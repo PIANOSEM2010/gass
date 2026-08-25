@@ -89,7 +89,12 @@ function makeIcon(type: keyof typeof TYPE_CONFIG) {
   const { color, emoji } = TYPE_CONFIG[type];
   return L.divIcon({
     className: "custom-marker",
-    html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;">${emoji}</div>`,
+    // Zona rawan berdenyut: gelombang keluar dari titiknya supaya mata
+    // langsung tertarik ke bahaya, bukan ke fasilitas biasa.
+    html: `<div class="pin-bahaya" style="--pin:${color}">
+      <span class="pin-gelombang"></span><span class="pin-gelombang pin-tunda"></span>
+      <span class="pin-inti">${emoji}</span>
+    </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
   });
@@ -99,9 +104,15 @@ function makeLandmarkIcon(category: keyof typeof LANDMARK_CONFIG) {
   const { color, emoji } = LANDMARK_CONFIG[category];
   return L.divIcon({
     className: "landmark-marker",
-    html: `<div style="background:${color};width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px;">${emoji}</span></div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
+    // Landmark: jatuh dari atas saat muncul, lalu mengapung pelan dan
+    // memantulkan bayangan yang ikut mengempis. Tiap penanda diberi jeda acak
+    // kecil supaya tidak turun serempak seperti mesin.
+    html: `<div class="pin-landmark" style="--pin:${color};animation-delay:${(Math.random() * 420).toFixed(0)}ms">
+      <span class="pin-bayang"></span>
+      <span class="pin-tetes"><span class="pin-emoji">${emoji}</span></span>
+    </div>`,
+    iconSize: [30, 38],
+    iconAnchor: [15, 34],
   });
 }
 
@@ -109,7 +120,10 @@ function makeRouteIcon(letter: "A" | "B") {
   const color = letter === "A" ? "#7c3aed" : "#0ea5e9";
   return L.divIcon({
     className: "route-marker",
-    html: `<div style="background:${color};width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);color:white;font-weight:bold;font-size:14px;">${letter}</span></div>`,
+    html: `<div class="pin-landmark pin-rute" style="--pin:${color}">
+      <span class="pin-bayang"></span>
+      <span class="pin-tetes"><span class="pin-emoji" style="color:#fff;font-weight:700;">${letter}</span></span>
+    </div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 36],
   });
@@ -130,7 +144,7 @@ const userLocationIcon = L.divIcon({
 });
 
 // Ambil lokasi sekali lewat modul bersama: di APLIKASI memakai plugin GPS
-// native, bukan GPS browser — supaya tidak bentrok dengan sesi gowes/pantau.
+// native, bukan GPS browser, supaya tidak bentrok dengan sesi gowes/pantau.
 async function getCurrentLocationOnce(): Promise<{ lat: number; lng: number; accuracy: number }> {
   const p = await getPositionOnce();
   return { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
@@ -299,7 +313,7 @@ function LocationLayer({
 
   useEffect(() => {
     // PENTING: memantau lokasi lewat startWatch() dari modul bersama.
-    // Dulu di sini memakai navigator.geolocation langsung — di aplikasi Android
+    // Dulu di sini memakai navigator.geolocation langsung, di aplikasi Android
     // itu BENTROK dengan plugin GPS native, sehingga sesi catat gowes / teman
     // pantau berhenti menerima posisi begitu halaman peta dibuka.
     if (!tracking) {
@@ -327,7 +341,7 @@ function LocationLayer({
         }
       },
       (msg) => onError(msg || "Gagal mengambil lokasi"),
-      { title: "BUG — Peta", message: "Menampilkan posisimu di peta…", distanceFilter: 5 }
+      { title: "BUG, Peta", message: "Menampilkan posisimu di peta…", distanceFilter: 5 }
     );
     return () => {
       watchRef.current?.stop();
@@ -382,7 +396,14 @@ export default function PetaClient({
   // Ubin peta gelap agar selaras dengan tampilan baru. Tetap bisa
   // dikembalikan ke terang karena di bawah matahari Bulungan peta terang
   // lebih mudah dibaca - pilihan itu diserahkan ke pengguna.
-  const [petaGelap, setPetaGelap] = useState(true);
+  // Peta mengikuti waktu setempat: terang pada siang (06.00-17.59) karena di
+  // bawah matahari peta terang jauh lebih mudah dibaca, gelap pada malam.
+  // Tetap bisa diganti manual lewat tombol di kiri atas.
+  const [petaGelap, setPetaGelap] = useState(false);
+  useEffect(() => {
+    const j = new Date().getHours();
+    setPetaGelap(j < 6 || j >= 18);
+  }, []);
   const [filter, setFilter] = useState<keyof typeof TYPE_CONFIG | "all">("all");
   const [mode, setMode] = useState<Mode>("view");
 
@@ -437,7 +458,7 @@ export default function PetaClient({
   const [avoidDanger, setAvoidDanger] = useState(true);
   const [avoidGeom, setAvoidGeom] = useState<AvoidGeometry | null>(null);
   const [routeNote, setRouteNote] = useState<{ type: "safe" | "fallback"; count: number } | null>(null);
-  // Cache hasil rute per (asal, tujuan, mode aman) — bikin toggle Rute Aman instan
+  // Cache hasil rute per (asal, tujuan, mode aman), bikin toggle Rute Aman instan
   const routeCacheRef = useRef<Map<string, {
     coords: [number, number][];
     info: { distance: number; duration: number };
@@ -703,7 +724,7 @@ export default function PetaClient({
     setError("");
     setRouteNote(null);
     // Hanya zona rawan/berbahaya & marker "Jalan Berbahaya" DI SEKITAR jalur A->B
-    // yang dihindari — jadi jumlah yang ditampilkan sesuai kenyataan di lapangan
+    // yang dihindari, jadi jumlah yang ditampilkan sesuai kenyataan di lapangan
     const { geometry: avoid, count } = avoidEnabled
       ? buildAvoidNearRoute(zones, markers, a, b)
       : { geometry: null, count: 0 };
@@ -745,7 +766,7 @@ export default function PetaClient({
     setAvoidDanger(next);
     if (!pointA || !pointB) return;
     // Kalau mode aman DIMATIKAN padahal tidak ada apa pun yang dihindari,
-    // rutenya pasti sama — tidak perlu memanggil server lagi
+    // rutenya pasti sama, tidak perlu memanggil server lagi
     if (!next && !avoidGeom) {
       setRouteNote(null);
       return;
@@ -843,7 +864,7 @@ export default function PetaClient({
       {!navigating && (
         <div className="absolute top-2 left-2 right-2 z-[1100]">
           <div className="relative">
-            <div className="flex items-center bg-[#0C1A15]/95 backdrop-blur border border-lime-400/15 rounded-full shadow-lg px-3 py-2">
+            <div className="flex items-center bg-[var(--kartu)]/95 backdrop-blur border border-lime-400/15 rounded-full shadow-lg px-3 py-2">
               <Search size={18} className="text-slate-500 flex-shrink-0" />
               <input
                 type="text"
@@ -862,7 +883,7 @@ export default function PetaClient({
             </div>
 
             {showResults && (
-              <div className="absolute top-full mt-1 left-0 right-0 bg-[#0C1A15] border border-white/10 rounded-xl shadow-xl overflow-hidden max-h-72 overflow-y-auto">
+              <div className="absolute top-full mt-1 left-0 right-0 bg-[var(--kartu)] border border-white/10 rounded-xl shadow-xl overflow-hidden max-h-72 overflow-y-auto">
                 {searching && searchResults.length === 0 && (
                   <div className="px-4 py-3 text-sm text-slate-400">Mencari...</div>
                 )}
@@ -873,7 +894,7 @@ export default function PetaClient({
                   <button
                     key={`${r.lat}-${r.lon}-${i}`}
                     onClick={() => selectSearchResult(r)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#0A1512] border-b border-white/5 last:border-0 flex items-start gap-2"
+                    className="w-full text-left px-4 py-2.5 hover:bg-[var(--kartu-2)] border-b border-white/5 last:border-0 flex items-start gap-2"
                   >
                     <MapPin size={16} className="text-pink-600 flex-shrink-0 mt-0.5" />
                     <span className="text-sm text-slate-200 leading-snug">{r.display_name}</span>
@@ -891,13 +912,13 @@ export default function PetaClient({
           <button
             onClick={() => setPetaGelap((v) => !v)}
             title="Ganti peta terang / gelap"
-            className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow bg-[#0C1A15]/95 border border-lime-400/25 text-lime-300 flex-shrink-0"
+            className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow bg-[var(--kartu)]/95 border border-lime-400/25 text-lime-300 flex-shrink-0"
           >
             {petaGelap ? "Gelap" : "Terang"}
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === "all" ? "bg-lime-400 text-slate-950" : "bg-[#0C1A15]/95 border border-white/10 text-slate-300"}`}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === "all" ? "bg-lime-400 text-slate-950" : "bg-[var(--kartu)]/95 border border-white/10 text-slate-300"}`}
           >
             Semua ({markers.length})
           </button>
@@ -907,7 +928,7 @@ export default function PetaClient({
               <button
                 key={type}
                 onClick={() => setFilter(type)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === type ? "text-white" : "bg-[#0C1A15]/95 border border-white/10 text-slate-300"}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shadow ${filter === type ? "text-white" : "bg-[var(--kartu)]/95 border border-white/10 text-slate-300"}`}
                 style={filter === type ? { background: TYPE_CONFIG[type].color } : {}}
               >
                 {TYPE_CONFIG[type].emoji} {TYPE_CONFIG[type].label} ({count})
@@ -926,12 +947,12 @@ export default function PetaClient({
       )}
       {mode === "route-b" && (
         <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-sky-600 text-white px-3 py-2 rounded-lg shadow text-sm font-medium flex items-center justify-between">
-          <span>🚴 Dari <strong>lokasimu</strong> — tap titik <strong>TUJUAN</strong> di peta</span>
+          <span>🚴 Dari <strong>lokasimu</strong>, tap titik <strong>TUJUAN</strong> di peta</span>
           <button onClick={() => setMode("view")}><X size={16} /></button>
         </div>
       )}
       {routing && (
-        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-[#0E1C17] px-3 py-2 rounded-lg shadow text-sm flex items-center gap-2">
+        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-[var(--kartu)] px-3 py-2 rounded-lg shadow text-sm flex items-center gap-2">
           <Loader2 size={16} className="animate-spin" />
           Menyiapkan rute pesepeda...
         </div>
@@ -947,7 +968,7 @@ export default function PetaClient({
       {showLegend && (
         <div className="absolute bottom-36 left-2 z-[1000] flex flex-col gap-2 max-w-[60%]">
           {showTraffic && tomtomKey && (
-            <div className="bg-[#0E1C17]/95 rounded-lg shadow-lg px-3 py-2 text-xs">
+            <div className="bg-[var(--kartu)]/95 rounded-lg shadow-lg px-3 py-2 text-xs">
               <p className="font-semibold text-slate-200 mb-1">Insiden Jalan</p>
               {TRAFFIC_LEGEND.map((t) => (
                 <div key={t.label} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
@@ -958,7 +979,7 @@ export default function PetaClient({
             </div>
           )}
           {showZones && zones.length > 0 && (
-            <div className="bg-[#0E1C17]/95 rounded-lg shadow-lg px-3 py-2 text-xs">
+            <div className="bg-[var(--kartu)]/95 rounded-lg shadow-lg px-3 py-2 text-xs">
               <p className="font-semibold text-slate-200 mb-1">Zona Rawan</p>
               {(Object.keys(ZONE_CONFIG) as Array<keyof typeof ZONE_CONFIG>).map((cat) => (
                 <div key={cat} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
@@ -973,7 +994,7 @@ export default function PetaClient({
 
       {/* Route info card */}
       {routeInfo && !navigating && (
-        <div className="absolute bottom-44 left-2 right-2 z-[1000] bg-[#0E1C17] rounded-2xl p-4 shadow-xl border border-white/5">
+        <div className="absolute bottom-44 left-2 right-2 z-[1000] bg-[var(--kartu)] rounded-2xl p-4 shadow-xl border border-white/5">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Navigation size={18} className="text-purple-600" />
@@ -1008,7 +1029,7 @@ export default function PetaClient({
               Rute Aman (hindari titik & zona rawan)
             </span>
             <span className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${avoidDanger ? "bg-green-600" : "bg-white/20"}`}>
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[#0E1C17] rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[var(--kartu)] rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
             </span>
           </button>
           {routeNote && (
@@ -1038,7 +1059,7 @@ export default function PetaClient({
       {showRecommend && !navigating && (
         <div className="absolute inset-0 z-[1400] flex items-end" onClick={() => setShowRecommend(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative w-full bg-[#0E1C17] rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full bg-[var(--kartu)] rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center">
@@ -1049,7 +1070,7 @@ export default function PetaClient({
                   <p className="text-xs text-slate-400 leading-tight">Rute melingkar, kembali ke titik awalmu</p>
                 </div>
               </div>
-              <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[#122019]" aria-label="Tutup">
+              <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
@@ -1110,7 +1131,7 @@ export default function PetaClient({
               <button
                 onClick={() => generateRecommendation(true)}
                 disabled={recoLoading}
-                className="flex-1 bg-[#0E1C17] border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition"
+                className="flex-1 bg-[var(--kartu)] border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition"
               >
                 <RefreshCw size={16} /> {recoRoute ? "Cari Lagi" : "Buat Rute"}
               </button>
@@ -1136,7 +1157,7 @@ export default function PetaClient({
 <button
             onClick={toggleTraffic}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-[#0E1C17] text-slate-200"
+              showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-[var(--kartu)] text-slate-200"
             }`}
             aria-label="Tampilkan insiden jalan"
             title="Insiden & bahaya jalan"
@@ -1146,7 +1167,7 @@ export default function PetaClient({
           <button
             onClick={() => setShowLandmarks((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              showLandmarks ? "bg-indigo-600 text-white" : "bg-[#0E1C17] text-slate-200"
+              showLandmarks ? "bg-indigo-600 text-white" : "bg-[var(--kartu)] text-slate-200"
             }`}
             aria-label="Tampilkan landmark"
             title="Landmark"
@@ -1156,7 +1177,7 @@ export default function PetaClient({
           <button
             onClick={() => setShowZones((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              showZones ? "bg-orange-500 text-white" : "bg-[#0E1C17] text-slate-200"
+              showZones ? "bg-orange-500 text-white" : "bg-[var(--kartu)] text-slate-200"
             }`}
             aria-label="Tampilkan zona rawan"
             title="Zona rawan"
@@ -1166,7 +1187,7 @@ export default function PetaClient({
           <button
             onClick={handleLocateClick}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-              tracking ? (follow ? "bg-blue-600 text-white" : "bg-[#0E1C17] text-blue-600") : "bg-[#0E1C17] text-slate-200"
+              tracking ? (follow ? "bg-blue-600 text-white" : "bg-[var(--kartu)] text-blue-600") : "bg-[var(--kartu)] text-slate-200"
             }`}
             aria-label="Lokasi saya"
             title="Lokasi saya"
@@ -1200,7 +1221,7 @@ export default function PetaClient({
               {userId && (
                 <button
                   onClick={() => setMode("report")}
-                  className="flex-1 bg-[#0E1C17] border border-white/10 text-slate-200 py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
+                  className="flex-1 bg-[var(--kartu)] border border-white/10 text-slate-200 py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
                 >
                   <MapPin size={16} />
                   Lapor Jalur
@@ -1209,7 +1230,7 @@ export default function PetaClient({
             </>
           )}
           {mode === "report" && (
-            <div className="flex-1 bg-[#0E1C17] rounded-lg p-3 shadow text-xs text-slate-200 text-center flex items-center justify-between">
+            <div className="flex-1 bg-[var(--kartu)] rounded-lg p-3 shadow text-xs text-slate-200 text-center flex items-center justify-between">
               <span>💡 Tap titik di peta untuk lapor</span>
               <button onClick={() => setMode("view")} className="text-red-600 font-medium">Batal</button>
             </div>
@@ -1333,7 +1354,7 @@ export default function PetaClient({
       {/* Report form modal */}
       {showForm && pickedCoords && (
         <div className="absolute inset-0 z-[1001] bg-black/50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-[#0E1C17] rounded-2xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-[var(--kartu)] rounded-2xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <h2 className="font-bold text-lg mb-1">Lapor Jalur Baru</h2>
             <p className="text-xs text-slate-400 mb-4">📍 {pickedCoords.lat.toFixed(5)}, {pickedCoords.lng.toFixed(5)}</p>
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -1345,7 +1366,7 @@ export default function PetaClient({
                       key={type}
                       type="button"
                       onClick={() => setFormType(type)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 ${formType === type ? "border-lime-400 bg-[#0A1512]" : "border-white/10"}`}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 ${formType === type ? "border-lime-400 bg-[var(--kartu-2)]" : "border-white/10"}`}
                     >
                       {TYPE_CONFIG[type].emoji} {TYPE_CONFIG[type].label}
                     </button>

@@ -1,4 +1,4 @@
-// Pengirim notifikasi FCM (Firebase Cloud Messaging) HTTP v1 — tanpa dependensi
+// Pengirim notifikasi FCM (Firebase Cloud Messaging) HTTP v1, tanpa dependensi
 // tambahan: JWT service account ditandatangani dengan modul crypto bawaan Node.
 //
 // Butuh env FIREBASE_SERVICE_ACCOUNT berisi seluruh isi file JSON service
@@ -44,7 +44,7 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
     exp: now + 3600,
   }));
   const signingInput = `${header}.${claims}`;
-  // Env sering menyimpan newline sebagai \n literal — kembalikan jadi newline asli
+  // Env sering menyimpan newline sebagai \n literal, kembalikan jadi newline asli
   const privateKey = sa.private_key.replace(/\\n/g, "\n");
   const signature = crypto.createSign("RSA-SHA256").update(signingInput).sign(privateKey);
   const jwt = `${signingInput}.${b64url(signature)}`;
@@ -67,7 +67,7 @@ export type FcmSendResult = { sent: number; deadTokens: string[]; errors: string
 
 // Kirim notifikasi ke banyak token FCM. Token mati (UNREGISTERED) dikembalikan
 // agar pemanggil bisa menghapusnya dari database. SEMUA kegagalan dilaporkan
-// lewat `errors` — tidak ada yang ditelan diam-diam.
+// lewat `errors`, tidak ada yang ditelan diam-diam.
 export async function sendFcmToTokens(
   tokens: string[],
   notif: { title: string; body: string; url?: string; data?: Record<string, string> }

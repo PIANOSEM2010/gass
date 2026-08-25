@@ -18,11 +18,11 @@ export default async function RiwayatPage() {
       <h1 className="display-title text-2xl text-white mb-2">Riwayat SOS</h1>
       <p className="text-sm text-slate-400 mb-6">Daftar tombol darurat yang pernah kamu tekan.</p>
       {(!logs || logs.length === 0) ? (
-        <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada riwayat SOS.</div>
+        <div className="bg-[var(--kartu)] rounded-xl p-8 text-center text-slate-400">Belum ada riwayat SOS.</div>
       ) : (
         <div className="space-y-3">
           {logs.map((log) => (
-            <div key={log.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+            <div key={log.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
                 <Clock size={14} />
                 {new Date(log.created_at).toLocaleString("id-ID")}

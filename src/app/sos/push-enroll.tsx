@@ -25,7 +25,7 @@ export default function PushEnroll() {
 
   useEffect(() => {
     // Di APLIKASI Android, notifikasi memakai FCM native (otomatis terdaftar
-    // saat login) — bukan web-push. Tampilkan status yang sesuai.
+    // saat login), bukan web-push. Tampilkan status yang sesuai.
     if (isNativeApp()) {
       setState("native");
       // Tampilkan status registrasi FCM langsung di layar (memudahkan diagnosa)
@@ -126,11 +126,11 @@ export default function PushEnroll() {
     const ok = nativeStatus === "terdaftar";
     const failed = nativeStatus.startsWith("gagal") || nativeStatus.startsWith("error") || nativeStatus.startsWith("izin:");
     return (
-      <div className={`${ok ? "bg-lime-400/10 border-lime-400/25 text-lime-300" : failed ? "bg-amber-400/10 border-amber-400/25 text-amber-300" : "bg-[#0A1512] border-white/10 text-slate-400"} border rounded-xl p-3 text-xs text-center flex items-center justify-center gap-2`}>
+      <div className={`${ok ? "bg-lime-400/10 border-lime-400/25 text-lime-300" : failed ? "bg-amber-400/10 border-amber-400/25 text-amber-300" : "bg-[var(--kartu-2)] border-white/10 text-slate-400"} border rounded-xl p-3 text-xs text-center flex items-center justify-center gap-2`}>
         <BellRing size={14} className="flex-shrink-0" />
         <span>
           {ok
-            ? "Notifikasi aplikasi aktif — peringatan SOS akan muncul walau aplikasi ditutup."
+            ? "Notifikasi aplikasi aktif, peringatan SOS akan muncul walau aplikasi ditutup."
             : `Status notifikasi: ${nativeStatus || "menunggu login…"}`}
         </span>
       </div>
@@ -139,7 +139,7 @@ export default function PushEnroll() {
 
   if (state === "unsupported") {
     return (
-      <div className="bg-[#0A1512] border border-white/10 rounded-xl p-3 text-xs text-slate-400 text-center">
+      <div className="bg-[var(--kartu-2)] border border-white/10 rounded-xl p-3 text-xs text-slate-400 text-center">
         Browser ini belum mendukung notifikasi push.
       </div>
     );
@@ -167,7 +167,7 @@ export default function PushEnroll() {
   }
 
   return (
-    <div className="bg-[#0E1C17] border border-white/10 rounded-xl p-4">
+    <div className="bg-[var(--kartu)] border border-white/10 rounded-xl p-4">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-full bg-red-400/15 flex items-center justify-center flex-shrink-0">
           <Bell size={18} className="text-red-600" />

@@ -12,7 +12,7 @@ import { getPositionOnce } from "@/lib/native-geo";
 
 const InfraMap = dynamic(() => import("./infra-map"), {
   ssr: false,
-  loading: () => <div className="h-full flex items-center justify-center bg-[#122019] text-slate-500 text-sm">Memuat peta...</div>,
+  loading: () => <div className="h-full flex items-center justify-center bg-[var(--kartu-2)] text-slate-500 text-sm">Memuat peta...</div>,
 });
 
 type Report = {
@@ -132,7 +132,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
   }
 
   return (
-    <div className="min-h-screen bg-[#071310]">
+    <div className="min-h-screen bg-[var(--latar)]">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-amber-300 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
@@ -149,9 +149,9 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
 
         {success && <div className="bg-lime-400/10 border border-lime-400/25 text-lime-300 text-sm rounded-xl px-3 py-2 mb-4 flex items-center gap-2"><CheckCircle2 size={16} /> {success}</div>}
 
-        <div className="flex bg-[#122019] rounded-xl p-1 mb-4">
-          <button onClick={() => setTab("lapor")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lapor" ? "bg-[#0E1C17] shadow text-amber-300" : "text-slate-400"}`}><Camera size={16} /> Buat Laporan</button>
-          <button onClick={() => setTab("lihat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lihat" ? "bg-[#0E1C17] shadow text-amber-300" : "text-slate-400"}`}><ListChecks size={16} /> Laporan ({reports.length})</button>
+        <div className="flex bg-[var(--kartu-2)] rounded-xl p-1 mb-4">
+          <button onClick={() => setTab("lapor")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lapor" ? "bg-[var(--kartu)] shadow text-amber-300" : "text-slate-400"}`}><Camera size={16} /> Buat Laporan</button>
+          <button onClick={() => setTab("lihat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === "lihat" ? "bg-[var(--kartu)] shadow text-amber-300" : "text-slate-400"}`}><ListChecks size={16} /> Laporan ({reports.length})</button>
         </div>
 
         {tab === "lapor" ? (
@@ -161,7 +161,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
               <div className="grid grid-cols-3 gap-2">
                 {CATEGORIES.map((c) => (
                   <button key={c.key} type="button" onClick={() => setCategory(c.key)}
-                    className={`py-3 rounded-xl border-2 text-center ${category === c.key ? "border-amber-500 bg-amber-400/10" : "border-white/10 bg-[#0E1C17]"}`}>
+                    className={`py-3 rounded-xl border-2 text-center ${category === c.key ? "border-amber-500 bg-amber-400/10" : "border-white/10 bg-[var(--kartu)]"}`}>
                     <div className="text-2xl leading-none">{c.emoji}</div>
                     <div className="text-[11px] font-medium text-slate-200 mt-1">{c.label}</div>
                   </button>
@@ -177,7 +177,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
                   <button onClick={removePhoto} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5"><X size={16} /></button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-amber-300 rounded-2xl py-8 cursor-pointer bg-[#0E1C17] text-amber-600">
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-amber-300 rounded-2xl py-8 cursor-pointer bg-[var(--kartu)] text-amber-600">
                   <Camera size={28} />
                   <span className="text-sm font-medium">Ambil atau pilih foto</span>
                   <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="hidden" />
@@ -187,7 +187,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
 
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">Lokasi</label>
-              <div className="rounded-2xl border border-white/10 bg-[#0E1C17] p-3 flex items-center gap-3">
+              <div className="rounded-2xl border border-white/10 bg-[var(--kartu)] p-3 flex items-center gap-3">
                 <MapPin size={20} className={coords ? "text-green-600" : "text-slate-500"} />
                 <div className="flex-1 min-w-0 text-sm">
                   {locating ? (
@@ -228,9 +228,9 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
               {reports.length === 0 ? (
                 <p className="text-center text-slate-500 py-6 text-sm">Belum ada laporan. Jadilah yang pertama melapor!</p>
               ) : reports.map((r) => {
-                const sm = STATUS_META[r.status] || { label: r.status, cls: "bg-[#122019] text-slate-400" };
+                const sm = STATUS_META[r.status] || { label: r.status, cls: "bg-[var(--kartu-2)] text-slate-400" };
                 return (
-                  <div key={r.id} className="flex gap-3 bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-3">
+                  <div key={r.id} className="flex gap-3 bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-3">
                     {r.photo_url ? (
                       <img src={r.photo_url} alt={r.category} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
                     ) : (

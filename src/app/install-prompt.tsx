@@ -56,7 +56,7 @@ export default function InstallPrompt() {
     }
 
     // Android (browser): tawarkan APLIKASI NATIVE (unduh APK), bukan PWA.
-    // APK punya GPS latar belakang (jalan walau layar mati) — jauh lebih baik.
+    // APK punya GPS latar belakang (jalan walau layar mati), jauh lebih baik.
     if (/android/i.test(ua)) {
       setAndroidApk(true);
       setVisible(true);
@@ -89,7 +89,7 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-3 right-3 z-[2000] max-w-md mx-auto">
-      <div className="bg-[#0E1C17] rounded-2xl shadow-2xl border border-white/5 p-3 flex items-center gap-3">
+      <div className="bg-[var(--kartu)] rounded-2xl shadow-2xl border border-white/5 p-3 flex items-center gap-3">
         <img src="/icon-192.png" alt="BUG" className="w-11 h-11 rounded-xl flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white leading-tight">Pasang Aplikasi BUG</p>

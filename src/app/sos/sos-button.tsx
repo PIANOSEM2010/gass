@@ -87,7 +87,7 @@ export default function SosButton({
       const supabase = createClient();
 
       // Simpan log SOS lewat server (service role) agar tidak terhalang RLS / sesi kedaluwarsa.
-      // Kalaupun gagal, alur SOS tetap lanjut — keselamatan diutamakan.
+      // Kalaupun gagal, alur SOS tetap lanjut, keselamatan diutamakan.
       let inserted: { id: string; created_at: string } | null = null;
       try {
         const logRes = await fetch("/api/sos-log", {
@@ -222,10 +222,10 @@ export default function SosButton({
         <WifiOff size={44} className="text-amber-600 mx-auto mb-3" />
         <h2 className="font-bold text-amber-300 text-lg mb-1">Mode Offline</h2>
         <p className="text-sm text-amber-300 mb-4">
-          Tidak ada koneksi internet. Lokasimu sudah didapat — kirim lewat SMS atau telepon langsung lewat jaringan seluler.
+          Tidak ada koneksi internet. Lokasimu sudah didapat, kirim lewat SMS atau telepon langsung lewat jaringan seluler.
         </p>
         {coords && (
-          <div className="bg-[#0E1C17] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">
+          <div className="bg-[var(--kartu)] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">
             <MapPin size={14} />
             {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
           </div>
@@ -245,7 +245,7 @@ export default function SosButton({
           </button>
           <button
             onClick={() => { window.location.href = `tel:${telNumber}`; }}
-            className="w-full bg-[#0E1C17] border border-white/15 text-slate-200 py-3 rounded-xl font-medium flex items-center justify-center gap-2"
+            className="w-full bg-[var(--kartu)] border border-white/15 text-slate-200 py-3 rounded-xl font-medium flex items-center justify-center gap-2"
           >
             <Phone size={18} /> Telepon {primaryContact?.name}
           </button>
@@ -264,19 +264,22 @@ if (status === "sent") {
         <CheckCircle2 size={48} className="text-lime-400 mx-auto mb-3" />
         <h2 className="font-bold text-lime-300 text-lg mb-2">SOS Terkirim</h2>
         <p className="text-sm text-lime-300 mb-3">
-          Pesan SOS otomatis telah dikirim ke kontak daruratmu & admin. WhatsApp juga terbuka ke kontak utama — kamu bisa menekan kirim untuk mengirim dari nomormu sendiri.
+          Pesan SOS otomatis telah dikirim ke kontak daruratmu & admin. WhatsApp juga terbuka ke kontak utama, kamu bisa menekan kirim untuk mengirim dari nomormu sendiri.
         </p>
         {coords && (
-          <div className="bg-[#0E1C17] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">
+          <div className="bg-[var(--kartu)] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">
             <MapPin size={14} />
             {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
           </div>
         )}
-        <Link
-          href="/sos/panggil"
+        <a
+          href="tel:110"
           className="w-full bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 animate-pulse"
         >
-          <Phone size={18} /> Telepon 110 (dengan panduan)
+          <Phone size={18} /> Telepon 110 Sekarang
+        </a>
+        <Link href="/sos/panggil" className="block text-center mt-2 text-[11px] text-slate-400 underline underline-offset-2">
+          Naskah panduan bicara ke operator
         </Link>
         <button
           onClick={reset}
@@ -292,7 +295,7 @@ if (status === "sent") {
     <div className="flex flex-col items-center">
       {!online && (
         <div className="mb-4 w-full max-w-xs bg-amber-400/10 border border-amber-400/25 text-amber-300 text-xs rounded-lg px-3 py-2 flex items-center justify-center gap-2 text-center">
-          <WifiOff size={14} /> Mode offline — SOS akan dikirim via SMS / telepon
+          <WifiOff size={14} /> Mode offline, SOS akan dikirim via SMS / telepon
         </div>
       )}
 
@@ -326,11 +329,14 @@ if (status === "sent") {
         )}
       </button>
 
-      <Link
-        href="/sos/panggil"
+      <a
+        href="tel:110"
         className="mt-4 text-sm font-semibold text-red-400 underline underline-offset-2 flex items-center gap-1.5"
       >
-        <Phone size={14} /> Panggilan terpandu ke 110
+        <Phone size={14} /> Telepon 110 sekarang
+      </a>
+      <Link href="/sos/panggil" className="mt-1.5 text-[11px] text-slate-500 underline underline-offset-2">
+        Lihat naskah panduan bicara
       </Link>
 
       <p className="text-xs text-slate-400 mt-3 text-center">

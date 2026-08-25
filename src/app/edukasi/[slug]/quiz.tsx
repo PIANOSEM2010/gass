@@ -214,6 +214,7 @@ export default function ModuleQuiz({
   const [ke, setKe] = useState(0);
   const [terkunci, setTerkunci] = useState(false);
   const [beruntun, setBeruntun] = useState(0);
+  const [goyang, setGoyang] = useState<"benar" | "salah" | null>(null);
 
   if (questions.length === 0) return null;
 
@@ -252,7 +253,7 @@ export default function ModuleQuiz({
 
   if (!started && !submitted) {
     return (
-      <div className="mt-6 rounded-2xl p-6 text-center border border-lime-400/20 bg-[#0C1A15]">
+      <div className="mt-6 rounded-2xl p-6 text-center border border-lime-400/20 bg-[var(--kartu)]">
         <Award size={38} className="mx-auto mb-2 text-lime-400" />
         <h3 className="display-title text-lg text-white mb-1">UJI PEMAHAMANMU</h3>
         <p className="text-[13px] text-slate-400 mb-4">
@@ -290,7 +291,7 @@ export default function ModuleQuiz({
           const userAns = answers[qIdx];
           const isCorrect = userAns === q.correct;
           return (
-            <div key={qIdx} className={`bg-[#0C1A15] rounded-2xl p-4 border ${isCorrect ? "border-lime-400/25" : "border-red-400/25"}`}>
+            <div key={qIdx} className={`bg-[var(--kartu)] rounded-2xl p-4 border ${isCorrect ? "border-lime-400/25" : "border-red-400/25"}`}>
               <div className="flex items-start gap-2 mb-2">
                 {isCorrect ? <CheckCircle2 size={20} className="text-lime-400 flex-shrink-0 mt-0.5" /> : <XCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />}
                 <p className="text-sm font-semibold text-white">{qIdx + 1}. {q.question}</p>
@@ -327,6 +328,8 @@ export default function ModuleQuiz({
 
   function pilih(idx: number) {
     if (terkunci) return;
+    setGoyang(idx === soal.correct ? "benar" : "salah");
+    setTimeout(() => setGoyang(null), 700);
     const salinan = [...answers];
     salinan[ke] = idx;
     setAnswers(salinan);
@@ -358,7 +361,7 @@ export default function ModuleQuiz({
           <p className="display-title text-[15px] text-white">SOAL {ke + 1} DARI {questions.length}</p>
         </div>
         <div className="text-right">
-          <p className="display-num text-2xl leading-none text-lime-400">{beruntun}</p>
+          <p className={`display-num text-2xl leading-none text-lime-400 ${goyang === "benar" ? "kuis-benar" : ""}`}>{beruntun}</p>
           <p className="eyebrow !text-[8px] text-slate-500 mt-1">beruntun</p>
         </div>
       </div>
@@ -369,10 +372,10 @@ export default function ModuleQuiz({
       </div>
 
       {/* Situasi di jalan */}
-      <div className="rounded-2xl border border-lime-400/12 bg-[#0C1A15] p-4">
+      <div className={`rounded-2xl border border-lime-400/12 bg-[var(--kartu)] p-4 ${goyang === "benar" ? "kuis-benar" : goyang === "salah" ? "kuis-salah" : ""}`}>
         <p className="eyebrow !text-[9px] text-slate-500 mb-2">Situasi di jalan</p>
         <p className="text-[14px] leading-relaxed text-slate-100">{soal.question}</p>
-        <div className="mt-3 rounded-xl bg-[#08120F] border border-white/5 py-3">
+        <div className="mt-3 rounded-xl bg-[var(--relung)] border border-white/5 py-3">
           <IlustrasiJalan />
         </div>
       </div>
@@ -382,10 +385,10 @@ export default function ModuleQuiz({
         {soal.options.map((opt, idx) => {
           const dipilih = jawab === idx;
           const iniKunci = idx === soal.correct;
-          let gaya = "border-white/10 bg-[#0C1A15] text-slate-200";
-          if (terkunci && iniKunci) gaya = "border-lime-400/60 bg-lime-400/12 text-lime-200";
+          let gaya = "border-white/10 bg-[var(--kartu)] text-slate-200";
+          if (terkunci && iniKunci) gaya = "border-lime-400/60 bg-lime-400/12 text-lime-200 shadow-[0_0_22px_rgba(180,255,58,.18)]";
           else if (terkunci && dipilih) gaya = "border-red-400/50 bg-red-500/10 text-red-200";
-          else if (terkunci) gaya = "border-white/5 bg-[#0A1512] text-slate-500";
+          else if (terkunci) gaya = "border-white/5 bg-[var(--kartu-2)] text-slate-500";
           return (
             <button key={idx} onClick={() => pilih(idx)} disabled={terkunci}
               className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] border transition-colors flex items-center gap-2.5 ${gaya}`}>
@@ -393,7 +396,14 @@ export default function ModuleQuiz({
                 {String.fromCharCode(65 + idx)}
               </span>
               <span className="flex-1">{opt}</span>
-              {terkunci && iniKunci && <span className="display-title text-[11px] text-lime-400">+10</span>}
+              {terkunci && iniKunci && (
+                <span className="relative display-title text-[11px] text-lime-400">
+                  +10
+                  {goyang === "benar" && (
+                    <span className="absolute -top-1 left-0 display-title text-[15px] text-lime-300 kuis-poin whitespace-nowrap">+10</span>
+                  )}
+                </span>
+              )}
             </button>
           );
         })}

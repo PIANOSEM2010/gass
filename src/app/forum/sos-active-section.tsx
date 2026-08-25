@@ -110,7 +110,7 @@ export default function SosActiveSection() {
       {sosList.map((sos) => (
         <div
           key={sos.id}
-          className="bg-[#0E1C17] rounded-xl shadow-md border-l-4 border-red-600 p-4"
+          className="bg-[var(--kartu)] rounded-xl shadow-md border-l-4 border-red-600 p-4"
         >
           <div className="flex items-start gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-red-400/15 flex items-center justify-center flex-shrink-0">

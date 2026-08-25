@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Share2, Download, ImagePlus, X, Loader2, Sparkles } from "lucide-react";
 import { drawCard, loadImage, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
+import { gambarKartuTanah, TEMPLATE_TANAH, WARNA_TANAH, WARNA_TANAH_KEYS, type Rasio } from "@/lib/kartu-tanah";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
 import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { placeNameFromPath } from "@/lib/place-name";
@@ -24,7 +25,11 @@ type Ride = {
 export default function ShareRide({ ride }: { ride: Ride }) {
   const [open, setOpen] = useState(false);
   const [pesanStory, setPesanStory] = useState("");
-  const [template, setTemplate] = useState("rute");
+  // Keluarga "Tanah" memakai palet dan penggambar sendiri, plus pilihan rasio.
+  const [rasio, setRasio] = useState<Rasio>("1:1");
+  const [warnaTanah, setWarnaTanah] = useState("terakota");
+  const keluargaTanah = TEMPLATE_TANAH.some((t) => t.key === template);
+  const [template, setTemplate] = useState("blok");
   const [palette, setPalette] = useState("hijau");
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [transparent, setTransparent] = useState(false);
@@ -57,21 +62,29 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     if (!open || !canvasRef.current || placeLoading) return;
     const doDraw = () => {
       if (!canvasRef.current) return;
-      drawCard(canvasRef.current, {
-        template, palette, place,
+      const umum = {
+        place,
         path: ride.path || [],
         distanceM: ride.distance_m,
         durationS: ride.duration_s,
         elevM: ride.elevation_gain_m,
         photo, transparent,
         date: rideDate ? new Date(rideDate) : new Date(),
-      });
+      };
+      if (TEMPLATE_TANAH.some((t) => t.key === template)) {
+        gambarKartuTanah(canvasRef.current, {
+          ...umum, template, warna: warnaTanah, rasio,
+          kalori: Math.round((ride.distance_m / 1000) * 35),
+        });
+      } else {
+        drawCard(canvasRef.current, { ...umum, template, palette });
+      }
     };
     doDraw();
     if (typeof document !== "undefined" && document.fonts?.ready) {
       document.fonts.ready.then(doDraw).catch(() => { /* abaikan */ });
     }
-  }, [open, template, palette, photo, transparent, ride, rideDate, place, placeLoading]);
+  }, [open, template, palette, photo, transparent, ride, rideDate, place, placeLoading, rasio, warnaTanah]);
 
   async function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -95,7 +108,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     try {
       const km = (ride.distance_m / 1000).toFixed(2).replace(".", ",");
       await kirimKartuKeStory(canvas, place ? `Gowes ${km} km di ${place}` : `Gowes ${km} km`, ride.id);
-      setPesanStory("Story tayang 24 jam — cek di halaman Umpan.");
+      setPesanStory("Story tayang 24 jam, cek di halaman Umpan.");
     } catch (err) {
       setPesanStory(err instanceof Error ? err.message : "Gagal membuat story.");
     } finally { setBusy(false); }
@@ -137,16 +150,16 @@ export default function ShareRide({ ride }: { ride: Ride }) {
 
       {open && (
         <div className="fixed inset-0 z-[2000] bg-black/60 flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
-          <div className="bg-[#0C1A15] border border-lime-400/15 rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="display-title text-base text-white">KARTU PERJALANAN</p>
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[#122019]" aria-label="Tutup">
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
 
             <div className="flex gap-2 mb-3">
-              {TEMPLATES.map((t) => (
+              {[...TEMPLATE_TANAH.map((t) => ({ key: t.key, name: t.nama })), ...TEMPLATES].map((t) => (
                 <button key={t.key} onClick={() => setTemplate(t.key)}
                   className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                   {t.name}
@@ -156,7 +169,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
             <div className="flex gap-2.5 mb-3">
               {PALETTE_KEYS.map((k) => (
                 <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
-                  className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-offset-[#0C1A15] ring-lime-400" : "ring-1 ring-white/15"}`}
+                  className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-offset-[var(--kartu)] ring-lime-400" : "ring-1 ring-white/15"}`}
                   style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
               ))}
             </div>

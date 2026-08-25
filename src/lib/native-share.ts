@@ -39,7 +39,7 @@ export async function shareText(opts: { title?: string; text?: string; url?: str
       });
       return "shared";
     } catch {
-      // user membatalkan share sheet juga masuk sini — coba fallback copy
+      // user membatalkan share sheet juga masuk sini, coba fallback copy
     }
   } else if (typeof navigator !== "undefined" && navigator.share) {
     // Browser modern → Web Share API
@@ -118,7 +118,7 @@ export async function shareImageDataUrl(
       return { status: "shared" };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      // Menutup share sheet tanpa memilih juga masuk sini — itu bukan kegagalan
+      // Menutup share sheet tanpa memilih juga masuk sini, itu bukan kegagalan
       if (/cancel/i.test(msg)) return { status: "shared" };
       return { status: "failed", error: msg };
     }
@@ -136,7 +136,7 @@ export async function shareImageDataUrl(
     /* dibatalkan / gagal → fallback unduh */
   }
 
-  // Fallback: unduh file (via Blob — data URL besar bisa gagal diam-diam)
+  // Fallback: unduh file (via Blob, data URL besar bisa gagal diam-diam)
   try {
     const blob = await (await fetch(dataUrl)).blob();
     triggerBlobDownload(blob, filename);

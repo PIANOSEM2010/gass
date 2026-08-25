@@ -28,11 +28,11 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
     (profil || []).find((p) => String(p.id) === uid)?.full_name || "Goweser";
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-24">
+    <div className="min-h-screen bg-[var(--latar)] pb-24">
       <div className="max-w-md mx-auto px-4 pt-5">
         <Link href="/" className="text-xs text-slate-400">← Kembali ke umpan</Link>
 
-        <div className="mt-4 rounded-2xl border border-lime-400/12 bg-[#0C1A15] p-4">
+        <div className="mt-4 rounded-2xl border border-lime-400/12 bg-[var(--kartu)] p-4">
           <div className="flex items-center gap-3">
             <Avatar nama={nama(String(a.user_id))} />
             <div>
@@ -43,7 +43,7 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
             </div>
           </div>
           {a.note && <p className="mt-3 text-[13px] text-slate-300 leading-relaxed">{String(a.note)}</p>}
-          <div className="mt-3 rounded-xl bg-[#08120F] border border-lime-400/8 py-3 flex justify-center">
+          <div className="mt-3 rounded-xl bg-[var(--relung)] border border-lime-400/8 py-3 flex justify-center">
             <JejakRute path={Array.isArray(a.path) ? (a.path as Titik[]) : null} width={280} height={110} />
           </div>
           <div className="flex gap-6 mt-3">
@@ -57,7 +57,7 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
         <div className="space-y-2">
           {(komentar || []).length === 0 && <p className="text-xs text-slate-600">Belum ada komentar.</p>}
           {(komentar || []).map((k) => (
-            <div key={String(k.id)} className="flex gap-2.5 rounded-xl bg-[#0C1A15] border border-white/5 p-3">
+            <div key={String(k.id)} className="flex gap-2.5 rounded-xl bg-[var(--kartu)] border border-white/5 p-3">
               <Avatar nama={nama(String(k.user_id))} ukuran={28} />
               <div className="min-w-0">
                 <p className="text-[12px] text-slate-200 font-semibold">{nama(String(k.user_id))}</p>

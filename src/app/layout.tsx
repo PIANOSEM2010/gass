@@ -1,4 +1,5 @@
 import GowesProvider from "./gowes-provider";
+import { SkripTema } from "@/components/tema";
 import PeralihanHalaman from "@/components/peralihan-halaman";
 import PantauProvider from "./pantau-provider";
 import NavProvider from "./nav-provider";
@@ -36,7 +37,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body className={`${inter.variable} ${barlow.variable} font-body bg-[#071310] text-slate-200 min-h-screen`}>
+      <head><SkripTema /></head>
+      <body className={`${inter.variable} ${barlow.variable} font-body bg-[var(--latar)] text-slate-200 min-h-screen`}>
         <GowesProvider>
           <PantauProvider>
             <NavProvider>
@@ -47,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <InstallPrompt />
                 <Navbar />
                 <ActivityDock />
-                <main className="pb-20"><PeralihanHalaman>{children}</PeralihanHalaman></main>
+                <main className="pb-[68px]"><PeralihanHalaman>{children}</PeralihanHalaman></main>
               </NavLoadingProvider>
             </NavProvider>
           </PantauProvider>

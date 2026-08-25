@@ -69,7 +69,7 @@ async function postTelnyx(path: string, payload: unknown, apiKey: string): Promi
 }
 
 // Parameter template WhatsApp tidak boleh memuat baris baru, tab, atau
-// spasi berlebih (aturan Meta) — jadi pesan dirapikan menjadi satu baris.
+// spasi berlebih (aturan Meta), jadi pesan dirapikan menjadi satu baris.
 function sanitizeForTemplate(text: string): string {
   return text.replace(/[\r\n\t]+/g, " · ").replace(/\s{2,}/g, " ").trim().slice(0, 900);
 }

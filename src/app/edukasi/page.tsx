@@ -35,7 +35,7 @@ export default async function EdukasiPage() {
   const pct = total ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-8">
+    <div className="min-h-screen bg-[var(--latar)] pb-8">
       <KepalaHalaman
         ikon={<IkonEdukasi size={22} />}
         judul="MODUL EDUKASI"
@@ -65,7 +65,7 @@ export default async function EdukasiPage() {
         {/* Daftar modul */}
         <div className="space-y-3 jenjang">
           {(!modules || modules.length === 0) && (
-            <div className="rounded-2xl border border-lime-400/12 bg-[#0C1A15] p-8 text-center">
+            <div className="rounded-2xl border border-lime-400/12 bg-[var(--kartu)] p-8 text-center">
               <p className="display-title text-lime-300">MODUL BELUM TERSEDIA</p>
               <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Materi edukasi sedang disiapkan. Sementara itu, kamu bisa melihat peta jalur aman atau mulai mencatat gowes.
@@ -80,7 +80,7 @@ export default async function EdukasiPage() {
               <Link
                 key={m.id}
                 href={`/edukasi/${m.slug}`}
-                className="block bg-[#0E1C17] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-white/5"
+                className="block bg-[var(--kartu)] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.99] border border-white/5"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${aud.grad} text-white shadow-sm`}>

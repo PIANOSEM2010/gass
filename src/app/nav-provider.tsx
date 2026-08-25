@@ -226,7 +226,7 @@ export default function NavProvider({ children }: { children: ReactNode }) {
     watchRef.current = startWatch(
       handlePosition,
       () => setNavInfo({ instruction: "Menunggu sinyal GPS…", distanceToNext: -1, type: 11 }),
-      { title: "BUG — Navigasi", message: "Panduan rute sedang berjalan…", distanceFilter: 3 }
+      { title: "BUG, Navigasi", message: "Panduan rute sedang berjalan…", distanceFilter: 3 }
     );
   }, [acquireWake, clearWatch, handlePosition]);
 

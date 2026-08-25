@@ -30,11 +30,11 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#071310] to-[#071310]">
+    <div className="min-h-screen bg-gradient-to-b from-[var(--latar)] to-[var(--latar)]">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/sos" className="inline-flex items-center gap-1 text-sm text-teal-700 mb-4"><ArrowLeft size={16} /> Kembali</Link>
 
-        <div className="relative overflow-hidden rounded-3xl p-5 border border-teal-400/20 bg-[#08140F] text-white mb-4 speed-lines">
+        <div className="relative overflow-hidden rounded-3xl p-5 border border-teal-400/20 bg-[var(--relung)] text-white mb-4 speed-lines">
           <div className="absolute right-4 top-0 h-full w-5 bg-gradient-to-b from-cyan-300 to-teal-400 opacity-70" style={{ transform: "skewX(-16deg)" }} />
           <div className="flex items-center gap-3 relative">
             <div className="w-12 h-12 rounded-2xl bg-cyan-300 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/20"><Radio size={26} strokeWidth={2.4} /></div>
@@ -49,7 +49,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
 
         {!sharing ? (
           <div className="space-y-4">
-            <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-5 text-sm text-slate-400 space-y-3">
+            <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-5 text-sm text-slate-400 space-y-3">
               <p className="flex items-start gap-2"><ShieldCheck size={18} className="text-teal-600 flex-shrink-0 mt-0.5" /> Lokasimu hanya bisa dilihat oleh orang yang kamu beri link. Link berisi kode acak yang sulit ditebak.</p>
               <p className="flex items-start gap-2"><Bike size={18} className="text-teal-600 flex-shrink-0 mt-0.5" /> Berbagi tetap berjalan walau kamu membuka fitur lain di BUG (Catat Gowes, Peta, Forum). Pop-up kecil akan menunjukkan statusnya.</p>
               <p className="flex items-start gap-2"><EyeOff size={18} className="text-amber-600 flex-shrink-0 mt-0.5" /> Yang menghentikan GPS hanya jika kamu keluar dari aplikasi/browser sepenuhnya. Selama BUG terbuka, lokasi terus terkirim.</p>
@@ -66,13 +66,13 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
                 <EyeOff size={16} className="flex-shrink-0" /> Aplikasi di latar belakang, lokasi berhenti terkirim. Buka lagi BUG.
               </div>
             )}
-            <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4">
+            <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4">
               <div className="flex items-center gap-2 text-teal-700 text-sm font-semibold mb-3">
                 <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-500 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-teal-600"></span></span>
                 Sedang berbagi lokasi
               </div>
               <p className="text-xs text-slate-400 mb-1">Bagikan link ini ke keluarga:</p>
-              <div className="flex items-center gap-2 bg-[#0A1512] border border-white/10 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 bg-[var(--kartu-2)] border border-white/10 rounded-xl px-3 py-2">
                 <span className="flex-1 min-w-0 text-xs text-slate-200 truncate">{shareUrl}</span>
                 <button onClick={copy} className="text-teal-600 flex-shrink-0" title="Salin">{copied ? <Check size={18} /> : <Copy size={18} />}</button>
               </div>
@@ -81,7 +81,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
               </button>
             </div>
 
-            <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 text-sm">
+            <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 text-sm">
               <div className="flex items-center gap-2 text-slate-200">
                 <MapPin size={18} className={coords ? "text-green-600" : "text-slate-500"} />
                 {coords ? (

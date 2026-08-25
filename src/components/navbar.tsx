@@ -33,9 +33,9 @@ const rightTabs = [
 // Titik singgung diambil pada 30 derajat agar tanjakannya hanya ~12px dan
 // tidak terlihat seperti gundukan.
 const JALUR_MENISKUS =
-  "M 0,40 L 26,40 C 50,40 56,30 75.4,28 " +
-  "A 40,40 0 0 1 144.6,28 " +
-  "C 164,30 170,40 194,40 L 220,40";
+  "M 0,40 L 24,40 C 48,40 54,32 78.8,30 " +
+  "A 36,36 0 0 1 141.2,30 " +
+  "C 166,32 172,40 196,40 L 220,40";
 
 function SoketMeniskus() {
   return (
@@ -44,7 +44,7 @@ function SoketMeniskus() {
       className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
       style={{ top: -40 }}
     >
-      <path d={`${JALUR_MENISKUS} L 220,46 L 0,46 Z`} fill="#050D0B" />
+      <path d={`${JALUR_MENISKUS} L 220,46 L 0,46 Z`} fill="var(--navbar)" fillOpacity="0.92" />
       <path d={JALUR_MENISKUS} fill="none" stroke="rgba(180,255,58,.14)" strokeWidth="1" />
     </svg>
   );
@@ -107,16 +107,16 @@ export default function Navbar() {
         className="relative z-10 flex flex-col items-center justify-center flex-1 h-full group"
       >
         <span className={`flex items-center justify-center px-3 py-1 transition-[color,transform] duration-300 ${active ? "text-lime-300 -translate-y-px" : "text-slate-400 group-active:text-slate-200"}`}>
-          <Icon size={21} strokeWidth={active ? 2.4 : 2} />
+          <Icon size={20} strokeWidth={active ? 2.4 : 2} />
         </span>
-        <span className={`eyebrow mt-0.5 !text-[9px] transition-colors duration-300 ${active ? "text-lime-300" : "text-slate-500"}`}>{label}</span>
+        <span className={`eyebrow mt-0 !text-[8.5px] transition-colors duration-300 ${active ? "text-lime-300" : "text-slate-500"}`}>{label}</span>
       </Link>
     );
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[1200] bg-[#050D0B] border-t border-lime-400/12 shadow-[0_-6px_20px_rgba(0,0,0,0.25)]">
-      <div ref={wadahRef} className="relative max-w-md mx-auto h-16">
+    <nav className="fixed bottom-0 left-0 right-0 z-[1200] bg-[var(--navbar)]/92 backdrop-blur-xl border-t border-lime-400/12 shadow-[0_-6px_20px_rgba(0,0,0,0.25)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div ref={wadahRef} className="relative max-w-md mx-auto h-[56px]">
         <SoketMeniskus />
 
         {/* Cahaya yang berjalan mengikuti tab aktif */}
@@ -125,7 +125,7 @@ export default function Navbar() {
           data-cahaya-tab
           className="absolute pointer-events-none rounded-full"
           style={{
-            left: cahaya.left, width: cahaya.width, top: 7, height: 30,
+            left: cahaya.left, width: cahaya.width, top: 5, height: 28,
             opacity: cahaya.tampil ? 1 : 0,
             background: "radial-gradient(120% 140% at 50% 0%, rgba(180,255,58,.28) 0%, rgba(180,255,58,.10) 60%, rgba(180,255,58,0) 100%)",
             boxShadow: "0 0 18px rgba(180,255,58,.22), inset 0 0 0 1px rgba(180,255,58,.30)",
@@ -134,17 +134,17 @@ export default function Navbar() {
         />
         <div className="flex items-center h-full">
           <div className="flex flex-1 h-full">{leftTabs.map((t) => <Tab key={t.href} {...t} />)}</div>
-          <div className="w-20 flex-shrink-0" />
+          <div className="w-[74px] flex-shrink-0" />
           <div className="flex flex-1 h-full">{rightTabs.map((t) => <Tab key={t.href} {...t} />)}</div>
         </div>
 
         {/* SOS: tombol tengah, paling besar, menonjol ke atas.
             Cincin pemisahnya kini dibentuk oleh soket meniskus, bukan border. */}
-        <Link href="/sos" prefetch={false} onClick={() => startNavigation("/sos")} className="absolute left-1/2 -translate-x-1/2 -top-6 flex flex-col items-center z-10">
-          <span className="sos-pulse w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform">
-            <IkonSos size={28} />
+        <Link href="/sos" prefetch={false} onClick={() => startNavigation("/sos")} className="absolute left-1/2 -translate-x-1/2 -top-5 flex flex-col items-center z-10">
+          <span className="sos-pulse w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+            <IkonSos size={25} />
           </span>
-          <span className={`eyebrow mt-1 !text-[10px] ${pathname === "/sos" ? "text-red-400" : "text-red-500"}`}>SOS</span>
+          <span className={`eyebrow mt-0.5 !text-[9px] ${pathname === "/sos" ? "text-red-400" : "text-red-500"}`}>SOS</span>
         </Link>
       </div>
     </nav>

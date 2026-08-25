@@ -94,7 +94,7 @@ export async function initNativePush(userId: string): Promise<void> {
     if (perm.receive !== "granted") setStatus(`izin: ${perm.receive}`);
     if (perm.receive === "granted") {
       setStatus("izin-ok, mendaftar…");
-      // WAJIB: buat channel "sos" — notifikasi FCM yang menyebut channel yang
+      // WAJIB: buat channel "sos", notifikasi FCM yang menyebut channel yang
       // belum ada akan DIBUANG diam-diam oleh Android 8+.
       try {
         await push.createChannel({

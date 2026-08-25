@@ -42,7 +42,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         Kembali
       </Link>
 
-      <article className="bg-[#0E1C17] rounded-xl p-5 shadow-sm">
+      <article className="bg-[var(--kartu)] rounded-xl p-5 shadow-sm">
         <h1 className="text-xl font-bold text-white mb-2 leading-tight">{post.title}</h1>
         <div className="flex items-center gap-2 text-xs text-slate-400 mb-4 pb-4 border-b border-white/5">
           <User size={12} />

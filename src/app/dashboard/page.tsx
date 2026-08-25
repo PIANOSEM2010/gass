@@ -71,7 +71,7 @@ function Bars({ items }: { items: { label: string; value: number; color: string 
             <span className="text-slate-400">{it.label}</span>
             <span className="font-semibold text-slate-100">{it.value}</span>
           </div>
-          <div className="h-2.5 rounded-full bg-[#122019] overflow-hidden">
+          <div className="h-2.5 rounded-full bg-[var(--kartu-2)] overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${Math.max(it.value > 0 ? 4 : 0, (it.value / max) * 100)}%`, background: it.color }} />
           </div>
         </div>
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
   }).format(new Date());
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#071310] to-[#071310]">
+    <div className="min-h-screen bg-gradient-to-b from-[var(--latar)] to-[var(--latar)]">
       <div className="px-4 pt-6 pb-10 max-w-md mx-auto">
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-slate-600 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
           {cards.map((c) => {
             const Icon = c.icon;
             return (
-              <div key={c.label} className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4">
+              <div key={c.label} className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4">
                 <div className={`w-10 h-10 rounded-xl ${c.bg} ${c.color} flex items-center justify-center mb-2`}><Icon size={20} /></div>
                 <p className="text-2xl font-extrabold text-white leading-none">{c.value}</p>
                 <p className="text-xs text-slate-400 mt-1">{c.label}</p>
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
           })}
         </div>
 
-        <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
+        <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-slate-100 text-sm">Tindak lanjut laporan</h2>
             <span className="text-xs font-semibold text-lime-300 bg-lime-400/10 px-2 py-0.5 rounded-full">{handledPct}% ditangani</span>
@@ -181,18 +181,18 @@ export default async function DashboardPage() {
         </div>
 
         {catBars.length > 0 && (
-          <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
+          <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
             <h2 className="font-bold text-slate-100 text-sm mb-3">Jenis laporan jalan</h2>
             <Bars items={catBars} />
           </div>
         )}
 
-        <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
+        <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 mb-3">
           <h2 className="font-bold text-slate-100 text-sm mb-3">Sebaran zona rawan</h2>
           {zonesTotal > 0 ? <Bars items={zoneBars} /> : <p className="text-xs text-slate-500 py-4 text-center">Belum ada zona dipetakan.</p>}
         </div>
 
-        <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 mb-4">
+        <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 mb-4">
           <h2 className="font-bold text-slate-100 text-sm mb-3">Aktivitas gowes 7 hari terakhir</h2>
           <div className="flex items-end justify-between gap-1.5">
             {days.map((d) => (

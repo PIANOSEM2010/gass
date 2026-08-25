@@ -29,7 +29,7 @@ const TIPS = [
 
 export default function KampanyePage() {
   return (
-    <div className="min-h-screen bg-[#071310] pb-8">
+    <div className="min-h-screen bg-[var(--latar)] pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header gradient */}
         <div className="rounded-2xl border border-orange-400/20 bg-orange-400/8 text-white p-5 mb-5">
@@ -45,7 +45,7 @@ export default function KampanyePage() {
 
         <div className="space-y-4 mb-8">
           {CAMPAIGNS.map((c, i) => (
-            <div key={i} className="bg-[#0E1C17] rounded-2xl p-5 shadow-sm border border-white/5">
+            <div key={i} className="bg-[var(--kartu)] rounded-2xl p-5 shadow-sm border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-8 h-8 rounded-lg bg-orange-400/15 text-orange-600 flex items-center justify-center flex-shrink-0"><Hash size={16} /></span>
                 <h3 className="font-bold text-white">{c.title.replace("#", "")}</h3>
@@ -68,7 +68,7 @@ export default function KampanyePage() {
         <h3 className="font-bold text-white mb-3 flex items-center gap-2 px-1"><Share2 size={18} /> Ide Konten yang Berdampak</h3>
         <div className="space-y-2 mb-6">
           {TIPS.map((t, i) => (
-            <div key={i} className="bg-[#0E1C17] rounded-2xl p-4 shadow-sm border border-white/5 flex items-start gap-3">
+            <div key={i} className="bg-[var(--kartu)] rounded-2xl p-4 shadow-sm border border-white/5 flex items-start gap-3">
               <span className="text-2xl flex-shrink-0">{t.emoji}</span>
               <p className="text-sm text-slate-200 leading-relaxed">{t.text}</p>
             </div>
@@ -77,7 +77,7 @@ export default function KampanyePage() {
 
         <div className="rounded-2xl border border-sky-400/20 bg-sky-400/8 text-white p-5 text-center">
           <p className="text-sm leading-relaxed mb-3 opacity-95">Punya cerita atau ide kampanye sendiri?</p>
-          <Link href="/forum/baru" className="inline-block bg-[#0E1C17] text-indigo-700 px-5 py-2 rounded-lg font-bold text-sm">Bagikan di Forum</Link>
+          <Link href="/forum/baru" className="inline-block bg-[var(--kartu)] text-indigo-700 px-5 py-2 rounded-lg font-bold text-sm">Bagikan di Forum</Link>
         </div>
       </div>
     </div>

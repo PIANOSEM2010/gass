@@ -1,5 +1,5 @@
 // ============================================================
-// KARTU GOWES BUG — modul bersama (dipakai halaman Catat & Riwayat)
+// KARTU GOWES BUG, modul bersama (dipakai halaman Catat & Riwayat)
 // Desain sporty: font condensed italic, garis kecepatan diagonal,
 // panel kaca, rute dengan efek glow.
 // Fitur: 4 template (Rute, Momen, Statistik, Ringkas), 5 palet warna,
@@ -24,6 +24,8 @@ export const PALETTES: Record<string, { name: string; grad: [string, string]; ac
 };
 export const PALETTE_KEYS = ["hijau", "senja", "samudra", "ungu", "malam"];
 export const TEMPLATES: { key: string; name: string }[] = [
+  { key: "marka", name: "Marka" },
+  { key: "sorot", name: "Sorot" },
   { key: "rute", name: "Rute" },
   { key: "momen", name: "Momen" },
   { key: "statistik", name: "Statistik" },
@@ -70,7 +72,7 @@ export type CardOptions = {
   place: string;
   /** Foto perjalanan sebagai latar (opsional) */
   photo?: HTMLImageElement | null;
-  /** Latar transparan (PNG alpha) — cocok ditempel di story */
+  /** Latar transparan (PNG alpha), cocok ditempel di story */
   transparent?: boolean;
   /** Tanggal aktivitas (riwayat memakai tanggal asli, bukan hari ini) */
   date?: Date;
@@ -316,7 +318,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
 
   // ---------- Template ----------
   if (template === "momen") {
-    // Gaya Momen: minimalis — rute besar di tengah tanpa panel,
+    // Gaya Momen: minimalis, rute besar di tengah tanpa panel,
     // statistik raksasa berjajar di bawah, cocok dengan foto latar.
     header(80, 122);
     datePill(W - 100, 118);
@@ -338,7 +340,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.fillText(placeLabel, 84, 776);
     setSpacing(0);
 
-    // Tiga statistik raksasa berjajar (tanpa panel — bergaya story)
+    // Tiga statistik raksasa berjajar (tanpa panel, bergaya story)
     const cols: [string, string, string][] = [
       ["JARAK", km, "km"],
       ["WAKTU", dur, ""],
@@ -463,8 +465,7 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.font = dFont(25, 600, false);
     ctx.fillText(`ELEVASI ${elevStr} M`, W - 84, 998);
     setSpacing(0);
-  } else {
-    // Template default: "rute"
+  } else if (template === "rute") {
     header(80, 122);
     datePill(W - 100, 118);
 
@@ -475,11 +476,9 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.fillText(placeLabel, 84, 212);
     setSpacing(0);
 
-    // Panel kaca berisi rute
     glassPanel(84, 246, W - 168, 452, 40);
     drawRoute(140, 296, W - 280, 352, 13);
 
-    // Angka km besar
     ctx.textAlign = "left";
     ctx.fillStyle = "#ffffff";
     ctx.font = dFont(150, 800);
@@ -489,7 +488,6 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     ctx.font = dFont(52, 700);
     ctx.fillText("km", 80 + kmW + 16, 860);
 
-    // Tiga chip statistik
     const gap = 18;
     const cw = (W - 168 - gap * 2) / 3;
     statChip(84, 900, cw, "Waktu", dur);
@@ -497,5 +495,277 @@ export function drawCard(canvas: HTMLCanvasElement, opts: CardOptions) {
     statChip(84 + (cw + gap) * 2, 900, cw, "Elevasi", elevStr, "m");
 
     footer(1058);
+  } else if (template === "sorot") {
+    // ---------------- Template "sorot" ----------------
+    // Susunannya dibangun dari satu gagasan: jarak tempuh adalah bintang
+    // utamanya, jejak rute jadi latar raksasa di belakangnya, dan tiga angka
+    // pendukung berbaris di bawah pita marka jalan. Tetap bekerja pada mode
+    // transparan maupun berlatar foto karena semua teks memakai wText().
+    header(80, 118);
+    datePill(W - 100, 114);
+
+    // Jejak rute besar sebagai latar, ditempatkan agak ke atas dan diredam
+    // supaya tidak bersaing dengan angkanya.
+    ctx.save();
+    ctx.globalAlpha = photo ? 0.5 : 0.34;
+    drawRoute(96, 206, W - 192, 396, 20);
+    ctx.restore();
+
+    // Nama tempat, ditulis kecil di atas angka
+    setSpacing(4);
+    ctx.textAlign = "left";
+    ctx.fillStyle = wText(0.72);
+    ctx.font = dFont(34, 600);
+    ctx.fillText(placeLabel, 84, 668);
+    setSpacing(0);
+
+    // Angka jarak raksasa, dua bagian: bilangan bulat putih, desimal beraksen
+    const [bulat, desimal] = km.split(".");
+    ctx.textAlign = "left";
+    ctx.font = dFont(232, 800);
+    const wBulat = ctx.measureText(bulat).width;
+    ctx.font = dFont(232, 800);
+    const wKoma = ctx.measureText("." + (desimal ?? "00")).width;
+    const mulai = 80;
+
+    // Pendar lembut di belakang angka agar tetap terbaca di atas foto
+    if (photo || transparent) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,.55)";
+      ctx.shadowBlur = 36;
+      ctx.fillStyle = "rgba(0,0,0,.01)";
+      ctx.fillRect(mulai, 672, wBulat + wKoma, 200);
+      ctx.restore();
+    }
+
+    ctx.save();
+    if (photo || transparent) { ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 24; }
+    ctx.fillStyle = "#ffffff";
+    ctx.font = dFont(232, 800);
+    ctx.fillText(bulat, mulai, 834);
+    ctx.fillStyle = pal.accent;
+    ctx.fillText("." + (desimal ?? "00"), mulai + wBulat, 834);
+    ctx.restore();
+
+    ctx.fillStyle = wText(0.62);
+    ctx.font = dFont(40, 700);
+    ctx.fillText("KM", mulai + wBulat + wKoma + 20, 830);
+
+    // Pita marka jalan sebagai pemisah
+    ctx.save();
+    ctx.fillStyle = pal.accent;
+    ctx.globalAlpha = 0.85;
+    for (let x = 84; x < W - 84; x += 46) ctx.fillRect(x, 878, 26, 7);
+    ctx.restore();
+
+    // Tiga angka pendukung, tanpa kotak, dipisah garis tipis
+    const kolom = [
+      { l: "WAKTU", v: dur, u: "" },
+      { l: "KEC. RATA", v: avg, u: "km/j" },
+      { l: "ELEVASI", v: elevStr, u: "m" },
+    ];
+    const lebarKolom = (W - 168) / 3;
+    kolom.forEach((k, i) => {
+      const x = 84 + lebarKolom * i;
+      if (i > 0) {
+        ctx.fillStyle = wText(0.16);
+        ctx.fillRect(x - 1, 928, 2, 66);
+      }
+      setSpacing(4);
+      ctx.textAlign = "left";
+      ctx.fillStyle = wText(0.5);
+      ctx.font = dFont(23, 600, false);
+      ctx.fillText(k.l, x + 6, 948);
+      setSpacing(0);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = dFont(60, 800);
+      ctx.fillText(k.v, x + 4, 1006);
+      if (k.u) {
+        const vw = ctx.measureText(k.v).width;
+        ctx.fillStyle = pal.accent;
+        ctx.font = dFont(26, 700, false);
+        ctx.fillText(k.u, x + 8 + vw, 1004);
+      }
+    });
+
+    footer(1054);
+  } else {
+    // ================= Template baku: "MARKA" =================
+    // Gagasannya berbeda dari kartu gowes kebanyakan. Alih-alih menggambar
+    // jejak rute sebagai garis tipis di dalam panel, rutenya digambar sebagai
+    // JALAN sungguhan: bahu jalan terang di kedua sisi, badan aspal gelap, dan
+    // marka putus-putus mengikuti lekuk lintasan. Jadi kartunya bercerita
+    // "inilah jalan yang saya lalui", bukan sekadar grafik perjalanan, dan itu
+    // sejalan dengan jati diri BUG yang berdiri di atas bahasa marka jalan.
+
+    // ---- Sorot jeruji dari sudut kiri bawah ----
+    if (!photo) {
+      ctx.save();
+      ctx.globalAlpha = transparent ? 0.16 : 0.09;
+      ctx.strokeStyle = pal.accent;
+      ctx.lineWidth = 2;
+      const cx = 60, cy = 1150;
+      for (let i = 0; i < 26; i++) {
+        const a = -Math.PI / 2 + (i / 25) * (Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * 1500, cy + Math.sin(a) * 1500);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ---- Pita bahaya di sudut kanan atas ----
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(W, 0); ctx.lineTo(W, 196); ctx.lineTo(W - 196, 0); ctx.closePath();
+    ctx.clip();
+    ctx.fillStyle = photo ? "rgba(0,0,0,.45)" : "rgba(0,0,0,.28)";
+    ctx.fillRect(W - 206, -10, 216, 216);
+    ctx.strokeStyle = "#FFB020";
+    ctx.lineWidth = 11;
+    ctx.globalAlpha = 0.85;
+    for (let i = -200; i < 240; i += 34) {
+      ctx.beginPath(); ctx.moveTo(W - 200 + i, -20); ctx.lineTo(W + 40 + i, 240); ctx.stroke();
+    }
+    ctx.restore();
+
+    // ---- Jejak rute digambar sebagai jalan ----
+    const drawJalan = (bx: number, by: number, bw: number, bh: number) => {
+      if (path.length < 2) {
+        ctx.textAlign = "center";
+        ctx.fillStyle = wText(0.5);
+        ctx.font = dFont(34, 600, false);
+        ctx.fillText("Jejak rute tidak tersimpan", bx + bw / 2, by + bh / 2);
+        return;
+      }
+      const lats = path.map((q) => q.lat), lngs = path.map((q) => q.lng);
+      const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+      const spanLat = maxLat - minLat || 1e-6, spanLng = maxLng - minLng || 1e-6;
+      const sc = Math.min(bw / spanLng, bh / spanLat);
+      const ox = bx + (bw - spanLng * sc) / 2;
+      const oy = by + (bh - spanLat * sc) / 2;
+      const xy = path.map((q) => [ox + (q.lng - minLng) * sc, oy + (maxLat - q.lat) * sc] as [number, number]);
+
+      const jalur = (lw: number, warna: string, dash: number[] = [], geser = 0) => {
+        ctx.save();
+        ctx.setLineDash(dash);
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = warna;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        xy.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y + geser) : ctx.lineTo(x, y + geser)));
+        ctx.stroke();
+        ctx.restore();
+      };
+
+      jalur(46, "rgba(0,0,0,0.42)", [], 9);              // bayangan jatuh
+      jalur(40, "rgba(255,255,255,0.62)");               // bahu jalan (marka tepi)
+      jalur(30, photo ? "rgba(6,18,13,0.92)" : "#0A1410"); // badan aspal
+      ctx.save();
+      ctx.shadowColor = pal.accent;
+      ctx.shadowBlur = 22;
+      jalur(4.6, pal.accent, [18, 22]);                  // marka tengah putus-putus
+      ctx.restore();
+
+      // Titik mulai dan selesai
+      const [sx, sy] = xy[0], [ex, ey] = xy[xy.length - 1];
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(sx, sy, 15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#0A1410";
+      ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = pal.accent; ctx.shadowBlur = 26;
+      ctx.fillStyle = pal.accent;
+      ctx.beginPath(); ctx.arc(ex, ey, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#0A1410";
+      ctx.beginPath(); ctx.arc(ex, ey, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    };
+
+    header(80, 116);
+
+    setSpacing(5);
+    ctx.textAlign = "left";
+    ctx.fillStyle = pal.accent;
+    ctx.font = dFont(24, 700, false);
+    ctx.fillText((opts.date || new Date()).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }).toUpperCase(), 84, 186);
+    setSpacing(4);
+    ctx.fillStyle = wText(0.9);
+    ctx.font = dFont(44, 700);
+    ctx.fillText(placeLabel, 84, 240);
+    setSpacing(0);
+
+    drawJalan(70, 268, W - 140, 386);
+
+    // ---- Angka jarak: sangat besar, desimal beraksen ----
+    const [bl, ds] = km.split(".");
+    ctx.save();
+    if (photo || transparent) { ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 30; }
+    ctx.textAlign = "left";
+    ctx.font = dFont(250, 800);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(bl, 76, 886);
+    const wbl = ctx.measureText(bl).width;
+    ctx.fillStyle = pal.accent;
+    ctx.fillText("." + (ds ?? "00"), 76 + wbl, 886);
+    const wds = ctx.measureText("." + (ds ?? "00")).width;
+    ctx.restore();
+
+    // Satuan ditulis tegak berdiri di samping angka
+    ctx.save();
+    ctx.translate(76 + wbl + wds + 30, 886);
+    ctx.rotate(-Math.PI / 2);
+    setSpacing(10);
+    ctx.textAlign = "left";
+    ctx.fillStyle = wText(0.6);
+    ctx.font = dFont(38, 700, false);
+    ctx.fillText("KM", 0, 0);
+    setSpacing(0);
+    ctx.restore();
+
+    // ---- Tiga angka pendukung, dipisah tanda jeruji ----
+    const isi = [
+      { l: "WAKTU", v: dur, u: "" },
+      { l: "KEC. RATA", v: avg, u: "km/j" },
+      { l: "ELEVASI", v: elevStr, u: "m" },
+    ];
+    const lk = (W - 168) / 3;
+    isi.forEach((k, i) => {
+      const x = 84 + lk * i;
+      if (i > 0) {
+        // tanda jeruji: tiga garis pendek mengipas
+        ctx.save();
+        ctx.strokeStyle = wText(0.22);
+        ctx.lineWidth = 3;
+        for (let j = -1; j <= 1; j++) {
+          ctx.beginPath();
+          ctx.moveTo(x - 14 + j * 5, 936);
+          ctx.lineTo(x - 4 + j * 5, 998);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      setSpacing(5);
+      ctx.textAlign = "left";
+      ctx.fillStyle = wText(0.5);
+      ctx.font = dFont(23, 600, false);
+      ctx.fillText(k.l, x + 16, 952);
+      setSpacing(0);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = dFont(62, 800);
+      ctx.fillText(k.v, x + 14, 1004);
+      if (k.u) {
+        const vw = ctx.measureText(k.v).width;
+        ctx.fillStyle = pal.accent;
+        ctx.font = dFont(26, 700, false);
+        ctx.fillText(k.u, x + 18 + vw, 1002);
+      }
+    });
+
+    footer(1056);
   }
 }

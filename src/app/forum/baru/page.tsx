@@ -44,7 +44,7 @@ export default function NewPostPage() {
 
       <h1 className="display-title text-2xl text-white mb-6">Tulis Post Baru</h1>
 
-      <form onSubmit={handleSubmit} className="bg-[#0E1C17] rounded-xl p-5 shadow-sm space-y-4">
+      <form onSubmit={handleSubmit} className="bg-[var(--kartu)] rounded-xl p-5 shadow-sm space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-200 mb-1">Judul</label>
           <input

@@ -25,7 +25,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-8">
+    <div className="min-h-screen bg-[var(--latar)] pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
         <Link href="/edukasi" className="inline-flex items-center gap-1 text-sm text-lime-300 font-medium mb-4">
           <ArrowLeft size={16} /> Kembali ke daftar
@@ -41,7 +41,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
             style={{ background: "repeating-linear-gradient(90deg,#B4FF3A 0 10px,transparent 10px 18px)" }} />
         </div>
 
-        <div className="bg-[#0E1C17] rounded-2xl p-5 shadow-sm border border-white/5">
+        <div className="bg-[var(--kartu)] rounded-2xl p-5 shadow-sm border border-white/5">
           {module.content.split("\n\n").map((para: string, i: number) => (
             <p key={i} className="text-[13.5px] text-slate-300 mb-4 leading-[1.75] whitespace-pre-line last:mb-0">{para}</p>
           ))}

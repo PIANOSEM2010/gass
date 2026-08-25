@@ -23,10 +23,10 @@ type Landmark = {
 const CATEGORY_CONFIG: Record<Category, { label: string; emoji: string; color: string; chip: string }> = {
   belanja:   { label: "Perbelanjaan",     emoji: "🛒", color: "#2563eb", chip: "bg-blue-400/15 text-sky-300" },
   kuliner:   { label: "Kafe & Kuliner",   emoji: "☕", color: "#c2410c", chip: "bg-orange-400/15 text-orange-300" },
-  kantor:    { label: "Kantor & Layanan", emoji: "🏢", color: "#475569", chip: "bg-[#122019] text-slate-700" },
+  kantor:    { label: "Kantor & Layanan", emoji: "🏢", color: "#475569", chip: "bg-[var(--kartu-2)] text-slate-700" },
   kesehatan: { label: "Kesehatan",        emoji: "🏥", color: "#dc2626", chip: "bg-red-400/15 text-red-300" },
   bengkel:   { label: "Bengkel Sepeda",   emoji: "🔧", color: "#0d9488", chip: "bg-teal-400/15 text-teal-700" },
-  lainnya:   { label: "Lainnya",          emoji: "📌", color: "#64748b", chip: "bg-[#122019] text-slate-200" },
+  lainnya:   { label: "Lainnya",          emoji: "📌", color: "#64748b", chip: "bg-[var(--kartu-2)] text-slate-200" },
 };
 
 function makePinIcon(category: Category) {
@@ -113,7 +113,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
   return (
     <div className="space-y-6">
       {/* Form tambah landmark */}
-      <div className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+      <div className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <LandmarkIcon size={18} className="text-blue-600" />
           <h2 className="font-semibold text-white">Tambah Landmark Baru</h2>
@@ -190,13 +190,13 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
       <div>
         <h2 className="font-semibold text-white mb-3">Daftar Landmark ({items.length})</h2>
         {items.length === 0 ? (
-          <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada landmark.</div>
+          <div className="bg-[var(--kartu)] rounded-xl p-8 text-center text-slate-400">Belum ada landmark.</div>
         ) : (
           <div className="space-y-3">
             {items.map((it) => {
               const cfg = CATEGORY_CONFIG[it.category];
               return (
-                <div key={it.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
+                <div key={it.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${cfg.chip}`}>{cfg.emoji} {cfg.label}</span>
                   </div>
@@ -215,7 +215,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
                   </div>
                   <button
                     onClick={() => remove(it.id)}
-                    className="px-3 bg-[#0E1C17] border border-red-300 text-red-600 py-1.5 rounded-lg text-sm flex items-center gap-1"
+                    className="px-3 bg-[var(--kartu)] border border-red-300 text-red-600 py-1.5 rounded-lg text-sm flex items-center gap-1"
                   >
                     <Trash2 size={14} /> Hapus
                   </button>

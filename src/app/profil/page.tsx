@@ -6,6 +6,7 @@ import LogoutButton from "./logout-button";
 import { Avatar } from "@/components/umpan-kartu";
 import { type Titik } from "@/components/jejak-rute";
 import PetakProfil from "./petak-profil";
+import EditProfil from "./edit-profil";
 import { IkonStreak, IkonTrofi, IkonRute, IkonEdukasi } from "@/components/bug-icons";
 
 export const dynamic = "force-dynamic";
@@ -59,26 +60,21 @@ export default async function ProfilPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-10">
+    <div className="min-h-screen bg-[var(--latar)] pb-10">
       {/* Kepala profil dengan latar roda berjeruji */}
       <div className="relative overflow-hidden border-b border-lime-400/10 butiran">
         <div className="absolute -top-24 -right-20 w-[300px] h-[300px] opacity-40 pointer-events-none"
           style={{ background: "radial-gradient(circle at center, rgba(180,255,58,.18) 0%, transparent 62%)" }} />
         <div className="relative max-w-md mx-auto px-5 pt-8 pb-5">
-          <div className="flex items-center gap-3.5">
-            <Avatar nama={namaLengkap} ukuran={62} />
+          <div className="relative flex items-center gap-3.5">
+            <EditProfil nama={namaLengkap} asal={organization} fotoUrl={profile?.avatar_url || null}
+              jenis={isPekerja ? "pekerja" : "pelajar"} />
             <div className="min-w-0 flex-1">
               <h1 className="display-title text-[19px] text-white truncate">{namaLengkap}</h1>
               <p className="text-[11px] text-slate-500 truncate">
                 {organization ? `${organization} · ` : ""}{statusLabel}
               </p>
             </div>
-            {profile?.role === "admin" && (
-              <Link href="/admin"
-                className="rounded-full border border-lime-400/40 text-lime-300 text-[11px] px-3.5 py-1.5 display-title">
-                ADMIN
-              </Link>
-            )}
           </div>
 
           <div className="grid grid-cols-4 gap-2 mt-6 jenjang">
@@ -102,7 +98,7 @@ export default async function ProfilPage() {
         <div className="grid grid-cols-4 gap-2.5 jenjang">
           {lencana.map((b) => (
             <div key={b.ket}
-              className={`rounded-xl border p-2.5 text-center transition-all ${b.aktif ? "border-white/10 bg-[#0C1A15] shadow-[0_0_18px_rgba(0,0,0,.35)]" : "border-white/5 bg-[#0A1512] opacity-40 grayscale"}`}>
+              className={`rounded-xl border p-2.5 text-center transition-all ${b.aktif ? "border-white/10 bg-[var(--kartu)] shadow-[0_0_18px_rgba(0,0,0,.35)]" : "border-white/5 bg-[var(--kartu-2)] opacity-40 grayscale"}`}>
               <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg mb-1.5"
                 style={{ background: `${b.warna}1F`, color: b.warna }}>
                 <b.ikon size={18} />
@@ -136,6 +132,12 @@ export default async function ProfilPage() {
             KONTAK DARURAT
           </Link>
         </div>
+        {profile?.role === "admin" && (
+          <Link href="/admin"
+            className="block mt-2.5 rounded-xl border border-lime-400/35 text-lime-300 py-3 text-center display-title text-sm">
+            PANEL ADMIN
+          </Link>
+        )}
 
         <LogoutButton />
         <p className="mt-6 text-center text-[11px] text-slate-600">BUG {BUILD_TAG}</p>

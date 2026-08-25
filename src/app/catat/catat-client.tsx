@@ -9,6 +9,7 @@ import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import { placeNameFromPath } from "@/lib/place-name";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
+import { meter } from "@/lib/angka";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
 import RodaLatar from "@/components/roda-latar";
 import {
@@ -48,7 +49,7 @@ export default function CatatClient({
   const [sharingForum, setSharingForum] = useState(false);
   const [sharingStory, setSharingStory] = useState(false);
   const [storyMsg, setStoryMsg] = useState("");
-  const [template, setTemplate] = useState("rute");
+  const [template, setTemplate] = useState("blok");
   const [palette, setPalette] = useState("hijau");
   // Nama daerah diisi dari GPS (reverse geocoding), bukan nilai tetap,
   // agar kartu & caption mengikuti lokasi gowes yang sebenarnya.
@@ -93,7 +94,7 @@ export default function CatatClient({
 
   // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk kartu & caption.
   // Dicari SEKALI per perjalanan, dan TIDAK dibatalkan saat status berubah
-  // (finished -> saved), supaya penanda "sedang mencari" selalu dimatikan —
+  // (finished -> saved), supaya penanda "sedang mencari" selalu dimatikan -
   // dulu di sinilah kartu bisa terkunci dan tidak pernah tergambar.
   useEffect(() => {
     // Perjalanan baru dimulai: siapkan pencarian ulang
@@ -255,7 +256,7 @@ export default function CatatClient({
   const medal = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="min-h-screen bg-[#071310] px-4 pt-5 max-w-md mx-auto pb-8">
+    <div className="min-h-screen bg-[var(--latar)] px-4 pt-5 max-w-md mx-auto pb-8">
       {/* Ringkasan beruntun: ringkas, tidak mencuri perhatian dari angka jarak */}
       <div className="kartu-bug px-4 py-3 mb-3 flex items-center gap-4">
         <div className="flex items-center gap-2">
@@ -274,7 +275,7 @@ export default function CatatClient({
       </Link>
 
       {/* Toggle */}
-      <div className="flex bg-[#0C1A15] border border-white/8 rounded-xl p-1 mb-4">
+      <div className="flex bg-[var(--kartu)] border border-white/8 rounded-xl p-1 mb-4">
         <button onClick={() => setTab("catat")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "catat" ? "bg-lime-400/15 text-lime-300" : "text-slate-500"}`}><Bike size={16} /> Catat</button>
         <button onClick={() => setTab("papan")} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${tab === "papan" ? "bg-lime-400/15 text-lime-300" : "text-slate-500"}`}><Trophy size={16} /> Peringkat</button>
       </div>
@@ -282,7 +283,7 @@ export default function CatatClient({
       {tab === "catat" ? (
         <>
           {/* Kartu jarak: angka besar di atas geometri jeruji roda */}
-          <div className="relative overflow-hidden rounded-3xl border border-lime-400/18 p-6 mb-4 butiran" style={{ background: "radial-gradient(130% 90% at 50% 0%, rgba(180,255,58,.10) 0%, #0A1714 58%)" }}>
+          <div className="relative overflow-hidden rounded-3xl border border-lime-400/18 p-6 mb-4 butiran" style={{ background: "radial-gradient(130% 90% at 50% 0%, rgba(180,255,58,.10) 0%, var(--kartu) 58%)" }}>
             <RodaLatar className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] opacity-60 pointer-events-none" putar={status === "tracking"} />
 
             <div className="relative flex items-center justify-between mb-4">
@@ -312,9 +313,9 @@ export default function CatatClient({
               {[
                 { l: "Waktu", v: fmtDuration(duration) },
                 { l: status === "tracking" ? "Kec." : "Kec. rata", v: displaySpeed },
-                { l: "Elevasi", v: `${elev}m` },
+                { l: "Elevasi", v: `${meter(Number(elev))} m` },
               ].map((b) => (
-                <div key={b.l} className="rounded-2xl border border-white/8 bg-[#08120F] py-3 text-center">
+                <div key={b.l} className="rounded-2xl border border-white/8 bg-[var(--relung)] py-3 text-center">
                   <p className="eyebrow !text-[8px] text-slate-500">{b.l}</p>
                   <p className="display-num text-xl tabular-nums leading-tight text-white mt-0.5">{b.v}</p>
                 </div>
@@ -322,7 +323,7 @@ export default function CatatClient({
             </div>
 
             {/* Jejak hari ini, dari titik GPS yang sudah terekam */}
-            <div className="relative mt-3 rounded-2xl border border-white/8 bg-[#08120F] py-2 flex flex-col items-center">
+            <div className="relative mt-3 rounded-2xl border border-white/8 bg-[var(--relung)] py-2 flex flex-col items-center">
               <JejakRute path={(getPath() as Titik[] | null)} width={250} height={64} tebal={2.2} />
               <p className="eyebrow !text-[8px] text-slate-600 pb-1">jalur hari ini</p>
             </div>
@@ -342,14 +343,14 @@ export default function CatatClient({
               {wasHidden && !nativeApp && (
                 <div className="bg-amber-400/10 border border-amber-400/25 text-amber-300 text-xs rounded-xl px-3 py-2 flex items-start gap-2">
                   <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-                  Layar sempat mati / aplikasi di latar belakang — sistem HP menjeda GPS selama itu, jadi sebagian jarak mungkin tidak terekam. Biarkan aplikasi tetap terbuka di layar selama gowes.
+                  Layar sempat mati / aplikasi di latar belakang, sistem HP menjeda GPS selama itu, jadi sebagian jarak mungkin tidak terekam. Biarkan aplikasi tetap terbuka di layar selama gowes.
                 </div>
               )}
               <div className="flex gap-2">
                 <button onClick={pause} className="flex-1 border border-white/15 text-slate-200 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"><Pause size={20} /> Jeda</button>
                 <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
               </div>
-              <p className="text-xs text-slate-500 text-center">{nativeApp ? "Perekaman tetap berjalan walau layar mati — notifikasi BUG tampil selama merekam." : "Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis — jangan kunci layar selama merekam."}</p>
+              <p className="text-xs text-slate-500 text-center">{nativeApp ? "Perekaman tetap berjalan walau layar mati, notifikasi BUG tampil selama merekam." : "Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis, jangan kunci layar selama merekam."}</p>
             </div>
           )}
           {status === "paused" && (
@@ -405,7 +406,7 @@ export default function CatatClient({
                 <div className="flex gap-2.5 mb-3">
                   {PALETTE_KEYS.map((k) => (
                     <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
-                      className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-offset-[#071310] ring-lime-400" : "ring-1 ring-white/15"}`}
+                      className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${palette === k ? "ring-2 ring-offset-2 ring-offset-[var(--latar)] ring-lime-400" : "ring-1 ring-white/15"}`}
                       style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
                   ))}
                 </div>
@@ -458,7 +459,7 @@ export default function CatatClient({
           ) : board.map((r, i) => {
             const me = r.user_id === userId;
             return (
-              <div key={r.user_id} className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-lime-400/40" : "bg-[#0E1C17] border border-white/5"}`}>
+              <div key={r.user_id} className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-lime-400/40" : "bg-[var(--kartu)] border border-white/5"}`}>
                 <div className="w-7 text-center display-num text-lg text-slate-400">{i < 3 ? medal[i] : i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white truncate">{r.name}{me ? " (kamu)" : ""}</p>

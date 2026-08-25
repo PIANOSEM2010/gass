@@ -93,7 +93,7 @@ export default function KontakManager({
       )}
 
       {contacts.map((c) => (
-        <div key={c.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm flex items-start justify-between">
+        <div key={c.id} className="bg-[var(--kartu)] rounded-xl p-4 shadow-sm flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <p className="font-semibold">{c.name}</p>
@@ -138,7 +138,7 @@ export default function KontakManager({
       )}
 
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-[#0E1C17] rounded-xl p-5 shadow-sm space-y-3">
+        <form onSubmit={handleAdd} className="bg-[var(--kartu)] rounded-xl p-5 shadow-sm space-y-3">
           <div>
             <label className="block text-sm font-medium text-slate-200 mb-1">Nama</label>
             <input

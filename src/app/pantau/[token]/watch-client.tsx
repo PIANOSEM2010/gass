@@ -6,7 +6,7 @@ import { Loader2, AlertTriangle, CheckCircle2, Wifi, WifiOff, Bike } from "lucid
 
 const LiveMap = dynamic(() => import("./live-map"), {
   ssr: false,
-  loading: () => <div className="h-full flex items-center justify-center bg-[#122019] text-slate-500 text-sm">Memuat peta...</div>,
+  loading: () => <div className="h-full flex items-center justify-center bg-[var(--kartu-2)] text-slate-500 text-sm">Memuat peta...</div>,
 });
 
 type Live = {
@@ -56,7 +56,7 @@ export default function WatchClient({ token }: { token: string }) {
   const speedKmh = typeof data?.speed === "number" && data.speed >= 0 ? (data.speed * 3.6) : null;
 
   return (
-    <div className="min-h-screen bg-[#071310]">
+    <div className="min-h-screen bg-[var(--latar)]">
       <div className="px-4 pt-6 pb-10 max-w-md mx-auto">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-extrabold">B</div>
@@ -69,14 +69,14 @@ export default function WatchClient({ token }: { token: string }) {
         {loading && !data ? (
           <div className="text-center py-20 text-slate-500"><Loader2 size={28} className="animate-spin mx-auto mb-2" /> Memuat...</div>
         ) : !data?.found ? (
-          <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-8 text-center">
+          <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-8 text-center">
             <AlertTriangle size={36} className="text-amber-500 mx-auto mb-3" />
             <p className="font-bold text-slate-100 mb-1">Sesi tidak ditemukan</p>
             <p className="text-sm text-slate-400">Link mungkin salah atau sudah tidak berlaku.</p>
           </div>
         ) : (
           <>
-            <div className="rounded-2xl p-4 mb-4 shadow-sm border bg-[#0E1C17] border-white/5">
+            <div className="rounded-2xl p-4 mb-4 shadow-sm border bg-[var(--kartu)] border-white/5">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
                   <p className="font-bold text-white truncate">{data.sharer_name || "Goweser"}</p>
@@ -85,7 +85,7 @@ export default function WatchClient({ token }: { token: string }) {
                   </p>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 flex-shrink-0 ${
-                  ended ? "bg-[#122019] text-slate-400" : stale ? "bg-amber-400/15 text-amber-300" : "bg-lime-400/15 text-lime-300"
+                  ended ? "bg-[var(--kartu-2)] text-slate-400" : stale ? "bg-amber-400/15 text-amber-300" : "bg-lime-400/15 text-lime-300"
                 }`}>
                   {ended ? <CheckCircle2 size={14} /> : stale ? <WifiOff size={14} /> : <Wifi size={14} />}
                   {ended ? "Selesai" : stale ? "Terputus" : "Live"}
@@ -105,13 +105,13 @@ export default function WatchClient({ token }: { token: string }) {
 
             {hasPos && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 text-center">
+                <div className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 text-center">
                   <Bike size={20} className="text-teal-600 mx-auto mb-1" />
                   <p className="text-xl font-extrabold text-white">{speedKmh !== null ? speedKmh.toFixed(1) : "-"}</p>
                   <p className="text-xs text-slate-400">km/jam</p>
                 </div>
                 <a href={`https://www.google.com/maps?q=${data.lat},${data.lng}`} target="_blank" rel="noopener noreferrer"
-                  className="bg-[#0E1C17] rounded-2xl border border-white/5 shadow-sm p-4 text-center flex flex-col items-center justify-center active:scale-[0.98] transition-transform">
+                  className="bg-[var(--kartu)] rounded-2xl border border-white/5 shadow-sm p-4 text-center flex flex-col items-center justify-center active:scale-[0.98] transition-transform">
                   <p className="text-sm font-bold text-blue-600">Buka di Google Maps</p>
                   <p className="text-xs text-slate-400 mt-0.5">Lihat lokasi persis</p>
                 </a>

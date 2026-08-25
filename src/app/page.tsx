@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { IkonGowes, IkonTrofi, IkonSos } from "@/components/bug-icons";
+import { IkonCatatGowes } from "@/components/fitur-ikon";
+import LogoBug from "@/components/logo-bug";
+import TombolTema from "@/components/tema";
 import KartuAktivitas, { type Aktivitas } from "@/components/umpan-kartu";
 import BarisStory, { type Story } from "@/components/story-baris";
 import GeserFitur from "@/components/geser-fitur";
@@ -84,16 +86,19 @@ export default async function Umpan() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#071310] pb-8">
+    <div className="min-h-screen bg-[var(--latar)] pb-8">
       {/* Kepala aplikasi */}
-      <div className="sticky top-0 z-[900] bg-[#071310]/92 backdrop-blur-md border-b border-lime-400/10 cahaya-sudut">
-        <div className="max-w-md mx-auto flex items-center gap-2.5 px-5 pt-4 pb-2 relative">
-          <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-300 to-emerald-500 text-slate-950 flex items-center justify-center shadow-[0_0_18px_rgba(180,255,58,.3)]">
-            <IkonGowes size={20} accent="#062014" />
+      <div className="sticky top-0 z-[900] bg-[var(--latar)]/85 backdrop-blur-xl border-b border-lime-400/10 cahaya-sudut">
+        <div className="max-w-md mx-auto flex items-center gap-2.5 px-5 pt-4 pb-2.5 relative">
+          <LogoBug size={38} />
+          <span className="display-title text-[22px] text-white leading-none">
+            BUG
+            <span className="block eyebrow !text-[7.5px] text-lime-400/70 mt-1">Bulungan untuk Goweser</span>
           </span>
-          <span className="display-title text-xl text-white leading-none">BUG<span className="block eyebrow !text-[7px] text-lime-400/60 mt-0.5">Bulungan untuk Goweser</span></span>
-          <Link href="/leaderboard" className="ml-auto text-slate-400" aria-label="Papan peringkat"><IkonTrofi size={20} /></Link>
-          <Link href="/sos" className="text-red-500" aria-label="Darurat"><IkonSos size={20} /></Link>
+          {/* Trofi dan SOS dipindahkan: trofi kini ada di geser fitur, SOS
+              sudah menjadi tombol tengah navbar. Ruang ini dipakai pengalih
+              tema supaya tidak ada tombol yang menganggur. */}
+          <div className="ml-auto"><TombolTema /></div>
         </div>
         <div className="max-w-md mx-auto flex gap-5 px-5">
           {[
@@ -124,7 +129,7 @@ export default async function Umpan() {
             </p>
           )}
           {!galat && aktivitas.length === 0 && (
-            <div className="rounded-2xl border border-lime-400/12 bg-[#0C1A15] p-8 text-center">
+            <div className="rounded-2xl border border-lime-400/12 bg-[var(--kartu)] p-8 text-center">
               <p className="display-title text-lime-300">BELUM ADA GOWES</p>
               <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Jadilah yang pertama. Tekan tombol Catat Gowes di kanan bawah, lalu perjalananmu muncul di sini.
@@ -138,8 +143,8 @@ export default async function Umpan() {
       {/* Tombol aksi utama: selalu terlihat */}
       <Link href="/catat"
         className="fixed right-4 z-[1250] flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-400 to-emerald-500 pl-4 pr-5 py-3 shadow-lg shadow-emerald-600/30 active:scale-95 transition-transform"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 78px)" }}>
-        <IkonGowes size={19} accent="#062014" />
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 70px)" }}>
+        <IkonCatatGowes size={20} aksen="#062014" />
         <span className="display-title text-sm tracking-wide text-slate-950">CATAT GOWES</span>
       </Link>
     </div>

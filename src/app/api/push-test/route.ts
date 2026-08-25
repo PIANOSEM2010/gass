@@ -5,7 +5,7 @@ import { sendFcmToTokens } from "@/lib/fcm";
 
 export const runtime = "nodejs";
 
-// ENDPOINT DIAGNOSTIK — buka https://<situs>/api/push-test di browser yang
+// ENDPOINT DIAGNOSTIK, buka https://<situs>/api/push-test di browser yang
 // sedang LOGIN dengan akun yang sama dengan di aplikasi. Endpoint ini:
 // 1. Mengambil semua token FCM milik akunmu
 // 2. Mengirim notifikasi tes ke token-token itu
@@ -66,7 +66,7 @@ export async function GET() {
       catatan:
         result.sent > 0
           ? "Server BERHASIL menyerahkan notifikasi ke Firebase. Kalau HP tidak menampilkannya, masalah ada di sisi perangkat (channel/baterai/mode)."
-          : "Pengiriman gagal — lihat 'errors' di atas untuk penyebab pastinya.",
+          : "Pengiriman gagal, lihat 'errors' di atas untuk penyebab pastinya.",
     });
   } catch (e) {
     return NextResponse.json(

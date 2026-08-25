@@ -1,5 +1,5 @@
 "use client";
-// Pustaka ikon khusus BUG — digambar dari nol pada grid 24px.
+// Pustaka ikon khusus BUG, digambar dari nol pada grid 24px.
 // Setiap ikon memuat satu elemen "marka jalan" (kelas .a) yang mewarisi warna aksen,
 // sehingga seluruh set terasa satu keluarga. Pakai: <IkonPeta size={20} />
 import type { SVGProps } from "react";

@@ -113,7 +113,7 @@ export default function SosChatBox({ sosLogId }: { sosLogId: string }) {
 
   if (!currentUserId) {
     return (
-      <div className="bg-[#0A1512] rounded-lg p-3 text-xs text-slate-400 text-center">
+      <div className="bg-[var(--kartu-2)] rounded-lg p-3 text-xs text-slate-400 text-center">
         Login untuk ikut koordinasi bantuan
       </div>
     );
@@ -125,7 +125,7 @@ export default function SosChatBox({ sosLogId }: { sosLogId: string }) {
 
       <div
         ref={scrollRef}
-        className="bg-[#0A1512] rounded-lg p-2 mb-2 max-h-40 overflow-y-auto space-y-1.5"
+        className="bg-[var(--kartu-2)] rounded-lg p-2 mb-2 max-h-40 overflow-y-auto space-y-1.5"
       >
         {messages.length === 0 ? (
           <p className="text-xs text-slate-500 text-center py-2">

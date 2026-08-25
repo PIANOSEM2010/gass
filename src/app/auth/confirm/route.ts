@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 // Kenapa: alur lama (?code=... + exchangeCodeForSession) hanya sah bila link
 // dibuka di BROWSER YANG SAMA dengan tempat permintaan dibuat (PKCE verifier
 // tersimpan lokal). Daftar dari aplikasi lalu buka link di Chrome = "invalid".
-// Dengan token_hash + verifyOtp, verifikasi terjadi murni di server —
+// Dengan token_hash + verifyOtp, verifikasi terjadi murni di server -
 // link sah dibuka di mana pun.
 //
 // Template email di Supabase harus menunjuk ke route ini (lihat instruksi).
