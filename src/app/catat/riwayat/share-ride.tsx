@@ -51,7 +51,10 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     let cancelled = false;
     setPlaceLoading(true);
     (async () => {
-      const name = await placeNameFromPath(ride.path);
+      const name = await Promise.race([
+        placeNameFromPath(ride.path),
+        new Promise<string>((res) => setTimeout(() => res(""), 6000)),
+      ]);
       if (!cancelled) {
         if (name) setPlace(name);
         setPlaceLoading(false);
@@ -63,7 +66,12 @@ export default function ShareRide({ ride }: { ride: Ride }) {
 
   // Gambar ulang kartu setiap ada perubahan pilihan (dan setelah font siap)
   useEffect(() => {
-    if (!open || !canvasRef.current || placeLoading) return;
+    // Kartu digambar segera, tanpa menunggu pencarian nama tempat selesai.
+    // Sebelumnya penggambaran ditahan oleh placeLoading, sehingga bila
+    // Nominatim lambat atau tak terjangkau - hal biasa di data seluler -
+    // pengguna hanya melihat kotak kosong. Nama tempat menyusul lewat state
+    // `place` yang ada di daftar pemicu, jadi kartunya digambar ulang sendiri.
+    if (!open || !canvasRef.current) return;
     const doDraw = () => {
       if (!canvasRef.current) return;
       const umum = {
@@ -152,9 +160,15 @@ export default function ShareRide({ ride }: { ride: Ride }) {
         <Share2 size={16} /> Bagikan Kartu
       </button>
 
+      {/* Lapisan luar hanya menggulir; pemusatan dikerjakan wadah di dalamnya.
+          Menggabungkan flex-center dengan overflow-y-auto pada satu unsur
+          membuat kotak yang lebih tinggi dari layar terdorong ke atas batas
+          gulir sehingga tidak bisa dijangkau - itu sebabnya yang tampil hanya
+          latar buram tanpa kartu. */}
       {open && (
-        <div className="fixed inset-0 z-[3000] bg-black/70 backdrop-blur-sm overflow-y-auto flex items-start justify-center p-3" onClick={() => setOpen(false)}>
-          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-2xl w-full max-w-md my-auto p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[3000] bg-black/70 backdrop-blur-sm overflow-y-auto overscroll-contain" onClick={() => setOpen(false)}>
+          <div className="min-h-full flex items-center justify-center p-3">
+          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-2xl w-full max-w-md p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="display-title text-base text-white">KARTU PERJALANAN</p>
               <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
@@ -231,6 +245,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
               </button>
             </div>
             {pesanStory && <p className="text-[11px] text-slate-400 mt-2">{pesanStory}</p>}
+          </div>
           </div>
         </div>
       )}
