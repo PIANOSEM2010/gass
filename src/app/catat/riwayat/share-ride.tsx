@@ -28,7 +28,6 @@ export default function ShareRide({ ride }: { ride: Ride }) {
   // Keluarga "Tanah" memakai palet dan penggambar sendiri, plus pilihan rasio.
   const [rasio, setRasio] = useState<Rasio>("1:1");
   const [warnaTanah, setWarnaTanah] = useState("terakota");
-  const keluargaTanah = TEMPLATE_TANAH.some((t) => t.key === template);
   const [template, setTemplate] = useState("blok");
   const [palette, setPalette] = useState("hijau");
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
@@ -37,6 +36,11 @@ export default function ShareRide({ ride }: { ride: Ride }) {
   // Nama daerah ditentukan dari GPS jalur perjalanan itu sendiri
   const [place, setPlace] = useState("");
   const [placeLoading, setPlaceLoading] = useState(false);
+  // Ditentukan SETELAH seluruh state dideklarasikan. Sebelumnya baris ini
+  // berada di atas deklarasi `template`, dan karena pemakaiannya tersembunyi
+  // di dalam panggilan-balik .some(), TypeScript tidak menangkapnya sementara
+  // saat dijalankan ia melempar ReferenceError dan meruntuhkan halaman.
+  const keluargaTanah = TEMPLATE_TANAH.some((t) => t.key === template);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const rideDate = ride.started_at || ride.activity_date;
@@ -149,8 +153,8 @@ export default function ShareRide({ ride }: { ride: Ride }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[2000] bg-black/60 flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
-          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[3000] bg-black/70 backdrop-blur-sm overflow-y-auto flex items-start justify-center p-3" onClick={() => setOpen(false)}>
+          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-2xl w-full max-w-md my-auto p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="display-title text-base text-white">KARTU PERJALANAN</p>
               <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
@@ -158,14 +162,37 @@ export default function ShareRide({ ride }: { ride: Ride }) {
               </button>
             </div>
 
-            <div className="flex gap-2 mb-3">
+            <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
               {[...TEMPLATE_TANAH.map((t) => ({ key: t.key, name: t.nama })), ...TEMPLATES].map((t) => (
                 <button key={t.key} onClick={() => setTemplate(t.key)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
+                  className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                   {t.name}
                 </button>
               ))}
             </div>
+            {keluargaTanah ? (
+              <>
+                {/* Rasio kartu: 1:1 untuk unggahan biasa, 4:5 untuk Story */}
+                <div className="flex gap-2 mb-3">
+                  {(["1:1", "4:5"] as Rasio[]).map((r) => (
+                    <button key={r} onClick={() => setRasio(r)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${rasio === r
+                        ? "border-lime-400/60 bg-lime-400/10 text-lime-300"
+                        : "border-white/10 text-slate-400"}`}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                {/* Empat warna tanah khusus keluarga template ini */}
+                <div className="flex gap-2.5 mb-3">
+                  {WARNA_TANAH_KEYS.map((k) => (
+                    <button key={k} onClick={() => setWarnaTanah(k)} title={WARNA_TANAH[k].nama} aria-label={WARNA_TANAH[k].nama}
+                      className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${warnaTanah === k ? "ring-2 ring-offset-2 ring-offset-[var(--kartu)] ring-lime-400" : "ring-1 ring-white/15"}`}
+                      style={{ background: `linear-gradient(135deg, ${WARNA_TANAH[k].tanah} 55%, ${WARNA_TANAH[k].kertas})` }} />
+                  ))}
+                </div>
+              </>
+            ) : (
             <div className="flex gap-2.5 mb-3">
               {PALETTE_KEYS.map((k) => (
                 <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
@@ -173,6 +200,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
                   style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
               ))}
             </div>
+            )}
             <div className="flex gap-2 mb-3">
               <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-white/15 text-slate-400 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
                 <ImagePlus size={15} /> {photo ? "Ganti Foto" : "Tambah Foto"}
