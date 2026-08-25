@@ -191,9 +191,15 @@ body {
 .jenjang > *:nth-child(8) { animation-delay: .39s; }
 
 /* 4) Peralihan antar halaman */
+/* Hanya opacity yang dianimasikan.
+   Sebelumnya animasi ini memakai transform dengan fill-mode "both", sehingga
+   nilai transform terakhir menempel selamanya pada pembungkus halaman. Unsur
+   ber-transform menjadi acuan posisi bagi seluruh keturunan position:fixed,
+   akibatnya inset-0 pada dialog mengacu ke tinggi seluruh halaman, bukan ke
+   layar. Itulah sebab dialog kartu muncul jauh di bawah dan harus digulir. */
 @keyframes bug-halaman-masuk {
-  from { opacity: 0; transform: translateY(10px) scale(.995); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .halaman-masuk { animation: bug-halaman-masuk .34s cubic-bezier(.22, 1, .36, 1) both; }
 

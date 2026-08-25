@@ -493,10 +493,10 @@ export default function CatatClient({
               {/* Kartu untuk dibagikan: pilih template + warna */}
               <div>
                 <p className="text-xs text-slate-400 mb-2 font-medium">Pilih tampilan kartu</p>
-                <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
+                <div className="grid grid-cols-4 gap-2 mb-3">
                   {[...TEMPLATE_TANAH.map((t) => ({ key: t.key, name: t.nama })), ...TEMPLATES].map((t) => (
                     <button key={t.key} onClick={() => setTemplate(t.key)}
-                      className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
+                      className={`px-1.5 py-2 rounded-xl text-[11px] font-semibold border-2 leading-tight transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                       {t.name}
                     </button>
                   ))}

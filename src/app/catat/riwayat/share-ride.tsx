@@ -4,6 +4,7 @@
 // lengkap: 4 template (termasuk Momen), 5 warna, foto latar, dan
 // mode latar transparan. Tanggal di kartu memakai tanggal perjalanan asli.
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Share2, Download, ImagePlus, X, Loader2, Sparkles } from "lucide-react";
 import { drawCard, loadImage, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import { gambarKartuTanah, TEMPLATE_TANAH, WARNA_TANAH, WARNA_TANAH_KEYS, type Rasio } from "@/lib/kartu-tanah";
@@ -42,6 +43,12 @@ export default function ShareRide({ ride }: { ride: Ride }) {
   // saat dijalankan ia melempar ReferenceError dan meruntuhkan halaman.
   const keluargaTanah = TEMPLATE_TANAH.some((t) => t.key === template);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Dialog dipasang lewat portal ke <body>. Pembungkus animasi halaman
+  // membentuk konteks penumpukan sekaligus acuan posisi bagi keturunan
+  // position:fixed, sehingga dialog di dalamnya bisa muncul di luar layar dan
+  // tetap tertimpa navbar meski z-index-nya lebih tinggi.
+  const [terpasang, setTerpasang] = useState(false);
+  useEffect(() => { setTerpasang(true); }, []);
 
   const rideDate = ride.started_at || ride.activity_date;
 
@@ -165,37 +172,28 @@ export default function ShareRide({ ride }: { ride: Ride }) {
           membuat kotak yang lebih tinggi dari layar terdorong ke atas batas
           gulir sehingga tidak bisa dijangkau - itu sebabnya yang tampil hanya
           latar buram tanpa kartu. */}
-      {open && (
-        <div className="fixed inset-0 z-[3000] bg-black/70 backdrop-blur-sm overflow-y-auto overscroll-contain" onClick={() => setOpen(false)}>
-          <div className="min-h-full flex items-center justify-center p-3">
-          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-2xl w-full max-w-md p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
+      {open && terpasang && createPortal(
+
+        <div className="fixed inset-0 z-[4000] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center" onClick={() => setOpen(false)}>
+          <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-t-3xl sm:rounded-2xl w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 flex-shrink-0">
               <p className="display-title text-base text-white">KARTU PERJALANAN</p>
               <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
 
+            {/* Hanya bagian ini yang menggulir; tombol aksi ada di kaki tetap */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-3 min-h-0">
             <canvas ref={canvasRef} className={`w-full h-auto rounded-2xl shadow border border-white/10 ${transparent ? "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:22px_22px]" : ""}`} />
 
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <button onClick={share} disabled={busy} className="bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
-                {busy ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} Bagikan
-              </button>
-              <button onClick={download} className="border border-white/15 text-slate-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
-                <Download size={16} /> Unduh
-              </button>
-              <button onClick={keStory} disabled={busy} className="border border-lime-400/35 text-lime-300 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
-                <Sparkles size={16} /> Ke Story
-              </button>
-            </div>
 
             <div className="mt-4 pt-3 border-t border-white/8">
               <p className="eyebrow !text-[9px] text-slate-500 mb-2.5">Ubah tampilan kartu</p>
-            <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
+            <div className="grid grid-cols-4 gap-2 mb-3">
               {[...TEMPLATE_TANAH.map((t) => ({ key: t.key, name: t.nama })), ...TEMPLATES].map((t) => (
                 <button key={t.key} onClick={() => setTemplate(t.key)}
-                  className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
+                  className={`px-1.5 py-2 rounded-xl text-[11px] font-semibold border-2 leading-tight transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                   {t.name}
                 </button>
               ))}
@@ -248,10 +246,27 @@ export default function ShareRide({ ride }: { ride: Ride }) {
             </div>
 
             </div>
-            {pesanStory && <p className="text-[11px] text-slate-400 mt-2">{pesanStory}</p>}
+            </div>
+
+            {/* Kaki tetap: Bagikan, Unduh, dan Ke Story selalu terlihat
+                tanpa perlu menggulir sedikit pun. */}
+            <div className="flex-shrink-0 border-t border-white/8 px-4 pt-3 pb-4 bg-[var(--kartu)]">
+            <div className="grid grid-cols-3 gap-2">
+              <button onClick={share} disabled={busy} className="bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
+                {busy ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} Bagikan
+              </button>
+              <button onClick={download} className="border border-white/15 text-slate-200 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm active:scale-95 transition-transform">
+                <Download size={16} /> Unduh
+              </button>
+              <button onClick={keStory} disabled={busy} className="border border-lime-400/35 text-lime-300 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 transition-transform">
+                <Sparkles size={16} /> Ke Story
+              </button>
+            </div>
+              {pesanStory && <p className="text-[11px] text-slate-400 mt-2">{pesanStory}</p>}
+            </div>
           </div>
-          </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
