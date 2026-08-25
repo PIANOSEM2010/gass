@@ -1,0 +1,9 @@
+{
+  "name": "GASS — Goweser Aman, Saling Sadar",
+  "short_name": "GASS",
+  "description": "Platform keselamatan pelajar pesepeda Bulungan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#16a34a"
+}

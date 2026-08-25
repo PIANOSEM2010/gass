@@ -1,0 +1,90 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default function NewPostPage() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("forum_posts")
+      .insert({ user_id: user.id, title, body })
+      .select()
+      .single();
+    if (error) {
+      setError(error.message);
+      setSaving(false);
+    } else if (data) {
+      router.push(`/forum/${data.id}`);
+    }
+  }
+
+  return (
+    <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
+      <Link href="/forum" className="inline-flex items-center gap-1 text-sm text-lime-300 mb-4">
+        <ArrowLeft size={16} />
+        Kembali ke forum
+      </Link>
+
+      <h1 className="display-title text-2xl text-white mb-6">Tulis Post Baru</h1>
+
+      <form onSubmit={handleSubmit} className="bg-[#0E1C17] rounded-xl p-5 shadow-sm space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-200 mb-1">Judul</label>
+          <input
+            type="text"
+            required
+            maxLength={120}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Ceritakan secara singkat..."
+          />
+          <p className="text-xs text-slate-400 mt-1">{title.length}/120</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-200 mb-1">Isi</label>
+          <textarea
+            required
+            rows={8}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            className="w-full px-3 py-2 border border-white/15 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
+            placeholder="Bagikan cerita, pertanyaan, atau ide kamu tentang bersepeda di Bulungan..."
+          />
+        </div>
+
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+
+        <div className="bg-sky-400/10 border border-sky-400/25 rounded-lg p-3 text-xs text-sky-200">
+          💬 <strong>Etika forum:</strong> Hormati pengguna lain, hindari ujaran kasar, tidak share informasi pribadi orang lain tanpa izin. Post yang melanggar akan dihapus admin.
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving || !title.trim() || !body.trim()}
+          className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15"
+        >
+          {saving ? "Mengirim..." : "Kirim Post"}
+        </button>
+      </form>
+    </div>
+  );
+}
