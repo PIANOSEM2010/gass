@@ -80,7 +80,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
       </div>
       {pesan && <p className="px-5 pb-2 text-[11px] text-red-400">{pesan}</p>}
       {buka !== null && grup[buka] && (
-        <PenampilStory grup={grup[buka]} tutup={() => setBuka(null)}
+        <PenampilStory grup={grup[buka]} idSaya={idSaya} tutup={() => setBuka(null)}
           lanjut={() => setBuka((v) => (v !== null && v + 1 < grup.length ? v + 1 : null))} />
       )}
       {!masuk && namaSaya === "" && null}
@@ -89,7 +89,16 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
 }
 
 // Penampil story: satu foto per ketukan, batang kemajuan 5 detik per foto.
-function PenampilStory({ grup, tutup, lanjut }: { grup: Grup; tutup: () => void; lanjut: () => void }) {
+function PenampilStory({ grup, idSaya, tutup, lanjut }: {
+  grup: Grup; idSaya: string | null; tutup: () => void; lanjut: () => void;
+}) {
+  const router = useRouter();
+  // Konfirmasi hapus: story hilang selamanya, jadi jangan sampai terhapus
+  // hanya karena ketukan yang tidak sengaja saat berpindah foto.
+  const [tanya, setTanya] = useState(false);
+  const [hapusSibuk, setHapusSibuk] = useState(false);
+  const [galat, setGalat] = useState("");
+  const milikSaya = Boolean(idSaya) && grup.user_id === idSaya;
   const [ke, setKe] = useState(0);
   const [maju, setMaju] = useState(0);
   // Batang kemajuan hanya berjalan setelah fotonya benar-benar tampil.
@@ -101,12 +110,12 @@ function PenampilStory({ grup, tutup, lanjut }: { grup: Grup; tutup: () => void;
   }, [grup.items.length, lanjut]);
 
   useEffect(() => {
-    if (!siap) return;
+    if (!siap || tanya) return;
     const t = setInterval(() => {
       setMaju((m) => { if (m >= 100) { berikutnya(); return 0; } return m + 2; });
     }, 100);
     return () => clearInterval(t);
-  }, [berikutnya, siap]);
+  }, [berikutnya, siap, tanya]);
 
   const s = grup.items[ke];
   return (
@@ -122,7 +131,17 @@ function PenampilStory({ grup, tutup, lanjut }: { grup: Grup; tutup: () => void;
       <div className="flex items-center gap-2 px-4 pb-2">
         <Avatar nama={grup.nama} ukuran={30} foto={grup.foto} />
         <p className="display-title text-sm text-white">{grup.nama}</p>
-        <button onClick={(e) => { e.stopPropagation(); tutup(); }} className="ml-auto text-white/70 text-xl leading-none px-2" aria-label="Tutup">×</button>
+        {milikSaya && (
+          <button onClick={(e) => { e.stopPropagation(); setTanya(true); }}
+            className="ml-auto text-white/70 px-2" aria-label="Hapus story">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9L18 7M10.5 11v5M13.5 11v5" />
+            </svg>
+          </button>
+        )}
+        <button onClick={(e) => { e.stopPropagation(); tutup(); }}
+          className={`${milikSaya ? "" : "ml-auto"} text-white/70 text-xl leading-none px-2`} aria-label="Tutup">×</button>
       </div>
       <div className="relative flex-1 flex items-center justify-center px-2 pb-6">
         {!siap && (
@@ -140,6 +159,55 @@ function PenampilStory({ grup, tutup, lanjut }: { grup: Grup; tutup: () => void;
           style={{ opacity: siap ? 1 : 0 }} />
       </div>
       {s.caption && <p className="px-5 pb-8 text-center text-sm text-white/90">{s.caption}</p>}
+
+      {tanya && (
+        <div className="absolute inset-0 z-10 bg-black/80 flex items-end justify-center p-4"
+          onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--kartu)] border border-white/12 p-5">
+            <p className="display-title text-base text-white">HAPUS STORY INI?</p>
+            <p className="text-[12.5px] text-slate-400 mt-1.5 leading-relaxed">
+              Foto ini akan hilang dari umpan dan tidak bisa dikembalikan.
+            </p>
+            {galat && <p className="text-[11.5px] text-red-400 mt-2">{galat}</p>}
+            <div className="flex gap-2.5 mt-4">
+              <button onClick={() => { setTanya(false); setGalat(""); }} disabled={hapusSibuk}
+                className="flex-1 rounded-xl border border-white/12 text-slate-300 py-3 text-sm font-semibold">
+                Batal
+              </button>
+              <button onClick={hapus} disabled={hapusSibuk}
+                className="flex-1 rounded-xl bg-red-600 text-white py-3 text-sm font-semibold disabled:opacity-60 teks-terang">
+                {hapusSibuk ? "Menghapus…" : "Hapus"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  async function hapus() {
+    if (hapusSibuk) return;
+    setHapusSibuk(true); setGalat("");
+    try {
+      const sb = createClient();
+      const { error } = await sb.from("stories").delete().eq("id", s.id);
+      if (error) throw error;
+      // Berkas fotonya ikut dibuang supaya tidak menumpuk di penyimpanan.
+      const tanda = "/story/";
+      const ke_ = s.image_url.indexOf(tanda);
+      if (ke_ !== -1) {
+        const jalur = s.image_url.slice(ke_ + tanda.length).split("?")[0];
+        await sb.storage.from("story").remove([decodeURIComponent(jalur)]).catch(() => null);
+      }
+      router.refresh();
+      if (grup.items.length > 1) {
+        setTanya(false);
+        setKe((v) => Math.max(0, v - 1));
+      } else {
+        tutup();
+      }
+    } catch (err) {
+      setGalat(err instanceof Error ? err.message : "Gagal menghapus story.");
+    } finally { setHapusSibuk(false); }
+  }
 }

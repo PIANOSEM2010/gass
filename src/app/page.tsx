@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { IkonCatatGowes } from "@/components/fitur-ikon";
 import LogoBug from "@/components/logo-bug";
 import TombolTema from "@/components/tema";
 import KartuAktivitas, { type Aktivitas } from "@/components/umpan-kartu";
@@ -142,13 +141,7 @@ export default async function Umpan() {
         </div>
       </div>
 
-      {/* Tombol aksi utama: selalu terlihat */}
-      <Link href="/catat"
-        className="fixed right-4 z-[1250] flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-400 to-emerald-500 pl-4 pr-5 py-3 shadow-lg shadow-emerald-600/30 active:scale-95 transition-transform"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)" }}>
-        <IkonCatatGowes size={20} aksen="#062014" />
-        <span className="display-title text-sm tracking-wide text-slate-950">CATAT GOWES</span>
-      </Link>
+
     </div>
   );
 }
