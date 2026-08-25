@@ -88,7 +88,7 @@ export default function InstallPrompt() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-20 left-3 right-3 z-[2000] max-w-md mx-auto">
+    <div className="fixed left-3 right-3 z-[2000] max-w-md mx-auto" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 128px)" }}>
       <div className="bg-[var(--kartu)] rounded-2xl shadow-2xl border border-white/5 p-3 flex items-center gap-3">
         <img src="/icon-192.png" alt="BUG" className="w-11 h-11 rounded-xl flex-shrink-0" />
         <div className="flex-1 min-w-0">

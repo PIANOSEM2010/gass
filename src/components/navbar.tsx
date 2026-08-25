@@ -33,19 +33,19 @@ const rightTabs = [
 // Titik singgung diambil pada 30 derajat agar tanjakannya hanya ~12px dan
 // tidak terlihat seperti gundukan.
 const JALUR_MENISKUS =
-  "M 0,40 L 24,40 C 48,40 54,32 78.8,30 " +
-  "A 36,36 0 0 1 141.2,30 " +
-  "C 166,32 172,40 196,40 L 220,40";
+  "M 0,40 L 14,40 C 34,40 41,29.5 62,26.1 " +
+  "A 34,34 0 0 1 114,26.1 " +
+  "C 135,29.5 142,40 162,40 L 176,40";
 
 function SoketMeniskus() {
   return (
     <svg
-      width="220" height="46" viewBox="0 0 220 46" aria-hidden="true"
+      width="176" height="46" viewBox="0 0 176 46" aria-hidden="true"
       className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
       style={{ top: -40 }}
     >
-      <path d={`${JALUR_MENISKUS} L 220,46 L 0,46 Z`} fill="var(--navbar)" fillOpacity="0.92" />
-      <path d={JALUR_MENISKUS} fill="none" stroke="rgba(180,255,58,.14)" strokeWidth="1" />
+      <path d={`${JALUR_MENISKUS} L 176,46 L 0,46 Z`} fill="var(--navbar)" fillOpacity="0.92" />
+      <path d={JALUR_MENISKUS} fill="none" stroke="var(--garis-nav)" strokeWidth="1" />
     </svg>
   );
 }

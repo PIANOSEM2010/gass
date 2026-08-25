@@ -9,6 +9,8 @@ import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
 import { placeNameFromPath } from "@/lib/place-name";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
+import { IkonCatatGowes } from "@/components/fitur-ikon";
+import { periksaRekorPribadi, type Rekor } from "@/lib/rekor-pribadi";
 import { meter } from "@/lib/angka";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
 import RodaLatar from "@/components/roda-latar";
@@ -46,6 +48,7 @@ export default function CatatClient({
   const [savedQualifies, setSavedQualifies] = useState(false);
   const [savedTodayKm, setSavedTodayKm] = useState(0);
   const [savedElev, setSavedElev] = useState<number | null>(null);
+  const [rekor, setRekor] = useState<Rekor[]>([]);
   const [sharingForum, setSharingForum] = useState(false);
   const [sharingStory, setSharingStory] = useState(false);
   const [storyMsg, setStoryMsg] = useState("");
@@ -152,6 +155,13 @@ export default function CatatClient({
       setSavedElev(typeof data.elevation_gain_m === "number" ? data.elevation_gain_m : null);
       setStatus("saved");
       router.refresh();
+      // Rekor diperiksa setelah tersimpan, supaya perjalanan ini sudah ada di
+      // basis data dan bisa dikeluarkan dari daftar pembanding.
+      periksaRekorPribadi(userId, {
+        distanceM: st.distanceM,
+        durationS: st.durationS,
+        elevM: typeof data.elevation_gain_m === "number" ? data.elevation_gain_m : st.elevM,
+      }).then(setRekor).catch(() => setRekor([]));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal menyimpan perjalanan"); setStatus("finished");
     }
@@ -252,7 +262,12 @@ export default function CatatClient({
 
   const km = (distance / 1000).toFixed(2);
   const avgSpeed = duration > 0 ? (distance / 1000) / (duration / 3600) : 0;
-  const displaySpeed = (status === "tracking" ? speed : avgSpeed).toFixed(1);
+  const displaySpeed = (status === "tracking" ? speed : avgSpeed).toFixed(1).replace(".", ",");
+  // Kecepatan tertinggi selama sesi, dipakai di blok angka pendukung.
+  const maxSpeedRef = useRef(0);
+  if (status === "tracking" && speed > maxSpeedRef.current) maxSpeedRef.current = speed;
+  if (status === "idle") maxSpeedRef.current = 0;
+  const maxSpeed = maxSpeedRef.current;
   const medal = ["🥇", "🥈", "🥉"];
 
   return (
@@ -265,7 +280,7 @@ export default function CatatClient({
         </div>
         <div className="ml-auto flex gap-4 text-right">
           <div><p className="display-num text-base leading-none text-slate-200">{longest}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">rekor</p></div>
-          <div><p className="display-num text-base leading-none text-slate-200">{totalKm.toFixed(1)}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">km total</p></div>
+          <div><p className="display-num text-base leading-none text-slate-200">{totalKm.toFixed(1).replace(".", ",")}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">km total</p></div>
           <div><p className="display-num text-base leading-none text-slate-200">{totalRides}</p><p className="eyebrow !text-[8px] text-slate-500 mt-1">perjalanan</p></div>
         </div>
       </div>
@@ -282,57 +297,128 @@ export default function CatatClient({
 
       {tab === "catat" ? (
         <>
-          {/* Kartu jarak: angka besar di atas geometri jeruji roda */}
-          <div className="relative overflow-hidden rounded-3xl border border-lime-400/18 p-6 mb-4 butiran" style={{ background: "radial-gradient(130% 90% at 50% 0%, rgba(180,255,58,.10) 0%, var(--kartu) 58%)" }}>
-            <RodaLatar className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] opacity-60 pointer-events-none" putar={status === "tracking"} />
+          {/* ---- Susunan "Blok Tegas": tiap angka punya bloknya sendiri ----
+              Angka jarak dibiarkan sebesar mungkin di blok kertas, sisanya
+              turun ke blok-blok kecil. Saat merekam, waktu bergerak ikut
+              tampil karena itu angka yang paling sering dilihat di jalan. */}
+          <div className="mb-3 flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 rounded-full bg-lime-400 text-slate-950 px-3 py-1">
+              <IkonCatatGowes size={15} aksen="#062014" />
+              <span className="display-title !text-[11px] tracking-wide">BUG</span>
+            </span>
+            <span className="eyebrow !text-[9px] text-slate-500">
+              {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }).toUpperCase()} · BULUNGAN
+            </span>
+          </div>
 
-            <div className="relative flex items-center justify-between mb-4">
-              <div>
-                <p className="eyebrow !text-[9px] text-slate-500">
-                  {status === "tracking" ? "Sedang merekam" : status === "paused" ? "Perekaman dijeda" : "Siap merekam"}
-                </p>
-                <p className="display-title text-[15px] text-white mt-0.5">GOWES DI BULUNGAN</p>
-              </div>
-              {status === "tracking" && (
-                <span className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1">
+          {/* Blok utama: angka jarak setinggi blok */}
+          <div className="relative overflow-hidden rounded-3xl p-5 pb-6 butiran border border-lime-400/20"
+            style={{ background: "radial-gradient(120% 100% at 12% 0%, rgba(180,255,58,.14) 0%, var(--kartu) 62%)" }}>
+            <RodaLatar className="absolute -right-16 -top-14 w-[240px] h-[240px] opacity-45 pointer-events-none" putar={status === "tracking"} />
+
+            <div className="relative flex items-start justify-between">
+              <p className="eyebrow !text-[9px] text-lime-400/80">Gowes di Bulungan</p>
+              {status === "tracking" ? (
+                <span className="flex items-center gap-1.5 rounded-full border border-red-500/45 bg-red-500/12 px-2.5 py-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span className="eyebrow !text-[9px] text-red-400">Live</span>
+                  <span className="eyebrow !text-[9px] text-red-400">Merekam</span>
                 </span>
+              ) : status === "paused" ? (
+                <span className="rounded-full border border-amber-400/40 bg-amber-400/12 px-2.5 py-1 eyebrow !text-[9px] text-amber-300">Dijeda</span>
+              ) : status === "saved" ? (
+                <span className="rounded-full border border-lime-400/45 bg-lime-400/12 px-2.5 py-1 eyebrow !text-[9px] text-lime-300">Tersimpan</span>
+              ) : (
+                <span className="rounded-full border border-white/12 px-2.5 py-1 eyebrow !text-[9px] text-slate-400">Siap</span>
               )}
             </div>
 
-            <div className="relative text-center py-3">
-              <p className="eyebrow !text-[9px] text-slate-500 mb-1">Jarak tempuh</p>
-              <p className="display-num text-[68px] tabular-nums leading-none text-white">
-                {km.split(".")[0]}<span className="text-lime-400">.{km.split(".")[1] ?? "00"}</span>
-              </p>
-              <p className="eyebrow !text-[9px] text-slate-500 mt-2">kilometer</p>
+            <div className="relative flex items-end gap-1.5 mt-1">
+              <span className="display-num text-[86px] leading-[0.82] tabular-nums text-white">{km.split(".")[0]}</span>
+              <span className="display-num text-[52px] leading-[1] tabular-nums text-lime-400">,{km.split(".")[1] ?? "00"}</span>
             </div>
+            <p className="relative eyebrow !text-[10px] text-slate-500 mt-2">kilometer</p>
 
-            <div className="relative grid grid-cols-3 gap-2 mt-5 jenjang">
-              {[
-                { l: "Waktu", v: fmtDuration(duration) },
-                { l: status === "tracking" ? "Kec." : "Kec. rata", v: displaySpeed },
-                { l: "Elevasi", v: `${meter(Number(elev))} m` },
-              ].map((b) => (
-                <div key={b.l} className="rounded-2xl border border-white/8 bg-[var(--relung)] py-3 text-center">
-                  <p className="eyebrow !text-[8px] text-slate-500">{b.l}</p>
-                  <p className="display-num text-xl tabular-nums leading-tight text-white mt-0.5">{b.v}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Jejak hari ini, dari titik GPS yang sudah terekam */}
-            <div className="relative mt-3 rounded-2xl border border-white/8 bg-[var(--relung)] py-2 flex flex-col items-center">
-              <JejakRute path={(getPath() as Titik[] | null)} width={250} height={64} tebal={2.2} />
-              <p className="eyebrow !text-[8px] text-slate-600 pb-1">jalur hari ini</p>
+            {/* Waktu bergerak: angka kedua yang paling dilihat saat di jalan */}
+            <div className="relative mt-4 flex items-end justify-between border-t border-white/8 pt-3">
+              <div>
+                <p className="eyebrow !text-[8.5px] text-slate-500">{status === "tracking" ? "Waktu bergerak" : "Waktu"}</p>
+                <p className="display-num text-[34px] leading-none tabular-nums text-white mt-1">{fmtDuration(duration)}</p>
+              </div>
+              <div className="text-right">
+                <p className="eyebrow !text-[8.5px] text-slate-500">{status === "tracking" ? "Kecepatan" : "Kec. rata"}</p>
+                <p className="display-num text-[34px] leading-none tabular-nums text-white mt-1">
+                  {displaySpeed}<span className="display-title text-[13px] text-lime-400 ml-1">km/j</span>
+                </p>
+              </div>
             </div>
           </div>
+
+          {/* Blok peta: jejak hari ini, gelap dan penuh */}
+          <div className="relative mt-3 rounded-3xl overflow-hidden border border-white/8 bg-[var(--relung)]">
+            <div className="flex flex-col items-center pt-7 pb-4">
+              <JejakRute path={(getPath() as Titik[] | null)} width={276} height={(getPath() as Titik[] | null)?.length ? 124 : 64} tebal={3} />
+            </div>
+            <div className="absolute top-3 left-4 eyebrow !text-[8.5px] text-slate-600">Jalur hari ini</div>
+            {status === "tracking" && (
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-black/40 px-2 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
+                <span className="eyebrow !text-[8px] text-lime-300">GPS aktif</span>
+              </div>
+            )}
+          </div>
+
+          {/* Blok angka pendukung */}
+          <div className="grid grid-cols-3 gap-2 mt-3 jenjang">
+            {[
+              { l: "Elevasi", v: `${meter(Number(elev))}`, u: "m" },
+              { l: "Kec. maks", v: maxSpeed.toFixed(1).replace(".", ","), u: "km/j" },
+              { l: "Kalori", v: String(Math.round((distance / 1000) * 35)), u: "kkal" },
+            ].map((b) => (
+              <div key={b.l} className="rounded-2xl border border-white/8 bg-[var(--kartu)] px-3 py-3">
+                <p className="eyebrow !text-[8px] text-slate-500">{b.l}</p>
+                <p className="display-num text-[26px] leading-none tabular-nums text-white mt-1">
+                  {b.v}<span className="display-title text-[11px] text-slate-500 ml-0.5">{b.u}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="h-4" />
+
+          {status === "saved" && rekor.length > 0 && (
+            <div className="relative overflow-hidden rounded-2xl border border-amber-400/35 p-4 mb-3 muncul"
+              style={{ background: "linear-gradient(135deg, rgba(251,191,36,.14) 0%, var(--kartu) 62%)" }}>
+              <span className="absolute -top-10 -right-8 w-32 h-32 pointer-events-none"
+                style={{ background: "radial-gradient(circle at center, rgba(251,191,36,.22) 0%, transparent 70%)" }} />
+              <div className="relative flex items-center gap-2.5">
+                <span className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center flex-shrink-0">
+                  <Trophy size={20} />
+                </span>
+                <div>
+                  <p className="display-title text-[15px] text-amber-200 leading-none">REKOR PRIBADI BARU</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    {rekor.length === 1 ? "Satu rekor terlampaui" : `${rekor.length} rekor terlampaui`} di perjalanan ini.
+                  </p>
+                </div>
+              </div>
+              <div className="relative mt-3 space-y-1.5">
+                {rekor.map((r) => (
+                  <div key={r.jenis} className="flex items-baseline justify-between gap-3 border-t border-white/8 pt-2">
+                    <span className="text-[12px] text-slate-300">{r.jenis}</span>
+                    <span className="text-right flex-shrink-0">
+                      <span className="display-num text-[19px] text-white">{r.nilai}</span>
+                      <span className="block text-[10px] text-amber-300/85">{r.selisih}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error && <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-lg px-3 py-2 mb-4 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
           {status === "idle" && (
-            <button onClick={start} className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(180,255,58,.25)] active:scale-95 transition-transform"><Play size={22} /> Mulai Bersepeda</button>
+            <button onClick={start} className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2.5 shadow-[0_0_26px_rgba(180,255,58,.28)] active:scale-[.98] transition-transform"><Play size={22} /> MULAI GOWES</button>
           )}
           {status === "tracking" && (
             <div className="space-y-3">
@@ -347,8 +433,8 @@ export default function CatatClient({
                 </div>
               )}
               <div className="flex gap-2">
-                <button onClick={pause} className="flex-1 border border-white/15 text-slate-200 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"><Pause size={20} /> Jeda</button>
-                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
+                <button onClick={pause} className="flex-1 border border-white/15 text-slate-200 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"><Pause size={20} /> JEDA</button>
+                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> SELESAI</button>
               </div>
               <p className="text-xs text-slate-500 text-center">{nativeApp ? "Perekaman tetap berjalan walau layar mati, notifikasi BUG tampil selama merekam." : "Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis, jangan kunci layar selama merekam."}</p>
             </div>
@@ -360,7 +446,7 @@ export default function CatatClient({
               </div>
               <div className="flex gap-2">
                 <button onClick={resume} className="flex-1 bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={20} /> Lanjut</button>
-                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> Selesai</button>
+                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> SELESAI</button>
               </div>
               <p className="text-xs text-slate-500 text-center">Perpindahan selama jeda tidak dihitung sebagai jarak gowes.</p>
             </div>
