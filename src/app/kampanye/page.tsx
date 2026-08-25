@@ -29,15 +29,15 @@ const TIPS = [
 
 export default function KampanyePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white pb-8">
+    <div className="min-h-screen bg-[#071310] pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header gradient */}
-        <div className="bg-gradient-to-br from-orange-500 to-pink-500 text-white rounded-3xl p-5 shadow-lg mb-5">
+        <div className="rounded-2xl border border-orange-400/20 bg-orange-400/8 text-white p-5 mb-5">
           <div className="flex items-center gap-2 mb-2">
             <Megaphone size={18} />
             <p className="text-xs font-medium opacity-90">Gerakan Bersama</p>
           </div>
-          <h1 className="text-2xl font-extrabold leading-tight">Berbagi Jalan untuk Pesepeda</h1>
+          <h1 className="display-title text-2xl text-white leading-tight">Berbagi Jalan untuk Pesepeda</h1>
           <p className="text-sm opacity-95 leading-relaxed mt-2">Jalan Bulungan jadi lebih aman saat kita semua sadar, baik pengendara motor, mobil, maupun pesepeda. Mulai dari unggahanmu hari ini.</p>
         </div>
 
@@ -47,7 +47,7 @@ export default function KampanyePage() {
           {CAMPAIGNS.map((c, i) => (
             <div key={i} className="bg-[#0E1C17] rounded-2xl p-5 shadow-sm border border-white/5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><Hash size={16} /></span>
+                <span className="w-8 h-8 rounded-lg bg-orange-400/15 text-orange-600 flex items-center justify-center flex-shrink-0"><Hash size={16} /></span>
                 <h3 className="font-bold text-white">{c.title.replace("#", "")}</h3>
               </div>
               <p className="text-sm text-slate-400 mb-4 leading-relaxed">{c.description}</p>
@@ -75,7 +75,7 @@ export default function KampanyePage() {
           ))}
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl p-5 text-center shadow-sm">
+        <div className="rounded-2xl border border-sky-400/20 bg-sky-400/8 text-white p-5 text-center">
           <p className="text-sm leading-relaxed mb-3 opacity-95">Punya cerita atau ide kampanye sendiri?</p>
           <Link href="/forum/baru" className="inline-block bg-[#0E1C17] text-indigo-700 px-5 py-2 rounded-lg font-bold text-sm">Bagikan di Forum</Link>
         </div>

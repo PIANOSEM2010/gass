@@ -22,9 +22,9 @@ type Zone = {
 };
 
 const CATEGORY_CONFIG: Record<Category, { label: string; color: string; chip: string }> = {
-  potensi:   { label: "Potensi Rawan",  color: "#eab308", chip: "bg-yellow-100 text-yellow-700" },
-  rawan:     { label: "Rawan Kecelakaan", color: "#f97316", chip: "bg-orange-100 text-orange-700" },
-  berbahaya: { label: "Area Berbahaya", color: "#dc2626", chip: "bg-red-100 text-red-300" },
+  potensi:   { label: "Potensi Rawan",  color: "#eab308", chip: "bg-yellow-400/15 text-yellow-700" },
+  rawan:     { label: "Rawan Kecelakaan", color: "#f97316", chip: "bg-orange-400/15 text-orange-300" },
+  berbahaya: { label: "Area Berbahaya", color: "#dc2626", chip: "bg-red-400/15 text-red-300" },
 };
 
 const pickerIcon = L.divIcon({
@@ -157,7 +157,7 @@ export default function ZonaManager({ initialZones }: { initialZones: Zone[] }) 
               type="button"
               onClick={() => setCategory(cat)}
               className={`px-2 py-2 rounded-lg text-xs font-medium border-2 ${
-                category === cat ? "border-gray-900" : "border-white/10"
+                category === cat ? "border-lime-400" : "border-white/10"
               }`}
               style={category === cat ? { background: CATEGORY_CONFIG[cat].color + "22" } : {}}
             >
@@ -210,7 +210,7 @@ export default function ZonaManager({ initialZones }: { initialZones: Zone[] }) 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-orange-500 text-white py-2.5 rounded-lg font-medium disabled:bg-gray-400"
+          className="w-full bg-orange-500 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15"
         >
           {saving ? "Menyimpan..." : "Simpan Zona"}
         </button>
@@ -237,7 +237,7 @@ export default function ZonaManager({ initialZones }: { initialZones: Zone[] }) 
                     <MapPin size={12} />
                     <button
                       onClick={() => window.open(`https://www.google.com/maps?q=${z.lat},${z.lng}`, "_blank")}
-                      className="text-orange-700 hover:underline"
+                      className="text-orange-300 hover:underline"
                     >
                       {z.lat.toFixed(5)}, {z.lng.toFixed(5)}
                     </button>

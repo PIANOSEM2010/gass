@@ -98,7 +98,7 @@ export default function KontakManager({
             <div className="flex items-center gap-2">
               <p className="font-semibold">{c.name}</p>
               {c.is_primary && (
-                <span className="text-xs bg-green-100 text-lime-300 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-lime-400/15 text-lime-300 px-2 py-0.5 rounded-full">
                   Utama
                 </span>
               )}
@@ -183,7 +183,7 @@ export default function KontakManager({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-gray-400"
+              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-white/15"
             >
               {saving ? "Menyimpan..." : "Simpan"}
             </button>

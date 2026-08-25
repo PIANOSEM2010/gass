@@ -140,7 +140,7 @@ export default async function DashboardPage() {
   }).format(new Date());
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#071310] to-[#071310]">
       <div className="px-4 pt-6 pb-10 max-w-md mx-auto">
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-slate-600 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
               <p className="text-xs opacity-80">Kabupaten Bulungan</p>
             </div>
           </div>
-          <div className="mt-4 bg-[#0E1C17]/10 rounded-2xl p-4">
+          <div className="mt-4 bg-white/10 rounded-2xl p-4">
             <p className="text-xs opacity-80">Total jarak bersepeda komunitas</p>
             <p className="text-4xl font-extrabold leading-none mt-1">{totalKm.toFixed(1)}<span className="text-lg font-bold ml-1">km</span></p>
             <p className="text-xs opacity-80 mt-1">{sos30} panggilan darurat dalam 30 hari terakhir</p>
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
             {days.map((d) => (
               <div key={d.date} className="flex-1 flex flex-col items-center">
                 <span className="text-[10px] font-semibold text-slate-400 mb-1">{d.count}</span>
-                <div className="w-full bg-green-100 rounded-md flex items-end" style={{ height: 80 }}>
+                <div className="w-full bg-lime-400/15 rounded-md flex items-end" style={{ height: 80 }}>
                   <div className="w-full bg-gradient-to-t from-green-600 to-emerald-400 rounded-md" style={{ height: `${Math.max(4, (d.count / maxDay) * 100)}%` }} />
                 </div>
                 <span className="text-[10px] text-slate-500 mt-1">{d.label}</span>

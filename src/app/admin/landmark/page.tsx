@@ -21,7 +21,7 @@ export default async function AdminLandmarkPage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-2xl font-bold text-white mb-1">Landmark</h1>
+      <h1 className="display-title text-2xl text-white mb-1">Landmark</h1>
       <p className="text-sm text-slate-400 mb-6">
         Tandai tempat penting bagi pesepeda: perbelanjaan, kafe, kantor, kesehatan, bengkel sepeda, dan lainnya. Landmark yang ditambahkan langsung tampil di peta publik.
       </p>

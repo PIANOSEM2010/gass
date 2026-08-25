@@ -38,7 +38,7 @@ export default function ForumModeration({ initialPosts }: { initialPosts: Post[]
         <div key={p.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             {p.approved ? (
-              <span className="text-xs bg-green-100 text-lime-300 px-2 py-0.5 rounded-full">✓ Tampil</span>
+              <span className="text-xs bg-lime-400/15 text-lime-300 px-2 py-0.5 rounded-full">✓ Tampil</span>
             ) : (
               <span className="text-xs bg-[#122019] text-slate-200 px-2 py-0.5 rounded-full">⊘ Tersembunyi</span>
             )}

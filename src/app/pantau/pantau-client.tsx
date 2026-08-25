@@ -30,11 +30,11 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#071310] to-[#071310]">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/sos" className="inline-flex items-center gap-1 text-sm text-teal-700 mb-4"><ArrowLeft size={16} /> Kembali</Link>
 
-        <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg mb-4 speed-lines">
+        <div className="relative overflow-hidden rounded-3xl p-5 border border-teal-400/20 bg-[#08140F] text-white mb-4 speed-lines">
           <div className="absolute right-4 top-0 h-full w-5 bg-gradient-to-b from-cyan-300 to-teal-400 opacity-70" style={{ transform: "skewX(-16deg)" }} />
           <div className="flex items-center gap-3 relative">
             <div className="w-12 h-12 rounded-2xl bg-cyan-300 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/20"><Radio size={26} strokeWidth={2.4} /></div>

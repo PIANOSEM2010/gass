@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Users, Bike, ShieldCheck, ChevronRight } from "lucide-react";
+import { CheckCircle2, Users, Bike, ShieldCheck, ChevronRight } from "lucide-react";
+import KepalaHalaman from "@/components/kepala-halaman";
+import { IkonEdukasi } from "@/components/bug-icons";
 
 const AUDIENCE_CONFIG = {
-  pesepeda:   { icon: Bike,        grad: "from-green-500 to-emerald-600", badge: "bg-green-100 text-lime-300",   label: "Untuk Pesepeda" },
-  pengendara: { icon: ShieldCheck, grad: "from-orange-500 to-amber-500",  badge: "bg-orange-100 text-orange-700", label: "Untuk Pengendara Motor" },
-  semua:      { icon: Users,       grad: "from-blue-500 to-cyan-500",     badge: "bg-blue-100 text-sky-300",     label: "Untuk Semua" },
+  pesepeda:   { icon: Bike,        grad: "from-green-500 to-emerald-600", badge: "bg-lime-400/15 text-lime-300",   label: "Untuk Pesepeda" },
+  pengendara: { icon: ShieldCheck, grad: "from-orange-500 to-amber-500",  badge: "bg-orange-400/15 text-orange-300", label: "Untuk Pengendara Motor" },
+  semua:      { icon: Users,       grad: "from-blue-500 to-cyan-500",     badge: "bg-sky-400/15 text-sky-300",     label: "Untuk Semua" },
 };
 
 export default async function EdukasiPage() {
@@ -33,35 +35,43 @@ export default async function EdukasiPage() {
   const pct = total ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pb-8">
-      <div className="max-w-md mx-auto px-4 pt-6">
-        {/* Header gradient + progress */}
-        <div className="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-3xl p-5 shadow-lg mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#0E1C17]/20 flex items-center justify-center flex-shrink-0"><BookOpen size={26} /></div>
-            <div className="min-w-0">
-              <h1 className="text-xl font-extrabold leading-none">Modul Edukasi</h1>
-              <p className="text-xs opacity-90 mt-1">Etika berbagi jalan untuk pesepeda & pengendara di Bulungan</p>
+    <div className="min-h-screen bg-[#071310] pb-8">
+      <KepalaHalaman
+        ikon={<IkonEdukasi size={22} />}
+        judul="MODUL EDUKASI"
+        keterangan="Etika berbagi jalan untuk pesepeda & pengendara di Bulungan"
+        anak={user ? (
+          <div className="mt-5">
+            <div className="flex justify-between items-end mb-2">
+              <span className="eyebrow !text-[9px] text-slate-500">Kemajuan belajar</span>
+              <span className="display-num text-lg leading-none text-white">
+                {completedCount}<span className="text-slate-500 text-sm">/{total}</span>
+              </span>
             </div>
+            <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-lime-400 to-emerald-500 rounded-full"
+                style={{ width: `${pct}%`, transition: "width .5s cubic-bezier(.22,1,.36,1)" }} />
+            </div>
+            {completedCount === total && total > 0 && (
+              <p className="text-[11px] mt-2 text-lime-300 flex items-center gap-1.5">
+                <CheckCircle2 size={13} /> Semua modul selesai.
+              </p>
+            )}
           </div>
-          {user && (
-            <div className="mt-4">
-              <div className="flex justify-between text-xs opacity-90 mb-1.5">
-                <span>Progress belajar</span>
-                <span className="font-semibold">{completedCount}/{total} modul</span>
-              </div>
-              <div className="h-2.5 bg-[#0E1C17]/25 rounded-full overflow-hidden">
-                <div className="h-full bg-[#0E1C17] rounded-full transition-all" style={{ width: `${pct}%` }} />
-              </div>
-              {completedCount === total && total > 0 && (
-                <p className="text-xs mt-2 font-medium flex items-center gap-1"><CheckCircle2 size={14} /> Selamat! Semua modul selesai.</p>
-              )}
-            </div>
-          )}
-        </div>
+        ) : undefined}
+      />
 
+      <div className="max-w-md mx-auto px-4 pt-5">
         {/* Daftar modul */}
         <div className="space-y-3">
+          {(!modules || modules.length === 0) && (
+            <div className="rounded-2xl border border-lime-400/12 bg-[#0C1A15] p-8 text-center">
+              <p className="display-title text-lime-300">MODUL BELUM TERSEDIA</p>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                Materi edukasi sedang disiapkan. Sementara itu, kamu bisa melihat peta jalur aman atau mulai mencatat gowes.
+              </p>
+            </div>
+          )}
           {modules?.map((m) => {
             const aud = AUDIENCE_CONFIG[m.target_audience as keyof typeof AUDIENCE_CONFIG] || AUDIENCE_CONFIG.semua;
             const Icon = aud.icon;
@@ -80,18 +90,18 @@ export default async function EdukasiPage() {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${aud.badge}`}>{aud.label}</span>
                       {progress?.completed && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-600 text-white font-medium flex items-center gap-1">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-lime-400 text-slate-950 font-semibold flex items-center gap-1">
                           <CheckCircle2 size={11} /> Selesai
                         </span>
                       )}
                     </div>
-                    <h2 className="font-bold text-white leading-tight">{m.title}</h2>
+                    <h2 className="display-title text-[15px] text-white leading-tight">{m.title}</h2>
                     <p className="text-xs text-slate-400 mt-1">{m.summary}</p>
                     {progress?.completed && progress.score !== null && (
                       <p className="text-xs text-lime-300 mt-2 font-semibold">Skor: {progress.score}/3</p>
                     )}
                   </div>
-                  <ChevronRight className="text-gray-300 flex-shrink-0 mt-1" size={18} />
+                  <ChevronRight className="text-slate-500 flex-shrink-0 mt-1" size={18} />
                 </div>
               </Link>
             );

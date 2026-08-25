@@ -24,8 +24,8 @@ const STATUS_CLS: Record<string, string> = {
   dilaporkan: "bg-amber-500", diverifikasi: "bg-blue-600", diteruskan: "bg-violet-600", ditangani: "bg-green-600",
 };
 const STATUS_BADGE: Record<string, string> = {
-  dilaporkan: "bg-amber-100 text-amber-300", diverifikasi: "bg-blue-100 text-sky-300",
-  diteruskan: "bg-violet-100 text-violet-700", ditangani: "bg-green-100 text-lime-300",
+  dilaporkan: "bg-amber-400/15 text-amber-300", diverifikasi: "bg-blue-400/15 text-sky-300",
+  diteruskan: "bg-violet-400/15 text-violet-700", ditangani: "bg-lime-400/15 text-lime-300",
 };
 
 function fmtDate(iso: string | null): string {
@@ -74,7 +74,7 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
     <div className="min-h-screen bg-[#0A1512]">
       <div className="px-4 pt-6 pb-10 max-w-2xl mx-auto">
         <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-slate-400 mb-4"><ArrowLeft size={16} /> Admin</Link>
-        <h1 className="text-2xl font-bold text-white mb-1">Laporan Infrastruktur</h1>
+        <h1 className="display-title text-2xl text-white mb-1">Laporan Infrastruktur</h1>
         <p className="text-sm text-slate-400 mb-5">{reports.length} laporan. Klik laporan untuk melihat detail & menindaklanjuti.</p>
 
         {reports.length === 0 ? (
@@ -196,7 +196,7 @@ export default function InfraAdminClient({ reports: initial }: { reports: Report
               <button
                 onClick={save}
                 disabled={saving}
-                className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:bg-gray-400"
+                className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:bg-white/15"
               >
                 {saving ? <><Loader2 size={18} className="animate-spin" /> Menyimpan...</> : "Simpan Status & Catatan"}
               </button>

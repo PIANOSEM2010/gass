@@ -33,7 +33,7 @@ export default async function LeaderboardPage() {
     <div className="px-4 pt-8 max-w-md mx-auto pb-8">
       <div className="flex items-center gap-2 mb-1">
         <Trophy className="text-yellow-500" size={24} />
-        <h1 className="text-2xl font-bold text-white">Papan Peringkat</h1>
+        <h1 className="display-title text-2xl text-white">Papan Peringkat</h1>
       </div>
       <p className="text-sm text-slate-400 mb-6">Lomba streak bersepeda 🔥 - gowes ≥1 km per hari untuk menjaga streakmu. Ada toleransi: streak baru putus bila kamu absen 2 hari berturut-turut.</p>
 

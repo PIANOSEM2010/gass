@@ -42,7 +42,7 @@ export default function NewPostPage() {
         Kembali ke forum
       </Link>
 
-      <h1 className="text-2xl font-bold text-white mb-6">Tulis Post Baru</h1>
+      <h1 className="display-title text-2xl text-white mb-6">Tulis Post Baru</h1>
 
       <form onSubmit={handleSubmit} className="bg-[#0E1C17] rounded-xl p-5 shadow-sm space-y-4">
         <div>
@@ -73,14 +73,14 @@ export default function NewPostPage() {
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <div className="bg-sky-400/10 border border-sky-400/25 rounded-lg p-3 text-xs text-blue-800">
+        <div className="bg-sky-400/10 border border-sky-400/25 rounded-lg p-3 text-xs text-sky-200">
           💬 <strong>Etika forum:</strong> Hormati pengguna lain, hindari ujaran kasar, tidak share informasi pribadi orang lain tanpa izin. Post yang melanggar akan dihapus admin.
         </div>
 
         <button
           type="submit"
           disabled={saving || !title.trim() || !body.trim()}
-          className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium disabled:bg-gray-400"
+          className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15"
         >
           {saving ? "Mengirim..." : "Kirim Post"}
         </button>

@@ -32,10 +32,10 @@ const CATEGORIES = [
 const CAT_LABEL: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.label]));
 const CAT_EMOJI: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.key, c.emoji]));
 const STATUS_META: Record<string, { label: string; cls: string }> = {
-  dilaporkan: { label: "Dilaporkan", cls: "bg-amber-100 text-amber-300" },
-  diverifikasi: { label: "Diverifikasi", cls: "bg-blue-100 text-sky-300" },
-  diteruskan: { label: "Diteruskan ke Dinas", cls: "bg-violet-100 text-violet-700" },
-  ditangani: { label: "Ditangani", cls: "bg-green-100 text-lime-300" },
+  dilaporkan: { label: "Dilaporkan", cls: "bg-amber-400/15 text-amber-300" },
+  diverifikasi: { label: "Diverifikasi", cls: "bg-blue-400/15 text-sky-300" },
+  diteruskan: { label: "Diteruskan ke Dinas", cls: "bg-violet-400/15 text-violet-700" },
+  ditangani: { label: "Ditangani", cls: "bg-lime-400/15 text-lime-300" },
 };
 
 function fmtDate(iso: string | null): string {
@@ -132,7 +132,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <div className="min-h-screen bg-[#071310]">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-amber-300 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
@@ -215,7 +215,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
             {error && <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-xl px-3 py-2 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
             <button onClick={submit} disabled={submitting || !coords}
-              className="w-full bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow disabled:bg-gray-400 active:scale-95 transition-transform">
+              className="w-full bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow disabled:bg-white/15 active:scale-95 transition-transform">
               {submitting ? <><Loader2 size={20} className="animate-spin" /> Mengirim...</> : <><Send size={20} /> Kirim Laporan</>}
             </button>
           </div>

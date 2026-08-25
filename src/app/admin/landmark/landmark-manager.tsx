@@ -21,11 +21,11 @@ type Landmark = {
 };
 
 const CATEGORY_CONFIG: Record<Category, { label: string; emoji: string; color: string; chip: string }> = {
-  belanja:   { label: "Perbelanjaan",     emoji: "🛒", color: "#2563eb", chip: "bg-blue-100 text-sky-300" },
-  kuliner:   { label: "Kafe & Kuliner",   emoji: "☕", color: "#c2410c", chip: "bg-orange-100 text-orange-700" },
+  belanja:   { label: "Perbelanjaan",     emoji: "🛒", color: "#2563eb", chip: "bg-blue-400/15 text-sky-300" },
+  kuliner:   { label: "Kafe & Kuliner",   emoji: "☕", color: "#c2410c", chip: "bg-orange-400/15 text-orange-300" },
   kantor:    { label: "Kantor & Layanan", emoji: "🏢", color: "#475569", chip: "bg-[#122019] text-slate-700" },
-  kesehatan: { label: "Kesehatan",        emoji: "🏥", color: "#dc2626", chip: "bg-red-100 text-red-300" },
-  bengkel:   { label: "Bengkel Sepeda",   emoji: "🔧", color: "#0d9488", chip: "bg-teal-100 text-teal-700" },
+  kesehatan: { label: "Kesehatan",        emoji: "🏥", color: "#dc2626", chip: "bg-red-400/15 text-red-300" },
+  bengkel:   { label: "Bengkel Sepeda",   emoji: "🔧", color: "#0d9488", chip: "bg-teal-400/15 text-teal-700" },
   lainnya:   { label: "Lainnya",          emoji: "📌", color: "#64748b", chip: "bg-[#122019] text-slate-200" },
 };
 
@@ -144,7 +144,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
               type="button"
               onClick={() => setCategory(cat)}
               className={`px-2 py-2 rounded-lg text-xs font-medium border-2 leading-tight ${
-                category === cat ? "border-gray-900" : "border-white/10"
+                category === cat ? "border-lime-400" : "border-white/10"
               }`}
               style={category === cat ? { background: CATEGORY_CONFIG[cat].color + "22" } : {}}
             >
@@ -180,7 +180,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium disabled:bg-gray-400"
+          className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15"
         >
           {saving ? "Menyimpan..." : "Simpan Landmark"}
         </button>

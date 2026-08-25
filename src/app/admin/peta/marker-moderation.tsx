@@ -16,10 +16,10 @@ type Marker = {
 };
 
 const TYPE_LABEL: Record<string, { label: string; color: string }> = {
-  safe:    { label: "Aman",    color: "bg-green-100 text-lime-300"  },
-  danger:  { label: "Bahaya",  color: "bg-red-100 text-red-300"      },
-  parking: { label: "Parkir",  color: "bg-blue-100 text-sky-300"    },
-  rest:    { label: "Istirahat", color: "bg-yellow-100 text-yellow-700" },
+  safe:    { label: "Aman",    color: "bg-lime-400/15 text-lime-300"  },
+  danger:  { label: "Bahaya",  color: "bg-red-400/15 text-red-300"      },
+  parking: { label: "Parkir",  color: "bg-blue-400/15 text-sky-300"    },
+  rest:    { label: "Istirahat", color: "bg-yellow-400/15 text-yellow-700" },
 };
 
 export default function MarkerModeration({ initialMarkers }: { initialMarkers: Marker[] }) {
@@ -67,7 +67,7 @@ export default function MarkerModeration({ initialMarkers }: { initialMarkers: M
               <div key={m.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${typeCfg.color}`}>{typeCfg.label}</span>
-                  {m.approved ? (<span className="text-xs bg-green-100 text-lime-300 px-2 py-0.5 rounded-full">Aktif</span>) : (<span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Pending</span>)}
+                  {m.approved ? (<span className="text-xs bg-lime-400/15 text-lime-300 px-2 py-0.5 rounded-full">Aktif</span>) : (<span className="text-xs bg-yellow-400/15 text-yellow-700 px-2 py-0.5 rounded-full">Pending</span>)}
                 </div>
                 <h3 className="font-semibold text-white">{m.title}</h3>
                 {m.description && <p className="text-sm text-slate-400 mt-1">{m.description}</p>}

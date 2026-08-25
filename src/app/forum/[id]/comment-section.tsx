@@ -104,7 +104,7 @@ export default function CommentSection({
             <button
               type="submit"
               disabled={!text.trim() || saving}
-              className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:bg-gray-400 flex items-center gap-1"
+              className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:bg-white/15 flex items-center gap-1"
             >
               <Send size={14} />
               {saving ? "Mengirim..." : "Kirim"}

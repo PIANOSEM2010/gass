@@ -1007,7 +1007,7 @@ export default function PetaClient({
               <ShieldCheck size={16} className={avoidDanger ? "text-green-600" : "text-slate-500"} />
               Rute Aman (hindari titik & zona rawan)
             </span>
-            <span className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${avoidDanger ? "bg-green-600" : "bg-gray-300"}`}>
+            <span className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${avoidDanger ? "bg-green-600" : "bg-white/20"}`}>
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[#0E1C17] rounded-full shadow transition-transform ${avoidDanger ? "translate-x-4" : ""}`} />
             </span>
           </button>
@@ -1088,7 +1088,7 @@ export default function PetaClient({
               ) : recoError ? (
                 <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-xl p-3 text-center">{recoError}</div>
               ) : recoRoute ? (
-                <div className="bg-gradient-to-br from-emerald-50 to-lime-50 border border-emerald-100 rounded-2xl p-4">
+                <div className="bg-gradient-to-br from-emerald-500/10 to-lime-500/10 border border-emerald-100 rounded-2xl p-4">
                   <div className="grid grid-cols-2 gap-3 text-center">
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-emerald-700/70 font-semibold">Jarak rute</p>
@@ -1345,7 +1345,7 @@ export default function PetaClient({
                       key={type}
                       type="button"
                       onClick={() => setFormType(type)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 ${formType === type ? "border-gray-900 bg-[#0A1512]" : "border-white/10"}`}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 ${formType === type ? "border-lime-400 bg-[#0A1512]" : "border-white/10"}`}
                     >
                       {TYPE_CONFIG[type].emoji} {TYPE_CONFIG[type].label}
                     </button>
@@ -1377,7 +1377,7 @@ export default function PetaClient({
                 </button>
                 <button
                   type="submit" disabled={saving}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-gray-400"
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-white/15"
                 >
                   {saving ? "Mengirim..." : "Kirim"}
                 </button>

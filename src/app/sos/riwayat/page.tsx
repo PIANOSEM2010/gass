@@ -15,7 +15,7 @@ export default async function RiwayatPage() {
 
   return (
     <div className="px-4 pt-8 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold text-white mb-2">Riwayat SOS</h1>
+      <h1 className="display-title text-2xl text-white mb-2">Riwayat SOS</h1>
       <p className="text-sm text-slate-400 mb-6">Daftar tombol darurat yang pernah kamu tekan.</p>
       {(!logs || logs.length === 0) ? (
         <div className="bg-[#0E1C17] rounded-xl p-8 text-center text-slate-400">Belum ada riwayat SOS.</div>
@@ -31,7 +31,7 @@ export default async function RiwayatPage() {
                 <MapPin size={16} />
                 {log.lat.toFixed(5)}, {log.lng.toFixed(5)}
               </a>
-              <span className="inline-block mt-2 text-xs bg-green-100 text-lime-300 px-2 py-0.5 rounded-full">{log.status}</span>
+              <span className="inline-block mt-2 text-xs bg-lime-400/15 text-lime-300 px-2 py-0.5 rounded-full">{log.status}</span>
             </div>
           ))}
         </div>

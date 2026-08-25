@@ -16,7 +16,7 @@ export default async function KontakPage() {
 
   return (
     <div className="px-4 pt-8 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold text-white mb-2">Kontak Darurat</h1>
+      <h1 className="display-title text-2xl text-white mb-2">Kontak Darurat</h1>
       <p className="text-sm text-slate-400 mb-6">
         Nomor WhatsApp yang akan dihubungi saat tombol SOS ditekan. Tandai satu sebagai utama.
       </p>

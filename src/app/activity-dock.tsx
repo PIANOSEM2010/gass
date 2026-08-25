@@ -54,7 +54,7 @@ export default function ActivityDock() {
           className={`flex items-center gap-1.5 rounded-full bg-gradient-to-br ${primaryColor} text-white shadow-lg pl-1.5 pr-3 py-1.5 active:scale-95 transition`}
           aria-label="Bentangkan panel aktivitas"
         >
-          <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#0E1C17]/20">
+          <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
             <Icon size={15} />
             <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0E1C17] opacity-75" />
@@ -65,7 +65,7 @@ export default function ActivityDock() {
             {showGowes ? `${(gowes.distance / 1000).toFixed(1)} km` : showNav ? "Navigasi" : "Pantau"}
           </span>
           {activeCount > 1 && (
-            <span className="ml-0.5 text-[10px] font-bold bg-[#0E1C17]/25 rounded-full px-1.5 py-0.5">+{activeCount - 1}</span>
+            <span className="ml-0.5 text-[10px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">+{activeCount - 1}</span>
           )}
           <ChevronUp size={14} className="opacity-80" />
         </button>
@@ -87,7 +87,7 @@ export default function ActivityDock() {
           </span>
           <button
             onClick={() => setMini(true)}
-            className="flex items-center gap-1 text-slate-300 hover:text-white text-[11px] font-medium px-2 py-0.5 rounded-md hover:bg-[#0E1C17]/10 active:scale-95 transition"
+            className="flex items-center gap-1 text-slate-300 hover:text-white text-[11px] font-medium px-2 py-0.5 rounded-md hover:bg-white/10 active:scale-95 transition"
             aria-label="Perkecil"
           >
             <Minus size={13} /> Perkecil
@@ -120,7 +120,7 @@ export default function ActivityDock() {
               <button
                 onClick={(e) => { e.stopPropagation(); if (gowesTracking) gowes.pause(); else gowes.resume(); }}
                 aria-label={gowesTracking ? "Jeda" : "Lanjut"}
-                className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
+                className="shrink-0 bg-white/10 hover:bg-white/10 rounded-full p-2 active:scale-90 transition"
               >
                 {gowesTracking ? <Pause size={16} /> : <Play size={16} />}
               </button>
@@ -129,7 +129,7 @@ export default function ActivityDock() {
               <button
                 onClick={(e) => { e.stopPropagation(); gowes.finish(); }}
                 aria-label="Selesai"
-                className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
+                className="shrink-0 bg-white/10 hover:bg-white/10 rounded-full p-2 active:scale-90 transition"
               >
                 <Square size={16} />
               </button>
@@ -159,7 +159,7 @@ export default function ActivityDock() {
             <button
               onClick={(e) => { e.stopPropagation(); nav.stop(); }}
               aria-label="Akhiri navigasi"
-              className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
+              className="shrink-0 bg-white/10 hover:bg-white/10 rounded-full p-2 active:scale-90 transition"
             >
               <X size={16} />
             </button>
@@ -187,7 +187,7 @@ export default function ActivityDock() {
             <button
               onClick={(e) => { e.stopPropagation(); pantau.stop(); }}
               aria-label="Hentikan berbagi"
-              className="shrink-0 bg-[#0E1C17]/10 hover:bg-[#0E1C17]/20 rounded-full p-2 active:scale-90 transition"
+              className="shrink-0 bg-white/10 hover:bg-white/10 rounded-full p-2 active:scale-90 transition"
             >
               <Square size={16} />
             </button>

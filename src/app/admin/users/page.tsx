@@ -10,20 +10,20 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-2xl font-bold text-white mb-1">Pengguna</h1>
+      <h1 className="display-title text-2xl text-white mb-1">Pengguna</h1>
       <p className="text-sm text-slate-400 mb-6">Total {profiles?.length || 0} pengguna terdaftar.</p>
 
       <div className="space-y-2">
         {profiles?.map((p) => (
           <div key={p.id} className="bg-[#0E1C17] rounded-xl p-4 shadow-sm flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.role === "admin" ? "bg-purple-100 text-purple-700" : "bg-[#122019] text-slate-400"}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.role === "admin" ? "bg-purple-400/15 text-purple-700" : "bg-[#122019] text-slate-400"}`}>
               {p.role === "admin" ? <Shield size={18} /> : <User size={18} />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-semibold text-white truncate">{p.full_name || "-"}</p>
                 {p.role === "admin" && (
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Admin</span>
+                  <span className="text-xs bg-purple-400/15 text-purple-700 px-2 py-0.5 rounded-full">Admin</span>
                 )}
               </div>
               {p.school && <p className="text-xs text-slate-400 truncate">{p.school}</p>}

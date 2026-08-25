@@ -44,13 +44,13 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+    <div className="min-h-screen bg-[#071310]">
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
-        <Link href="/catat" className="inline-flex items-center gap-1 text-sm text-orange-700 mb-4">
+        <Link href="/catat" className="inline-flex items-center gap-1 text-sm text-orange-300 mb-4">
           <ArrowLeft size={16} /> Kembali
         </Link>
 
-        <h1 className="text-2xl font-bold text-white mb-1">Riwayat Perjalanan</h1>
+        <h1 className="display-title text-2xl text-white mb-1">Riwayat Perjalanan</h1>
         <p className="text-sm text-slate-400 mb-5">{rides.length} perjalanan tercatat</p>
 
         {rides.length === 0 ? (

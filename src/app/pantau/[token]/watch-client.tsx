@@ -56,7 +56,7 @@ export default function WatchClient({ token }: { token: string }) {
   const speedKmh = typeof data?.speed === "number" && data.speed >= 0 ? (data.speed * 3.6) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white">
+    <div className="min-h-screen bg-[#071310]">
       <div className="px-4 pt-6 pb-10 max-w-md mx-auto">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-extrabold">B</div>
@@ -85,7 +85,7 @@ export default function WatchClient({ token }: { token: string }) {
                   </p>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 flex-shrink-0 ${
-                  ended ? "bg-[#122019] text-slate-400" : stale ? "bg-amber-100 text-amber-300" : "bg-green-100 text-lime-300"
+                  ended ? "bg-[#122019] text-slate-400" : stale ? "bg-amber-400/15 text-amber-300" : "bg-lime-400/15 text-lime-300"
                 }`}>
                   {ended ? <CheckCircle2 size={14} /> : stale ? <WifiOff size={14} /> : <Wifi size={14} />}
                   {ended ? "Selesai" : stale ? "Terputus" : "Live"}

@@ -24,7 +24,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pb-8">
+    <div className="min-h-screen bg-[#071310] pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
         <Link href="/edukasi" className="inline-flex items-center gap-1 text-sm text-lime-300 font-medium mb-4">
           <ArrowLeft size={16} /> Kembali ke daftar
@@ -32,7 +32,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
 
         <div className="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-3xl p-5 shadow-lg mb-5">
           <BookOpen size={28} className="mb-3 opacity-90" />
-          <h1 className="text-2xl font-extrabold leading-tight">{module.title}</h1>
+          <h1 className="display-title text-2xl text-white leading-tight">{module.title}</h1>
           <p className="text-sm opacity-90 italic mt-1">{module.summary}</p>
         </div>
 

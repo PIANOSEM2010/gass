@@ -33,7 +33,7 @@ export default function LupaPasswordPage() {
 
       {sent ? (
         <div className="bg-white rounded-xl p-6 shadow-sm text-center space-y-3">
-          <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto text-2xl">✓</div>
+          <div className="w-14 h-14 rounded-full bg-lime-400/15 text-green-700 flex items-center justify-center mx-auto text-2xl">✓</div>
           <p className="text-gray-800 font-medium">Cek emailmu</p>
           <p className="text-sm text-gray-600">
             Jika <span className="font-medium">{email}</span> terdaftar, kami sudah mengirim link untuk mengatur ulang password. Cek juga folder spam.
@@ -59,7 +59,7 @@ export default function LupaPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400"
+            className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:bg-white/15"
           >
             {loading ? "Mengirim..." : "Kirim Link Reset"}
           </button>

@@ -21,7 +21,7 @@ export default async function AdminZonaPage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-2xl font-bold text-white mb-1">Zona Rawan Kecelakaan</h1>
+      <h1 className="display-title text-2xl text-white mb-1">Zona Rawan Kecelakaan</h1>
       <p className="text-sm text-slate-400 mb-6">
         Tandai area rawan kecelakaan, potensi rawan, dan area berbahaya bagi pesepeda. Zona yang ditambahkan langsung tampil di peta publik.
       </p>

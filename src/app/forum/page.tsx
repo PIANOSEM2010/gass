@@ -30,15 +30,15 @@ export default async function ForumPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pb-8">
+    <div className="min-h-screen bg-[#071310] pb-8">
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header gradient */}
-        <div className="bg-gradient-to-br from-violet-600 to-purple-700 text-white rounded-3xl p-5 shadow-lg mb-5">
+        <div className="rounded-2xl border border-violet-400/20 bg-violet-400/8 text-white p-5 mb-5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 rounded-2xl bg-[#0E1C17]/20 flex items-center justify-center flex-shrink-0"><MessageSquare size={24} /></div>
+              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0"><MessageSquare size={24} /></div>
               <div className="min-w-0">
-                <h1 className="text-xl font-extrabold leading-none">Forum</h1>
+                <h1 className="display-title text-xl text-white leading-none">Forum</h1>
                 <p className="text-xs opacity-90 mt-1">Cerita & diskusi pesepeda Bulungan</p>
               </div>
             </div>
@@ -79,7 +79,7 @@ export default async function ForumPage() {
                 <p className="text-sm text-slate-400 line-clamp-2 mb-3">{post.body}</p>
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0"><User size={12} /></span>
+                    <span className="w-6 h-6 rounded-full bg-purple-400/15 text-purple-600 flex items-center justify-center flex-shrink-0"><User size={12} /></span>
                     <span className="font-medium">{nameMap.get(post.user_id) || "Anonim"}</span>
                   </div>
                   <div className="flex items-center gap-3">

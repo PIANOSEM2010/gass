@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { IkonGowes, IkonTrofi, IkonSos } from "@/components/bug-icons";
 import KartuAktivitas, { type Aktivitas } from "@/components/umpan-kartu";
 import BarisStory, { type Story } from "@/components/story-baris";
+import GeserFitur from "@/components/geser-fitur";
 import { type Titik } from "@/components/jejak-rute";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +110,8 @@ export default async function Umpan() {
       </div>
 
       <div className="max-w-md mx-auto">
+        <GeserFitur />
+
         <BarisStory stories={daftarStory} masuk={!!user} idSaya={user?.id || null}
           namaSaya={String(user?.user_metadata?.full_name || "")} />
 

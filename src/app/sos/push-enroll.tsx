@@ -169,7 +169,7 @@ export default function PushEnroll() {
   return (
     <div className="bg-[#0E1C17] border border-white/10 rounded-xl p-4">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-red-400/15 flex items-center justify-center flex-shrink-0">
           <Bell size={18} className="text-red-600" />
         </div>
         <div className="flex-1">
@@ -180,7 +180,7 @@ export default function PushEnroll() {
           <button
             onClick={enable}
             disabled={state === "subscribing"}
-            className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 disabled:bg-gray-400"
+            className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 disabled:bg-white/15"
           >
             {state === "subscribing" ? (<><Loader2 size={16} className="animate-spin" /> Mengaktifkan...</>) : "Aktifkan"}
           </button>

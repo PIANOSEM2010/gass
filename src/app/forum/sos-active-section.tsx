@@ -102,7 +102,7 @@ export default function SosActiveSection() {
       <div className="flex items-center gap-2 mb-3">
         <Siren size={22} className="text-red-600 animate-pulse" />
         <h2 className="text-lg font-bold text-red-300">SOS Aktif</h2>
-        <span className="text-xs bg-red-100 text-red-300 px-2 py-0.5 rounded-full font-medium">
+        <span className="text-xs bg-red-400/15 text-red-300 px-2 py-0.5 rounded-full font-medium">
           {sosList.length} darurat
         </span>
       </div>
@@ -113,7 +113,7 @@ export default function SosActiveSection() {
           className="bg-[#0E1C17] rounded-xl shadow-md border-l-4 border-red-600 p-4"
         >
           <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-red-400/15 flex items-center justify-center flex-shrink-0">
               <Siren size={20} className="text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
