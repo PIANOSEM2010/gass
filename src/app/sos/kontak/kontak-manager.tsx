@@ -130,7 +130,7 @@ export default function KontakManager({
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full bg-green-600 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2"
+          className="w-full bg-green-600 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2 teks-terang"
         >
           <Plus size={18} />
           Tambah Kontak
@@ -183,7 +183,7 @@ export default function KontakManager({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-white/15"
+              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-white/15 teks-terang"
             >
               {saving ? "Menyimpan..." : "Simpan"}
             </button>

@@ -100,7 +100,7 @@ export default function ActivityDock() {
             onClick={() => navigate("/catat")}
             className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-[var(--kartu)]/5 transition-colors"
           >
-            <span className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white ${gowesTracking ? "bg-gradient-to-br from-green-500 to-emerald-600" : gowesPaused ? "bg-gradient-to-br from-slate-500 to-slate-700" : "bg-gradient-to-br from-orange-500 to-amber-600"}`}>
+            <span className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white ${gowesTracking ? "bg-gradient-to-br from-green-500 to-emerald-600" : gowesPaused ? "bg-gradient-to-br from-slate-500 to-slate-700" : "bg-gradient-to-br from-orange-500 to-amber-600"} teks-terang`}>
               {gowesTracking ? (
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--kartu)] opacity-75" />
@@ -144,7 +144,7 @@ export default function ActivityDock() {
             onClick={() => navigate("/peta")}
             className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-[var(--kartu)]/5 transition-colors"
           >
-            <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-white">
+            <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-white teks-terang">
               {maneuverIcon(nav.navInfo?.type ?? 11, 18)}
             </span>
             <div className="flex-1 min-w-0">
@@ -171,7 +171,7 @@ export default function ActivityDock() {
             onClick={() => navigate("/pantau")}
             className="flex items-center gap-3 px-3 py-2.5 text-white cursor-pointer active:bg-[var(--kartu)]/5 transition-colors"
           >
-            <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white relative">
+            <span className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white relative teks-terang">
               <Radio size={16} />
               <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-300 opacity-75" />

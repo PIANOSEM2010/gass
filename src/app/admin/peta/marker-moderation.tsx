@@ -54,7 +54,7 @@ export default function MarkerModeration({ initialMarkers }: { initialMarkers: M
     <div>
       <div className="flex gap-2 mb-4">
         <button onClick={() => setFilter("pending")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "pending" ? "bg-yellow-500 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"}`}>Pending ({pendingCount})</button>
-        <button onClick={() => setFilter("approved")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "approved" ? "bg-green-600 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"}`}>Disetujui ({markers.length - pendingCount})</button>
+        <button onClick={() => setFilter("approved")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "approved" ? "bg-green-600 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"} teks-terang`}>Disetujui ({markers.length - pendingCount})</button>
         <button onClick={() => setFilter("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === "all" ? "bg-gray-900 text-white" : "bg-[var(--kartu)] text-slate-200 border border-white/15"}`}>Semua ({markers.length})</button>
       </div>
       {filtered.length === 0 ? (
@@ -79,7 +79,7 @@ export default function MarkerModeration({ initialMarkers }: { initialMarkers: M
                 </div>
                 <div className="flex gap-2">
                   {!m.approved ? (
-                    <button onClick={() => approve(m.id)} className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1"><Check size={14} /> Setujui</button>
+                    <button onClick={() => approve(m.id)} className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1 teks-terang"><Check size={14} /> Setujui</button>
                   ) : (
                     <button onClick={() => unapprove(m.id)} className="flex-1 bg-yellow-500 text-white py-1.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1"><X size={14} /> Sembunyikan</button>
                   )}

@@ -108,14 +108,14 @@ export default function InstallPrompt() {
             href="/bug.apk"
             download
             onClick={close}
-            className="bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 flex-shrink-0"
+            className="bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 flex-shrink-0 teks-terang"
           >
             <Download size={16} /> Unduh
           </a>
         ) : !iosHint && (
           <button
             onClick={install}
-            className="bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 flex-shrink-0"
+            className="bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 flex-shrink-0 teks-terang"
           >
             <Download size={16} /> Pasang
           </button>

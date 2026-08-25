@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="px-4 pt-12 max-w-md mx-auto text-center">
         <h1 className="text-2xl font-bold text-red-300 mb-2">Akses Ditolak</h1>
         <p className="text-slate-400 mb-6">Halaman ini khusus untuk admin BUG.</p>
-        <Link href="/" className="inline-block bg-green-600 text-white px-5 py-2 rounded-lg font-medium">
+        <Link href="/" className="inline-block bg-green-600 text-white px-5 py-2 rounded-lg font-medium teks-terang">
           Kembali ke Beranda
         </Link>
       </div>

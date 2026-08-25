@@ -23,9 +23,11 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
     .eq("activity_id", id).order("created_at", { ascending: true });
 
   const idOrang = [...new Set([String(a.user_id), ...(komentar || []).map((k) => String(k.user_id))])];
-  const { data: profil } = await supabase.from("profiles").select("id,full_name").in("id", idOrang);
+  const { data: profil } = await supabase.from("profiles").select("id,full_name,avatar_url").in("id", idOrang);
   const nama = (uid: string) =>
     (profil || []).find((p) => String(p.id) === uid)?.full_name || "Goweser";
+  const foto = (uid: string) =>
+    ((profil || []).find((p) => String(p.id) === uid)?.avatar_url as string) || null;
 
   return (
     <div className="min-h-screen bg-[var(--latar)] pb-24">
@@ -34,7 +36,7 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
 
         <div className="mt-4 rounded-2xl border border-lime-400/12 bg-[var(--kartu)] p-4">
           <div className="flex items-center gap-3">
-            <Avatar nama={nama(String(a.user_id))} />
+            <Avatar nama={nama(String(a.user_id))} foto={foto(String(a.user_id))} />
             <div>
               <p className="display-title text-[15px] text-white">{nama(String(a.user_id))}</p>
               <p className="text-[11px] text-slate-500">
@@ -58,7 +60,7 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
           {(komentar || []).length === 0 && <p className="text-xs text-slate-600">Belum ada komentar.</p>}
           {(komentar || []).map((k) => (
             <div key={String(k.id)} className="flex gap-2.5 rounded-xl bg-[var(--kartu)] border border-white/5 p-3">
-              <Avatar nama={nama(String(k.user_id))} ukuran={28} />
+              <Avatar nama={nama(String(k.user_id))} ukuran={28} foto={foto(String(k.user_id))} />
               <div className="min-w-0">
                 <p className="text-[12px] text-slate-200 font-semibold">{nama(String(k.user_id))}</p>
                 <p className="text-[12px] text-slate-400 break-words">{String(k.body)}</p>

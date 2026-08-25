@@ -180,7 +180,7 @@ export default function PushEnroll() {
           <button
             onClick={enable}
             disabled={state === "subscribing"}
-            className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 disabled:bg-white/15"
+            className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 disabled:bg-white/15 teks-terang"
           >
             {state === "subscribing" ? (<><Loader2 size={16} className="animate-spin" /> Mengaktifkan...</>) : "Aktifkan"}
           </button>

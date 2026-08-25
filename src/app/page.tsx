@@ -10,7 +10,7 @@ import { type Titik } from "@/components/jejak-rute";
 
 export const dynamic = "force-dynamic";
 
-type BarisProfil = { id: string; full_name: string | null; organization: string | null };
+type BarisProfil = { id: string; full_name: string | null; organization: string | null; avatar_url: string | null };
 
 export default async function Umpan() {
   const supabase = await createClient();
@@ -31,7 +31,7 @@ export default async function Umpan() {
 
   const [{ data: profil }, { data: kudos }, { data: komentar }, { data: story }] = await Promise.all([
     idPengguna.length
-      ? supabase.from("profiles").select("id,full_name,organization").in("id", idPengguna)
+      ? supabase.from("profiles").select("id,full_name,organization,avatar_url").in("id", idPengguna)
       : Promise.resolve({ data: [] as BarisProfil[] }),
     idAktivitas.length
       ? supabase.from("activity_kudos").select("activity_id,user_id").in("activity_id", idAktivitas)
@@ -52,10 +52,11 @@ export default async function Umpan() {
     ...(story || []).map((s) => String(s.user_id)),
   ].filter((id) => !namaProfil.has(id));
   if (idTambahan.length) {
-    const { data: p2 } = await supabase.from("profiles").select("id,full_name,organization").in("id", [...new Set(idTambahan)]);
+    const { data: p2 } = await supabase.from("profiles").select("id,full_name,organization,avatar_url").in("id", [...new Set(idTambahan)]);
     for (const p of (p2 || []) as BarisProfil[]) namaProfil.set(String(p.id), p);
   }
   const nama = (id: string) => namaProfil.get(id)?.full_name || "Goweser";
+  const fotoDari = (id: string) => namaProfil.get(id)?.avatar_url || null;
 
   const aktivitas: Aktivitas[] = daftar.map((r) => {
     const id = String(r.id);
@@ -76,13 +77,14 @@ export default async function Umpan() {
       sudahKudos: !!user && k.some((x) => String(x.user_id) === user.id),
       komentar: c.length,
       komentarTeratas: c.length ? { nama: nama(String(c[0].user_id)), body: c[0].body } : null,
+      foto: p?.avatar_url || null,
     };
   });
 
   const daftarStory: Story[] = (story || []).map((s) => ({
     id: String(s.id), user_id: String(s.user_id), nama: nama(String(s.user_id)),
     image_url: String(s.image_url), caption: (s.caption as string) || null,
-    created_at: String(s.created_at),
+    created_at: String(s.created_at), foto: fotoDari(String(s.user_id)),
   }));
 
   return (
@@ -143,7 +145,7 @@ export default async function Umpan() {
       {/* Tombol aksi utama: selalu terlihat */}
       <Link href="/catat"
         className="fixed right-4 z-[1250] flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-400 to-emerald-500 pl-4 pr-5 py-3 shadow-lg shadow-emerald-600/30 active:scale-95 transition-transform"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 70px)" }}>
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)" }}>
         <IkonCatatGowes size={20} aksen="#062014" />
         <span className="display-title text-sm tracking-wide text-slate-950">CATAT GOWES</span>
       </Link>

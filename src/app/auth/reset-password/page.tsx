@@ -118,7 +118,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:bg-white/15"
+            className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:bg-white/15 teks-terang"
           >
             {loading ? "Menyimpan..." : "Simpan Password Baru"}
           </button>

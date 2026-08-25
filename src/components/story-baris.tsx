@@ -3,9 +3,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, warnaDari } from "@/components/umpan-kartu";
+import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 
-export type Story = { id: string; user_id: string; nama: string; image_url: string; caption: string | null; created_at: string };
-type Grup = { user_id: string; nama: string; items: Story[] };
+export type Story = { id: string; user_id: string; nama: string; image_url: string; caption: string | null; created_at: string; foto?: string | null };
+type Grup = { user_id: string; nama: string; foto: string | null; items: Story[] };
 
 export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
   stories: Story[]; masuk: boolean; namaSaya: string; idSaya: string | null;
@@ -21,7 +22,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
   for (const s of stories) {
     const g = grup.find((x) => x.user_id === s.user_id);
     if (g) g.items.push(s);
-    else grup.push({ user_id: s.user_id, nama: s.nama, items: [s] });
+    else grup.push({ user_id: s.user_id, nama: s.nama, foto: s.foto || null, items: [s] });
   }
   grup.sort((a, b) => (a.user_id === idSaya ? -1 : b.user_id === idSaya ? 1 : 0));
 
@@ -29,15 +30,18 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
-    if (f.size > 5 * 1024 * 1024) { setPesan("Foto terlalu besar (maksimal 5 MB)."); return; }
+    if (f.size > 15 * 1024 * 1024) { setPesan("Foto terlalu besar (maksimal 15 MB)."); return; }
     setUnggah(true); setPesan("");
     try {
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
       if (!user) throw new Error("Kamu perlu masuk dulu.");
-      const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-      const nama = `${user.id}/${Date.now()}.${ext}`;
-      const { error: e1 } = await sb.storage.from("story").upload(nama, f, { upsert: false });
+      // Dikecilkan lebih dulu supaya story cepat terbuka di ponsel.
+      const kecil = await kecilkanGambar(f, 1280, 0.82);
+      const nama = `${user.id}/${Date.now()}.jpg`;
+      const { error: e1 } = await sb.storage.from("story").upload(nama, kecil, {
+        upsert: false, contentType: "image/jpeg", cacheControl: "31536000",
+      });
       if (e1) throw e1;
       const { data: pub } = sb.storage.from("story").getPublicUrl(nama);
       const { error: e2 } = await sb.from("stories").insert({ user_id: user.id, image_url: pub.publicUrl });
@@ -65,7 +69,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
         {grup.map((g, i) => (
           <button key={g.user_id} onClick={() => setBuka(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
             <span className="rounded-full p-[2px]" style={{ background: `linear-gradient(135deg, ${warnaDari(g.nama)}, #4ADE80)` }}>
-              <span className="block rounded-full p-[2px] bg-[var(--latar)]"><Avatar nama={g.nama} ukuran={48} /></span>
+              <span className="block rounded-full p-[2px] bg-[var(--latar)]"><Avatar nama={g.nama} ukuran={48} foto={g.foto} /></span>
             </span>
             <span className="eyebrow !text-[9px] text-slate-500 max-w-14 truncate">{g.nama.split(" ")[0]}</span>
           </button>
@@ -88,17 +92,21 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
 function PenampilStory({ grup, tutup, lanjut }: { grup: Grup; tutup: () => void; lanjut: () => void }) {
   const [ke, setKe] = useState(0);
   const [maju, setMaju] = useState(0);
+  // Batang kemajuan hanya berjalan setelah fotonya benar-benar tampil.
+  const [siap, setSiap] = useState(false);
+  useEffect(() => { setSiap(false); }, [ke]);
 
   const berikutnya = useCallback(() => {
     setKe((v) => { if (v + 1 < grup.items.length) { setMaju(0); return v + 1; } lanjut(); return v; });
   }, [grup.items.length, lanjut]);
 
   useEffect(() => {
+    if (!siap) return;
     const t = setInterval(() => {
       setMaju((m) => { if (m >= 100) { berikutnya(); return 0; } return m + 2; });
     }, 100);
     return () => clearInterval(t);
-  }, [berikutnya]);
+  }, [berikutnya, siap]);
 
   const s = grup.items[ke];
   return (
@@ -112,13 +120,24 @@ function PenampilStory({ grup, tutup, lanjut }: { grup: Grup; tutup: () => void;
         ))}
       </div>
       <div className="flex items-center gap-2 px-4 pb-2">
-        <Avatar nama={grup.nama} ukuran={30} />
+        <Avatar nama={grup.nama} ukuran={30} foto={grup.foto} />
         <p className="display-title text-sm text-white">{grup.nama}</p>
         <button onClick={(e) => { e.stopPropagation(); tutup(); }} className="ml-auto text-white/70 text-xl leading-none px-2" aria-label="Tutup">×</button>
       </div>
-      <div className="flex-1 flex items-center justify-center px-2 pb-6">
+      <div className="relative flex-1 flex items-center justify-center px-2 pb-6">
+        {!siap && (
+          <span className="absolute w-8 h-8 rounded-full border-2 border-lime-300 border-t-transparent animate-spin" />
+        )}
+        {/* Foto berikutnya dimuat lebih dulu di latar agar perpindahan mulus */}
+        {grup.items[ke + 1] && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={grup.items[ke + 1].image_url} alt="" className="hidden" />
+        )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={s.image_url} alt={s.caption || "Story"} className="max-h-full max-w-full rounded-xl object-contain" />
+        <img src={s.image_url} alt={s.caption || "Story"} loading="eager" decoding="async"
+          onLoad={() => setSiap(true)} onError={() => setSiap(true)}
+          className="max-h-full max-w-full rounded-xl object-contain transition-opacity duration-300"
+          style={{ opacity: siap ? 1 : 0 }} />
       </div>
       {s.caption && <p className="px-5 pb-8 text-center text-sm text-white/90">{s.caption}</p>}
     </div>

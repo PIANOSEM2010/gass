@@ -180,7 +180,7 @@ export default function LandmarkManager({ initialLandmarks }: { initialLandmarks
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15"
+          className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15 teks-terang"
         >
           {saving ? "Menyimpan..." : "Simpan Landmark"}
         </button>

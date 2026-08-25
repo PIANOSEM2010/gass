@@ -163,7 +163,7 @@ export default function SosChatBox({ sosLogId }: { sosLogId: string }) {
         <button
           onClick={sendMessage}
           disabled={!input.trim() || sending}
-          className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
+          className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-1 teks-terang"
         >
           <Send size={12} />
         </button>

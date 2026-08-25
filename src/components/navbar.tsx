@@ -141,7 +141,7 @@ export default function Navbar() {
         {/* SOS: tombol tengah, paling besar, menonjol ke atas.
             Cincin pemisahnya kini dibentuk oleh soket meniskus, bukan border. */}
         <Link href="/sos" prefetch={false} onClick={() => startNavigation("/sos")} className="absolute left-1/2 -translate-x-1/2 -top-5 flex flex-col items-center z-10">
-          <span className="sos-pulse w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+          <span className="sos-pulse w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform teks-terang">
             <IkonSos size={25} />
           </span>
           <span className={`eyebrow mt-0.5 !text-[9px] ${pathname === "/sos" ? "text-red-400" : "text-red-500"}`}>SOS</span>

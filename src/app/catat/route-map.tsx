@@ -32,15 +32,27 @@ function FitBounds({ path }: { path: Pt[] }) {
 }
 
 export default function RouteMap({ path }: { path: Pt[] }) {
-  const center: [number, number] = path.length ? [path[0].lat, path[0].lng] : [2.845, 117.368];
-  const line = path.map((p) => [p.lat, p.lng] as [number, number]);
+  const aman = Array.isArray(path)
+    ? path.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng))
+    : [];
+  // Jejak GPS satu jam bisa berisi ribuan titik. Menggambar semuanya sebagai
+  // satu garis Leaflet membuat peramban ponsel kehabisan memori dan halaman
+  // gagal dimuat, jadi titiknya diringkas dulu ke paling banyak 400 - bentuk
+  // rutenya tidak berubah pada tingkat zoom mana pun.
+  const langkah = Math.max(1, Math.ceil(aman.length / 400));
+  const ringkas = aman.filter((_, i) => i % langkah === 0);
+  if (aman.length && ringkas[ringkas.length - 1] !== aman[aman.length - 1]) {
+    ringkas.push(aman[aman.length - 1]);
+  }
+  const center: [number, number] = ringkas.length ? [ringkas[0].lat, ringkas[0].lng] : [2.845, 117.368];
+  const line = ringkas.map((p) => [p.lat, p.lng] as [number, number]);
   return (
     <MapContainer center={center} zoom={14} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
       <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {line.length > 1 && <Polyline positions={line} pathOptions={{ color: "#fb923c", weight: 5, opacity: 0.9 }} />}
       {line.length > 0 && <Marker position={line[0]} icon={startIcon} />}
       {line.length > 1 && <Marker position={line[line.length - 1]} icon={endIcon} />}
-      <FitBounds path={path} />
+      <FitBounds path={ringkas} />
     </MapContainer>
   );
 }

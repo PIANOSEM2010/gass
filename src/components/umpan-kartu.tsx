@@ -20,6 +20,7 @@ export type Aktivitas = {
   sudahKudos: boolean;
   komentar: number;
   komentarTeratas: { nama: string; body: string } | null;
+  foto: string | null;
 };
 
 const CINCIN = ["#B4FF3A", "#4ADE80", "#FBBF24", "#A78BFA", "#38BDF8", "#FB7185"];
@@ -29,8 +30,16 @@ export function warnaDari(teks: string) {
   return CINCIN[n % CINCIN.length];
 }
 
-export function Avatar({ nama, ukuran = 40 }: { nama: string; ukuran?: number }) {
+export function Avatar({ nama, ukuran = 40, foto = null }: { nama: string; ukuran?: number; foto?: string | null }) {
   const w = warnaDari(nama || "?");
+  if (foto) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={foto} alt={nama} width={ukuran} height={ukuran} loading="lazy" decoding="async"
+        className="rounded-full object-cover flex-shrink-0"
+        style={{ width: ukuran, height: ukuran, border: `2px solid ${w}` }} />
+    );
+  }
   return (
     <span className="inline-flex items-center justify-center rounded-full flex-shrink-0 display-title"
       style={{
@@ -87,7 +96,7 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
   return (
     <article className="kartu-bug cahaya-sudut">
       <header className="flex items-center gap-3 px-4 pt-4">
-        <Avatar nama={a.nama} />
+        <Avatar nama={a.nama} foto={a.foto} />
         <div className="min-w-0 flex-1">
           <p className="display-title text-[15px] text-white truncate">{a.nama}</p>
           <p className="text-[11px] text-slate-500 truncate">

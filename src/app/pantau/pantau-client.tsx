@@ -34,7 +34,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/sos" className="inline-flex items-center gap-1 text-sm text-teal-700 mb-4"><ArrowLeft size={16} /> Kembali</Link>
 
-        <div className="relative overflow-hidden rounded-3xl p-5 border border-teal-400/20 bg-[var(--relung)] text-white mb-4 speed-lines">
+        <div className="relative overflow-hidden rounded-3xl p-5 border border-teal-400/25 text-white mb-4 speed-lines di-atas-gelap" style={{ background: "linear-gradient(150deg,#0C2A28 0%,#08201C 70%)" }}>
           <div className="absolute right-4 top-0 h-full w-5 bg-gradient-to-b from-cyan-300 to-teal-400 opacity-70" style={{ transform: "skewX(-16deg)" }} />
           <div className="flex items-center gap-3 relative">
             <div className="w-12 h-12 rounded-2xl bg-cyan-300 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/20"><Radio size={26} strokeWidth={2.4} /></div>
@@ -55,7 +55,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
               <p className="flex items-start gap-2"><EyeOff size={18} className="text-amber-600 flex-shrink-0 mt-0.5" /> Yang menghentikan GPS hanya jika kamu keluar dari aplikasi/browser sepenuhnya. Selama BUG terbuka, lokasi terus terkirim.</p>
             </div>
             <button onClick={() => start(userId, fullName)} disabled={starting}
-              className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow disabled:from-gray-400 disabled:to-gray-400 active:scale-95 transition-transform">
+              className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-4 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow disabled:from-gray-400 disabled:to-gray-400 active:scale-95 transition-transform teks-terang">
               {starting ? <><Loader2 size={20} className="animate-spin" /> Memulai...</> : <><Radio size={20} /> Mulai Berbagi Lokasi</>}
             </button>
           </div>
@@ -76,7 +76,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
                 <span className="flex-1 min-w-0 text-xs text-slate-200 truncate">{shareUrl}</span>
                 <button onClick={copy} className="text-teal-600 flex-shrink-0" title="Salin">{copied ? <Check size={18} /> : <Copy size={18} />}</button>
               </div>
-              <button onClick={share} className="w-full mt-3 bg-teal-600 text-white py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              <button onClick={share} className="w-full mt-3 bg-teal-600 text-white py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform teks-terang">
                 <Share2 size={18} /> Bagikan Link
               </button>
             </div>
@@ -103,7 +103,7 @@ export default function PantauClient({ userId, fullName }: { userId: string; ful
               Kamu bebas membuka fitur lain, misalnya Catat Gowes atau Peta. Berbagi lokasi tetap berjalan, dan pop-up kecil akan tampil sebagai pengingat.
             </div>
 
-            <button onClick={stop} className="w-full bg-red-600 text-white py-3.5 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow active:scale-95 transition-transform">
+            <button onClick={stop} className="w-full bg-red-600 text-white py-3.5 rounded-2xl display-title text-xl flex items-center justify-center gap-2 shadow active:scale-95 transition-transform teks-terang">
               <Square size={20} /> Hentikan Berbagi
             </button>
             <p className="text-xs text-slate-500 text-center">Layar dijaga tetap menyala selama berbagi aktif.</p>

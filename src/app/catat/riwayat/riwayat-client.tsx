@@ -58,7 +58,7 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
           <div className="text-center py-16 text-slate-500">
             <Bike size={40} className="mx-auto mb-3 opacity-40" />
             <p className="text-sm">Belum ada perjalanan. Mulai gowes pertamamu!</p>
-            <Link href="/catat" className="inline-block mt-4 bg-green-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm">
+            <Link href="/catat" className="inline-block mt-4 bg-green-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm teks-terang">
               Catat Perjalanan
             </Link>
           </div>

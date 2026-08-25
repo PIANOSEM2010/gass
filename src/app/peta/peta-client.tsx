@@ -848,7 +848,7 @@ export default function PetaClient({
     <div className="relative h-[calc(100vh-4rem)] -mb-20 w-full">
       {/* Banner navigasi */}
       {navigating && navInfo && (
-        <div className="absolute top-2 left-2 right-2 z-[1100] bg-gradient-to-r from-purple-600 to-violet-700 text-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3">
+        <div className="absolute top-2 left-2 right-2 z-[1100] bg-gradient-to-r from-purple-600 to-violet-700 text-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3 teks-terang">
           <div className="flex-shrink-0">{maneuverIcon(navInfo.type, 32)}</div>
           <div className="flex-1 min-w-0">
             <p className="font-bold leading-tight">{navInfo.instruction}</p>
@@ -940,13 +940,13 @@ export default function PetaClient({
 
       {/* Mode indicator banner */}
       {mode === "route-a" && (
-        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-purple-600 text-white px-3 py-2 rounded-lg shadow text-sm font-medium flex items-center justify-between">
+        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-purple-600 text-white px-3 py-2 rounded-lg shadow text-sm font-medium flex items-center justify-between teks-terang">
           <span>📍 Tap titik <strong>ASAL</strong> di peta</span>
           <button onClick={() => setMode("view")}><X size={16} /></button>
         </div>
       )}
       {mode === "route-b" && (
-        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-sky-600 text-white px-3 py-2 rounded-lg shadow text-sm font-medium flex items-center justify-between">
+        <div className="absolute top-[6.5rem] left-2 right-2 z-[1000] bg-sky-600 text-white px-3 py-2 rounded-lg shadow text-sm font-medium flex items-center justify-between teks-terang">
           <span>🚴 Dari <strong>lokasimu</strong>, tap titik <strong>TUJUAN</strong> di peta</span>
           <button onClick={() => setMode("view")}><X size={16} /></button>
         </div>
@@ -958,10 +958,10 @@ export default function PetaClient({
         </div>
       )}
       {error && (
-        <div className="absolute top-[6.5rem] left-2 right-2 z-[1200] bg-red-600 text-white text-sm px-3 py-2 rounded-lg shadow">{error}</div>
+        <div className="absolute top-[6.5rem] left-2 right-2 z-[1200] bg-red-600 text-white text-sm px-3 py-2 rounded-lg shadow teks-terang">{error}</div>
       )}
       {success && (
-        <div className="absolute top-[6.5rem] left-2 right-2 z-[1200] bg-green-600 text-white text-sm px-3 py-2 rounded-lg shadow">{success}</div>
+        <div className="absolute top-[6.5rem] left-2 right-2 z-[1200] bg-green-600 text-white text-sm px-3 py-2 rounded-lg shadow teks-terang">{success}</div>
       )}
 
       {/* Legenda gabungan (lalu lintas + zona) */}
@@ -1044,7 +1044,7 @@ export default function PetaClient({
           {routeSteps.length > 0 && (
             <button
               onClick={startNavigation}
-              className="w-full mt-3 bg-green-600 text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2"
+              className="w-full mt-3 bg-green-600 text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 teks-terang"
             >
               <Play size={18} /> Mulai Navigasi
             </button>
@@ -1062,7 +1062,7 @@ export default function PetaClient({
           <div className="relative w-full bg-[var(--kartu)] rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center teks-terang">
                   <Sparkles size={18} />
                 </span>
                 <div>
@@ -1138,7 +1138,7 @@ export default function PetaClient({
               {recoRoute && (
                 <button
                   onClick={navigateRecommendation}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-lime-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-lime-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition teks-terang"
                 >
                   <Navigation size={16} /> Mulai
                 </button>
@@ -1158,7 +1158,7 @@ export default function PetaClient({
             onClick={toggleTraffic}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
               showTraffic && tomtomKey ? "bg-rose-600 text-white" : "bg-[var(--kartu)] text-slate-200"
-            }`}
+            } teks-terang`}
             aria-label="Tampilkan insiden jalan"
             title="Insiden & bahaya jalan"
           >
@@ -1168,7 +1168,7 @@ export default function PetaClient({
             onClick={() => setShowLandmarks((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
               showLandmarks ? "bg-indigo-600 text-white" : "bg-[var(--kartu)] text-slate-200"
-            }`}
+            } teks-terang`}
             aria-label="Tampilkan landmark"
             title="Landmark"
           >
@@ -1178,7 +1178,7 @@ export default function PetaClient({
             onClick={() => setShowZones((s) => !s)}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
               showZones ? "bg-orange-500 text-white" : "bg-[var(--kartu)] text-slate-200"
-            }`}
+            } teks-terang`}
             aria-label="Tampilkan zona rawan"
             title="Zona rawan"
           >
@@ -1188,7 +1188,7 @@ export default function PetaClient({
             onClick={handleLocateClick}
             className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-colors ${
               tracking ? (follow ? "bg-blue-600 text-white" : "bg-[var(--kartu)] text-blue-600") : "bg-[var(--kartu)] text-slate-200"
-            }`}
+            } teks-terang`}
             aria-label="Lokasi saya"
             title="Lokasi saya"
           >
@@ -1202,7 +1202,7 @@ export default function PetaClient({
         <div className="absolute bottom-[5.5rem] left-2 right-2 z-[1000]">
           <button
             onClick={stopNavigation}
-            className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg"
+            className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg teks-terang"
           >
             <Square size={18} /> Akhiri Navigasi
           </button>
@@ -1213,7 +1213,7 @@ export default function PetaClient({
             <>
               <button
                 onClick={() => { setShowRecommend(true); if (!recoRoute) generateRecommendation(false); }}
-                className="flex-1 bg-gradient-to-r from-lime-500 to-emerald-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-lime-500 to-emerald-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2 teks-terang"
               >
                 <Sparkles size={16} />
                 Rekomendasi Rute Gowes
@@ -1398,7 +1398,7 @@ export default function PetaClient({
                 </button>
                 <button
                   type="submit" disabled={saving}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-white/15"
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium disabled:bg-white/15 teks-terang"
                 >
                   {saving ? "Mengirim..." : "Kirim"}
                 </button>

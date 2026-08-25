@@ -144,7 +144,7 @@ export default async function DashboardPage() {
       <div className="px-4 pt-6 pb-10 max-w-md mx-auto">
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-slate-600 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
-        <div className="rounded-3xl p-5 bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg mb-4">
+        <div className="rounded-3xl p-5 bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg mb-4 teks-terang">
           <div className="flex items-center gap-3">
             <ShieldCheck size={28} />
             <div>

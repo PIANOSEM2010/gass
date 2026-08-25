@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Camera, Loader2, Check, X } from "lucide-react";
 import { Avatar } from "@/components/umpan-kartu";
+import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 
 // Ubah foto profil dan informasi akun. Foto disimpan di wadah berkas
 // "avatar"; nama serta asal sekolah/instansi disimpan di tabel profiles
@@ -25,15 +26,17 @@ export default function EditProfil({ nama, asal, jenis, fotoUrl }: {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
-    if (f.size > 3 * 1024 * 1024) { setPesan("Foto terlalu besar (maksimal 3 MB)."); return; }
+    if (f.size > 15 * 1024 * 1024) { setPesan("Foto terlalu besar (maksimal 15 MB)."); return; }
     setSibuk(true); setPesan("");
     try {
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
       if (!user) throw new Error("Sesi berakhir. Masuk ulang.");
-      const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-      const berkas = `${user.id}/foto.${ext}`;
-      const { error: e1 } = await sb.storage.from("avatar").upload(berkas, f, { upsert: true });
+      const kecil = await kecilkanGambar(f, 512, 0.85);
+      const berkas = `${user.id}/foto.jpg`;
+      const { error: e1 } = await sb.storage.from("avatar").upload(berkas, kecil, {
+        upsert: true, contentType: "image/jpeg", cacheControl: "31536000",
+      });
       if (e1) throw e1;
       const { data: pub } = sb.storage.from("avatar").getPublicUrl(berkas);
       const url = `${pub.publicUrl}?v=${Date.now()}`;

@@ -434,7 +434,7 @@ export default function CatatClient({
               )}
               <div className="flex gap-2">
                 <button onClick={pause} className="flex-1 border border-white/15 text-slate-200 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"><Pause size={20} /> JEDA</button>
-                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> SELESAI</button>
+                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform teks-terang"><Square size={20} /> SELESAI</button>
               </div>
               <p className="text-xs text-slate-500 text-center">{nativeApp ? "Perekaman tetap berjalan walau layar mati, notifikasi BUG tampil selama merekam." : "Gowes tetap berjalan walau kamu membuka menu lain di BUG. Layar dijaga tetap menyala otomatis, jangan kunci layar selama merekam."}</p>
             </div>
@@ -446,7 +446,7 @@ export default function CatatClient({
               </div>
               <div className="flex gap-2">
                 <button onClick={resume} className="flex-1 bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Play size={20} /> Lanjut</button>
-                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform"><Square size={20} /> SELESAI</button>
+                <button onClick={finish} className="flex-1 bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2 shadow active:scale-95 transition-transform teks-terang"><Square size={20} /> SELESAI</button>
               </div>
               <p className="text-xs text-slate-500 text-center">Perpindahan selama jeda tidak dihitung sebagai jarak gowes.</p>
             </div>

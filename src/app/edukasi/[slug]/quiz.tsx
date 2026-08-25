@@ -376,7 +376,7 @@ export default function ModuleQuiz({
         <p className="eyebrow !text-[9px] text-slate-500 mb-2">Situasi di jalan</p>
         <p className="text-[14px] leading-relaxed text-slate-100">{soal.question}</p>
         <div className="mt-3 rounded-xl bg-[var(--relung)] border border-white/5 py-3">
-          <IlustrasiJalan />
+          <IlustrasiJalan varian={(ke + moduleSlug.length) % 5} />
         </div>
       </div>
 
@@ -425,28 +425,95 @@ export default function ModuleQuiz({
   );
 }
 
-// Ilustrasi marka jalan sederhana: truk, titik buta, dan posisi pesepeda.
-// Digambar sendiri agar sejalan dengan bahasa visual marka jalan BUG.
-function IlustrasiJalan() {
+// Ilustrasi situasi di jalan. Lima varian, dipilih mengikuti nomor soal
+// sehingga tiap soal punya gambarnya sendiri. Semuanya digambar sendiri agar
+// sejalan dengan bahasa visual marka jalan BUG.
+const G = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+
+function Aspal() {
+  return (
+    <>
+      <rect x="0" y="24" width="280" height="20" fill="rgba(148,163,184,.10)" />
+      <line x1="0" y1="24" x2="280" y2="24" stroke="rgba(148,163,184,.35)" strokeWidth="1" />
+      <line x1="0" y1="44" x2="280" y2="44" stroke="rgba(148,163,184,.35)" strokeWidth="1" />
+      <line x1="0" y1="34" x2="280" y2="34" stroke="#FFB020" strokeWidth="1.5" strokeDasharray="12 10" opacity=".7" />
+    </>
+  );
+}
+
+function Sepeda({ x = 96, y = 38, warna = "#B4FF3A" }: { x?: number; y?: number; warna?: string }) {
+  return (
+    <g stroke={warna} strokeWidth="1.8" fill="none">
+      <circle cx={x} cy={y} r="6" />
+      <circle cx={x + 18} cy={y} r="6" />
+      <path d={`M${x} ${y} L${x + 10} ${y - 8} L${x + 18} ${y} M${x + 10} ${y - 8} L${x + 8} ${y}`} />
+      <circle cx={x + 12} cy={y - 13} r="2.6" />
+    </g>
+  );
+}
+
+function IlustrasiJalan({ varian = 0 }: { varian?: number }) {
   return (
     <svg viewBox="0 0 280 62" className="w-full h-[62px]" aria-hidden="true">
-      <rect x="0" y="24" width="280" height="20" fill="rgba(255,255,255,.03)" />
-      <line x1="0" y1="24" x2="280" y2="24" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
-      <line x1="0" y1="44" x2="280" y2="44" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
-      <line x1="0" y1="34" x2="280" y2="34" stroke="#FFB020" strokeWidth="1.5" strokeDasharray="12 10" opacity=".7" />
-      {/* zona titik buta */}
-      <rect x="150" y="16" width="70" height="36" fill="rgba(248,113,113,.10)" stroke="rgba(248,113,113,.35)" strokeDasharray="4 4" />
-      <text x="185" y="12" textAnchor="middle" fontSize="7" fill="rgba(248,113,113,.8)" letterSpacing="1">TITIK BUTA</text>
-      {/* truk */}
-      <rect x="196" y="22" width="34" height="16" rx="2" fill="rgba(255,255,255,.22)" />
-      <rect x="230" y="26" width="12" height="12" rx="2" fill="rgba(255,255,255,.14)" />
-      {/* pesepeda */}
-      <g stroke="#B4FF3A" strokeWidth="1.8" fill="none">
-        <circle cx="96" cy="38" r="6" />
-        <circle cx="114" cy="38" r="6" />
-        <path d="M96 38 L106 30 L114 38 M106 30 L104 38" />
-        <circle cx="108" cy="25" r="2.6" />
-      </g>
+      <Aspal />
+
+      {varian === 0 && (
+        <>
+          {/* Titik buta truk */}
+          <rect x="150" y="16" width="70" height="36" fill="rgba(248,113,113,.10)" stroke="rgba(248,113,113,.35)" strokeDasharray="4 4" />
+          <text x="185" y="12" textAnchor="middle" fontSize="7" fill="rgba(248,113,113,.85)" letterSpacing="1">TITIK BUTA</text>
+          <rect x="196" y="22" width="34" height="16" rx="2" fill="rgba(148,163,184,.35)" />
+          <rect x="230" y="26" width="12" height="12" rx="2" fill="rgba(148,163,184,.22)" />
+          <Sepeda x={96} />
+        </>
+      )}
+
+      {varian === 1 && (
+        <>
+          {/* Simpang: kendaraan hendak belok kiri memotong jalur sepeda */}
+          <rect x="118" y="0" width="30" height="62" fill="rgba(148,163,184,.08)" />
+          <line x1="133" y1="0" x2="133" y2="62" stroke="#FFB020" strokeWidth="1.2" strokeDasharray="8 8" opacity=".55" />
+          <rect x="150" y="24" width="30" height="14" rx="2" fill="rgba(148,163,184,.32)" />
+          <path d="M150 31 L136 31 L140 27 M136 31 L140 35" {...G} stroke="rgba(248,113,113,.9)" />
+          <Sepeda x={72} />
+        </>
+      )}
+
+      {varian === 2 && (
+        <>
+          {/* Malam: lampu depan dan belakang menyala */}
+          <rect x="0" y="0" width="280" height="62" fill="rgba(15,23,42,.30)" />
+          <Aspal />
+          <Sepeda x={132} />
+          <circle cx="156" cy="38" r="3" fill="#FDE68A" />
+          <path d="M160 34 L184 28 M160 38 L188 38 M160 42 L184 48" {...G} stroke="rgba(253,230,138,.6)" />
+          <circle cx="128" cy="38" r="3" fill="#F87171" />
+          <path d="M124 38 L104 34 M124 38 L104 42" {...G} stroke="rgba(248,113,113,.55)" />
+        </>
+      )}
+
+      {varian === 3 && (
+        <>
+          {/* Rombongan: berjajar dua lalu menyusut satu banjar */}
+          <Sepeda x={40} y={31} />
+          <Sepeda x={40} y={44} />
+          <Sepeda x={104} y={38} warna="#4ADE80" />
+          <Sepeda x={152} y={38} warna="#4ADE80" />
+          <rect x="212" y="24" width="34" height="15" rx="2" fill="rgba(148,163,184,.32)" />
+          <path d="M208 31 L196 31 L200 27 M196 31 L200 35" {...G} stroke="rgba(148,163,184,.8)" />
+        </>
+      )}
+
+      {varian === 4 && (
+        <>
+          {/* Jalan berlubang dan pasir di tepi */}
+          <ellipse cx="176" cy="40" rx="20" ry="6" fill="rgba(15,23,42,.55)" stroke="rgba(251,191,36,.6)" strokeDasharray="3 3" />
+          <text x="176" y="57" textAnchor="middle" fontSize="7" fill="rgba(251,191,36,.85)" letterSpacing="1">LUBANG</text>
+          <path d="M228 42 q8 -5 16 0 q8 5 16 0" {...G} stroke="rgba(251,191,36,.5)" />
+          <Sepeda x={84} />
+          <path d="M110 38 q22 -12 44 -2" {...G} stroke="rgba(180,255,58,.55)" strokeDasharray="3 3" />
+        </>
+      )}
     </svg>
   );
 }

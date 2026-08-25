@@ -233,13 +233,13 @@ export default function SosButton({
         <div className="space-y-2">
           <button
             onClick={() => { window.location.href = smsUrl; }}
-            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 teks-terang"
           >
             <MessageSquare size={18} /> Kirim SMS Lokasi ke {primaryContact?.name}
           </button>
           <button
             onClick={() => { window.location.href = "tel:110"; }}
-            className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+            className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 teks-terang"
           >
             <Phone size={18} /> Telepon 110 (Polisi)
           </button>
@@ -274,7 +274,7 @@ if (status === "sent") {
         )}
         <a
           href="tel:110"
-          className="w-full bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 animate-pulse"
+          className="w-full bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 animate-pulse teks-terang"
         >
           <Phone size={18} /> Telepon 110 Sekarang
         </a>
@@ -306,7 +306,7 @@ if (status === "sent") {
         onTouchStart={startHold}
         onTouchEnd={cancelHold}
         disabled={status === "getting-location" || status === "sending"}
-        className="relative w-56 h-56 rounded-full bg-red-600 text-white shadow-2xl flex flex-col items-center justify-center select-none disabled:opacity-70 active:scale-95 transition-transform"
+        className="relative w-56 h-56 rounded-full bg-red-600 text-white shadow-2xl flex flex-col items-center justify-center select-none disabled:opacity-70 active:scale-95 transition-transform teks-terang"
         style={{
           boxShadow: holdProgress > 0
             ? `0 0 0 ${holdProgress / 5}px rgba(220, 38, 38, 0.2)`

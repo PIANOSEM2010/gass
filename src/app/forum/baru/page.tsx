@@ -80,7 +80,7 @@ export default function NewPostPage() {
         <button
           type="submit"
           disabled={saving || !title.trim() || !body.trim()}
-          className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15"
+          className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium disabled:bg-white/15 teks-terang"
         >
           {saving ? "Mengirim..." : "Kirim Post"}
         </button>

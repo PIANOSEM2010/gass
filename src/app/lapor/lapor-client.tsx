@@ -136,7 +136,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
       <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-amber-300 mb-4"><ArrowLeft size={16} /> Beranda</Link>
 
-        <div className="rounded-3xl p-5 bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg mb-4">
+        <div className="rounded-3xl p-5 bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg mb-4 teks-terang">
           <div className="flex items-center gap-3">
             <Construction size={28} />
             <div>
@@ -215,7 +215,7 @@ export default function LaporClient({ userId, reports }: { userId: string; repor
             {error && <div className="bg-red-500/10 border border-red-400/25 text-red-300 text-sm rounded-xl px-3 py-2 flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>}
 
             <button onClick={submit} disabled={submitting || !coords}
-              className="w-full bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow disabled:bg-white/15 active:scale-95 transition-transform">
+              className="w-full bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow disabled:bg-white/15 active:scale-95 transition-transform teks-terang">
               {submitting ? <><Loader2 size={20} className="animate-spin" /> Mengirim...</> : <><Send size={20} /> Kirim Laporan</>}
             </button>
           </div>

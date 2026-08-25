@@ -209,7 +209,7 @@ export default function SosAlertProvider() {
   const moreCount = visibleAlerts.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[3000] bg-red-700 text-white flex flex-col items-center justify-center px-6 py-10 text-center">
+    <div className="fixed inset-0 z-[3000] bg-red-700 text-white flex flex-col items-center justify-center px-6 py-10 text-center teks-terang">
       <button
         onClick={() => dismiss(current.id)}
         className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-[var(--kartu)]/30"
