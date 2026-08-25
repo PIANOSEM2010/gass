@@ -7,6 +7,7 @@ import { useGowes } from "../gowes-provider";
 import { isNativeApp } from "@/lib/native-geo";
 import { shareImageDataUrl, downloadCanvasPng } from "@/lib/native-share";
 import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } from "@/lib/gowes-card";
+import { gambarKartuTanah, TEMPLATE_TANAH, WARNA_TANAH, WARNA_TANAH_KEYS, type Rasio } from "@/lib/kartu-tanah";
 import { placeNameFromPath } from "@/lib/place-name";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
 import { IkonCatatGowes } from "@/components/fitur-ikon";
@@ -52,6 +53,8 @@ export default function CatatClient({
   const [sharingForum, setSharingForum] = useState(false);
   const [sharingStory, setSharingStory] = useState(false);
   const [storyMsg, setStoryMsg] = useState("");
+  const [rasio, setRasio] = useState<Rasio>("1:1");
+  const [warnaTanah, setWarnaTanah] = useState("terakota");
   const [template, setTemplate] = useState("blok");
   const [palette, setPalette] = useState("hijau");
   // Nama daerah diisi dari GPS (reverse geocoding), bukan nilai tetap,
@@ -79,12 +82,21 @@ export default function CatatClient({
       const st = getStats();
       const doDraw = () => {
         if (!cardRef.current) return;
-        drawCard(cardRef.current, {
-          template, palette, place: placeName,
+        const umum = {
+          place: placeName,
           path: getPath(), distanceM: st.distanceM, durationS: duration,
           elevM: savedElev ?? st.elevM,
           photo: cardPhoto, transparent: cardTransparent,
-        });
+        };
+        // Keluarga "Tanah" punya penggambar sendiri beserta pilihan rasio.
+        if (TEMPLATE_TANAH.some((t) => t.key === template)) {
+          gambarKartuTanah(cardRef.current, {
+            ...umum, template, warna: warnaTanah, rasio,
+            kalori: Math.round((st.distanceM / 1000) * 35),
+          });
+        } else {
+          drawCard(cardRef.current, { ...umum, template, palette });
+        }
       };
       doDraw();
       if (typeof document !== "undefined" && document.fonts?.ready) {
@@ -93,7 +105,7 @@ export default function CatatClient({
     }
     // getStats/getPath sengaja tidak dimasukkan dep (stabil, dibaca saat efek jalan)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, duration, savedElev, template, palette, placeName, cardPhoto, cardTransparent, placeLoading]);
+  }, [status, duration, savedElev, template, palette, placeName, cardPhoto, cardTransparent, placeLoading, rasio, warnaTanah]);
 
   // Deteksi nama daerah tempat gowes (dari titik tengah rute) untuk kartu & caption.
   // Dicari SEKALI per perjalanan, dan TIDAK dibatalkan saat status berubah
@@ -481,14 +493,35 @@ export default function CatatClient({
               {/* Kartu untuk dibagikan: pilih template + warna */}
               <div>
                 <p className="text-xs text-slate-400 mb-2 font-medium">Pilih tampilan kartu</p>
-                <div className="flex gap-2 mb-3">
-                  {TEMPLATES.map((t) => (
+                <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
+                  {[...TEMPLATE_TANAH.map((t) => ({ key: t.key, name: t.nama })), ...TEMPLATES].map((t) => (
                     <button key={t.key} onClick={() => setTemplate(t.key)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
+                      className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${template === t.key ? "border-lime-400/60 bg-lime-400/10 text-lime-300" : "border-white/10 text-slate-400"}`}>
                       {t.name}
                     </button>
                   ))}
                 </div>
+                {TEMPLATE_TANAH.some((t) => t.key === template) ? (
+                  <>
+                    <div className="flex gap-2 mb-3">
+                      {(["1:1", "4:5"] as Rasio[]).map((r) => (
+                        <button key={r} onClick={() => setRasio(r)}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${rasio === r
+                            ? "border-lime-400/60 bg-lime-400/10 text-lime-300"
+                            : "border-white/10 text-slate-400"}`}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2.5 mb-3">
+                      {WARNA_TANAH_KEYS.map((k) => (
+                        <button key={k} onClick={() => setWarnaTanah(k)} title={WARNA_TANAH[k].nama} aria-label={WARNA_TANAH[k].nama}
+                          className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${warnaTanah === k ? "ring-2 ring-offset-2 ring-offset-[var(--kartu)] ring-lime-400" : "ring-1 ring-white/15"}`}
+                          style={{ background: `linear-gradient(135deg, ${WARNA_TANAH[k].tanah} 55%, ${WARNA_TANAH[k].kertas})` }} />
+                      ))}
+                    </div>
+                  </>
+                ) : (
                 <div className="flex gap-2.5 mb-3">
                   {PALETTE_KEYS.map((k) => (
                     <button key={k} onClick={() => setPalette(k)} title={PALETTES[k].name} aria-label={PALETTES[k].name}
@@ -496,6 +529,7 @@ export default function CatatClient({
                       style={{ background: `linear-gradient(135deg, ${PALETTES[k].grad[0]} 55%, ${PALETTES[k].accent})` }} />
                   ))}
                 </div>
+                )}
                 <div className="flex gap-2 mb-3">
                   <label className="flex-1 py-2 rounded-xl text-xs font-semibold border-2 border-dashed border-white/15 text-slate-400 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
                     <ImagePlus size={15} /> {cardPhoto ? "Ganti Foto" : "Tambah Foto"}

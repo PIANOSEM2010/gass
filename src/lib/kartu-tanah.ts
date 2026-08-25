@@ -300,9 +300,9 @@ export function gambarKartuTanah(canvas: HTMLCanvasElement, o: OpsiKartu) {
 
     barisStat(H - 152, `${p.teksTanah}99`, p.teksTanah, kolomStat);
 
-    c.textAlign = "center"; spasi(5);
-    c.fillStyle = `${p.teksTanah}88`; c.font = fSans(22, 600);
-    c.fillText(`#GOWESERAMAN${(o.place || "BULUNGAN").replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`, W / 2, H - 48);
+    c.textAlign = "center"; spasi(3);
+    c.fillStyle = `${p.teksTanah}99`; c.font = fSans(19, 700);
+    c.fillText(`#GOWESERAMAN${(o.place || "BULUNGAN").replace(/\s+/g, "").toUpperCase()}  ·  DICATAT DENGAN BUG`, W / 2, H - 46);
     spasi(0);
 
   } else if (o.template === "cap") {
@@ -327,27 +327,28 @@ export function gambarKartuTanah(canvas: HTMLCanvasElement, o: OpsiKartu) {
     c.fillText(tempat, 80, 236);
 
     // Angka sengaja dibiarkan melewati tepi kanan: itu inti rancangannya
-    c.font = fSerif(o.rasio === "4:5" ? 430 : 372);
+    c.font = fSerif(o.rasio === "4:5" ? 392 : 336);
     c.fillStyle = p.teksTanah;
-    c.fillText(bulat + "," + desimal, 48, o.rasio === "4:5" ? 628 : 542);
+    c.fillText(bulat + "," + desimal, 52, o.rasio === "4:5" ? 592 : 506);
     spasi(12);
     c.font = fSans(40, 700);
-    c.fillText("KILOMETER", 76, o.rasio === "4:5" ? 692 : 598);
+    c.fillText("KILOMETER", 76, o.rasio === "4:5" ? 700 : 604);
     spasi(0);
 
-    const my = o.rasio === "4:5" ? 730 : 634;
-    jalan(70, my, W - 300, H - my - 244, 32, p.garis, p.tanah);
-    capRekor(W - 158, my + 66, 98, p.kertas, p.teksKertas);
+    const my = o.rasio === "4:5" ? 736 : 630;
+    jalan(70, my, W - 300, H - my - 288, 30, p.garis, p.tanah);
+    capRekor(W - 158, my + 58, 94, p.kertas, p.teksKertas);
 
-    barisStat(H - 216, `${p.teksTanah}99`, p.teksTanah, kolomStat);
+    barisStat(H - 202, `${p.teksTanah}99`, p.teksTanah, kolomStat);
 
     // Strip berjalan di kaki kartu
     c.save();
-    c.fillStyle = p.kertas; c.fillRect(0, H - 92, W, 64);
-    c.fillStyle = p.teksKertas; c.textAlign = "left"; spasi(6);
-    c.font = fSans(26, 800);
+    c.fillStyle = p.kertas; c.fillRect(0, H - 92, W, 60);
+    c.beginPath(); c.rect(0, H - 92, W, 60); c.clip();
+    c.fillStyle = p.teksKertas; c.textAlign = "left"; spasi(2);
+    c.font = fSans(19, 800);
     const strip = `#GOWESBARENGBULUNGAN   ·   ${km} KM   ·   ${durasi}   ·   DICATAT DENGAN BUG   `;
-    c.fillText(strip + strip, 34, H - 50);
+    c.fillText(strip + strip, 26, H - 53);
     spasi(0); c.restore();
 
   } else {
@@ -412,9 +413,9 @@ export function gambarKartuTanah(canvas: HTMLCanvasElement, o: OpsiKartu) {
       spasi(0); c.restore();
     }
 
-    c.textAlign = "left"; spasi(5);
-    c.fillStyle = teksRedam; c.font = fSans(22, 600);
-    c.fillText(`#GOWESERAMANBULUNGAN  ·  DICATAT DENGAN BUG`, 80, H - 58);
+    c.textAlign = "left"; spasi(3);
+    c.fillStyle = teksRedam; c.font = fSans(19, 700);
+    c.fillText(`#GOWESERAMANBULUNGAN  ·  DICATAT DENGAN BUG`, 80, H - 54);
     spasi(0);
   }
 }
