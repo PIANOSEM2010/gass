@@ -153,6 +153,7 @@ export default function SosButton({
             lat: location.lat,
             lng: location.lng,
           }),
+          keepalive: true,
         }).catch((e) => console.warn("Push SOS gagal:", e));
       }
 
@@ -165,6 +166,7 @@ export default function SosButton({
           userName,
           userEmail: user?.email || null,
         }),
+        keepalive: true,
       }).catch((e) => console.warn("Email SOS gagal terkirim:", e));
 
       // Kirim WhatsApp OTOMATIS via Fonnte ke semua kontak darurat + admin (fire-and-forget)
@@ -175,12 +177,20 @@ export default function SosButton({
           message,
           contacts: contacts.map((c) => c.whatsapp),
         }),
+        keepalive: true,
       }).catch((e) => console.warn("WhatsApp SOS gagal terkirim:", e));
 
-      const waUrl = `https://wa.me/${primaryContact.whatsapp}?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, "_blank");
-
       setStatus("sent");
+
+      // Panggilan ke 110 dibuka sendiri.
+      //
+      // Semua pengiriman di atas memakai keepalive, jadi tetap sampai walaupun
+      // halaman langsung berpindah ke aplikasi penelepon. Jedanya dibuat
+      // sesingkat mungkin (satu bingkai gambar) supaya masih terhitung sebagai
+      // lanjutan dari tekanan tombol pengguna - kalau ditunda lebih lama,
+      // sebagian peramban memblokir perpindahan ke tel: karena dianggap bukan
+      // hasil interaksi.
+      requestAnimationFrame(() => { window.location.href = "tel:110"; });
     } catch (err) {
       setStatus("error");
       setErrorMsg(err instanceof Error ? err.message : "Terjadi kesalahan");
@@ -247,12 +257,7 @@ export default function SosButton({
           </div>
         )}
         <div className="space-y-2">
-          <button
-            onClick={() => { window.location.href = smsUrl; }}
-            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 teks-terang"
-          >
-            <MessageSquare size={18} /> Kirim SMS Lokasi ke {primaryContact?.name}
-          </button>
+          
           <button
             onClick={() => { window.location.href = "tel:110"; }}
             className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 teks-terang"
@@ -280,7 +285,7 @@ if (status === "sent") {
         <CheckCircle2 size={48} className="text-lime-400 mx-auto mb-3" />
         <h2 className="font-bold text-lime-300 text-lg mb-2">SOS Terkirim</h2>
         <p className="text-sm text-lime-300 mb-3">
-          Pesan SOS otomatis telah dikirim ke kontak daruratmu & admin. WhatsApp juga terbuka ke kontak utama, kamu bisa menekan kirim untuk mengirim dari nomormu sendiri.
+          Pesan SOS otomatis sudah dikirim ke kontak daruratmu dan admin lewat bot WhatsApp. Panggilan ke 110 juga dibuka sendiri. Bila layar penelepon tidak terbuka, tekan tombol di bawah.
         </p>
         {coords && (
           <div className="bg-[var(--kartu)] rounded-lg p-3 text-xs text-slate-400 inline-flex items-center gap-2 mb-4">

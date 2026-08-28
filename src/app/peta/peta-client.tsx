@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
   Sparkles, RefreshCw,
-  Play, Square, Volume2, ShieldCheck, AlertTriangle} from "lucide-react";
+  Play, Square, Volume2, ShieldCheck, AlertTriangle, ChevronUp, ChevronDown} from "lucide-react";
 import { useNav, maneuverIcon } from "../nav-provider";
 import {
   type NavStep, type AvoidGeometry, type LoopRoute,
@@ -464,6 +464,9 @@ export default function PetaClient({
   const [titikAkhir, setTitikAkhir] = useState<{ lat: number; lng: number } | null>(null);
   const [pilihTitik, setPilihTitik] = useState<"awal" | "akhir" | null>(null);
   const [periksa, setPeriksa] = useState<HasilPeriksa | null>(null);
+  // Panel bisa dikecilkan menjadi bilah tipis agar peta di baliknya terlihat.
+  // Ini dipakai dua kali: sesudah rute jadi, dan selama pengguna memilih titik.
+  const [panelKecil, setPanelKecil] = useState(false);
 
   // Navigasi kini global (NavProvider di root layout): tetap jalan saat buka fitur lain
   const nav = useNav();
@@ -565,6 +568,8 @@ export default function PetaClient({
         loop.coords.map(([lat, lng]) => ({ lat, lng })),
         zones.map((z) => ({ lat: z.lat, lng: z.lng, radius_m: z.radius, name: z.title })),
       ));
+      // Panel turun sendiri supaya rute yang baru jadi langsung terlihat.
+      setPanelKecil(true);
     } catch (e) {
       setRecoRoute(null);
       setRecoError(e instanceof Error ? e.message : "Gagal membuat rute");
@@ -600,6 +605,7 @@ export default function PetaClient({
         koordinat.map(([lat, lng]) => ({ lat, lng })),
         zones.map((z) => ({ lat: z.lat, lng: z.lng, radius_m: z.radius, name: z.title })),
       ));
+      setPanelKecil(true);
     } catch (e) {
       setRecoRoute(null);
       setRecoError(e instanceof Error ? e.message : "Gagal membuat rute");
@@ -1112,10 +1118,10 @@ export default function PetaClient({
       )}
 
       {/* Panel Rekomendasi Rute Gowes */}
-      {showRecommend && !navigating && (
+      {showRecommend && !navigating && !panelKecil && (
         <div className="absolute inset-0 z-[1400] flex items-end" onClick={() => setShowRecommend(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative w-full bg-[var(--kartu)] rounded-t-3xl p-4 pb-6 shadow-2xl max-h-[80%] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full bg-[var(--kartu)] rounded-t-3xl p-4 pb-24 shadow-2xl max-h-[82%] overflow-y-auto overscroll-contain" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center teks-terang">
@@ -1126,15 +1132,30 @@ export default function PetaClient({
                   <p className="text-xs text-slate-400 leading-tight">Rute melingkar, kembali ke titik awalmu</p>
                 </div>
               </div>
-              <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPanelKecil(true)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Kecilkan panel">
+                  <ChevronDown size={18} />
+                </button>
+                <button onClick={() => setShowRecommend(false)} className="p-1.5 rounded-lg text-slate-500 active:bg-[var(--kartu-2)]" aria-label="Tutup">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Pemilih cara membuat rute. Otomatis tetap menjadi bawaan. */}
             <div className="flex gap-2 mt-4">
               {([["otomatis", "Otomatis melingkar"], ["titik", "Pilih titik sendiri"]] as const).map(([k, l]) => (
-                <button key={k} onClick={() => { setRecoMode(k); setRecoRoute(null); setPeriksa(null); setRecoError(""); }}
+                <button key={k} onClick={() => {
+                    setRecoMode(k); setRecoRoute(null); setPeriksa(null); setRecoError("");
+                    if (k === "titik") {
+                      // Langsung menuntun: panel turun, pengguna diminta
+                      // menandai titik awal di peta.
+                      setTitikAwal(null); setTitikAkhir(null);
+                      setPilihTitik("awal"); setPanelKecil(true);
+                    } else {
+                      setPilihTitik(null); setPanelKecil(false);
+                    }
+                  }}
                   className={`flex-1 py-2 rounded-xl text-[11.5px] font-semibold border-2 transition-colors ${recoMode === k ? "border-emerald-600 bg-emerald-400/10 text-emerald-700" : "border-white/10 text-slate-400"}`}>
                   {l}
                 </button>
@@ -1276,6 +1297,47 @@ export default function PetaClient({
         </div>
       )}
 
+      {/* Bilah tipis saat panel dikecilkan: peta terlihat penuh, dan bilah ini
+          sekaligus menjadi penuntun saat pengguna sedang memilih titik. */}
+      {showRecommend && !navigating && panelKecil && (
+        <button
+          onClick={() => { setPanelKecil(false); setPilihTitik(null); }}
+          className="absolute bottom-[76px] left-3 right-3 z-[1400] rounded-2xl bg-[var(--kartu)]/95 backdrop-blur border border-lime-400/25 px-4 py-3 shadow-2xl flex items-center gap-3 text-left"
+        >
+          <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center flex-shrink-0 teks-terang">
+            <Sparkles size={17} />
+          </span>
+          <span className="flex-1 min-w-0">
+            {pilihTitik === "awal" ? (
+              <>
+                <span className="block display-title text-[13px] text-white">PILIH TITIK START</span>
+                <span className="block text-[11px] text-slate-400">Ketuk peta untuk menandai titik awal</span>
+              </>
+            ) : pilihTitik === "akhir" ? (
+              <>
+                <span className="block display-title text-[13px] text-white">PILIH TITIK FINISH</span>
+                <span className="block text-[11px] text-slate-400">Ketuk peta untuk menandai titik akhir</span>
+              </>
+            ) : recoRoute ? (
+              <>
+                <span className="block display-title text-[13px] text-white">
+                  RUTE {(recoRoute.distance / 1000).toFixed(1).replace(".", ",")} KM SIAP
+                </span>
+                <span className="block text-[11px] text-slate-400">
+                  Ketuk untuk membuka panel dan mulai navigasi
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="block display-title text-[13px] text-white">REKOMENDASI RUTE</span>
+                <span className="block text-[11px] text-slate-400">Ketuk untuk membuka panel</span>
+              </>
+            )}
+          </span>
+          <ChevronUp size={18} className="text-slate-500 flex-shrink-0" />
+        </button>
+      )}
+
       {/* Tombol kanan bawah */}
       {!navigating && !routeInfo && (
         <div className="absolute bottom-36 right-3 z-[1000] flex flex-col gap-2">
@@ -1337,7 +1399,7 @@ export default function PetaClient({
           {mode === "view" && !routeInfo && (
             <>
               <button
-                onClick={() => { setShowRecommend(true); if (!recoRoute) generateRecommendation(false); }}
+                onClick={() => { setShowRecommend(true); setPanelKecil(false); }}
                 className="flex-1 bg-gradient-to-r from-lime-500 to-emerald-600 text-white py-2.5 rounded-xl font-semibold shadow-md text-sm flex items-center justify-center gap-2 teks-terang"
               >
                 <Sparkles size={16} />
@@ -1389,9 +1451,16 @@ export default function PetaClient({
           onPickRouteB={handlePickRouteB}
           pilihTitik={pilihTitik}
           onPickTitik={(jenis, lat, lng) => {
-            if (jenis === "awal") setTitikAwal({ lat, lng });
-            else setTitikAkhir({ lat, lng });
+            if (jenis === "awal") {
+              setTitikAwal({ lat, lng });
+              // Lanjut menuntun ke titik akhir tanpa perlu membuka panel.
+              if (!titikAkhir) { setPilihTitik("akhir"); return; }
+            } else {
+              setTitikAkhir({ lat, lng });
+              if (!titikAwal) { setPilihTitik("awal"); return; }
+            }
             setPilihTitik(null);
+            setPanelKecil(false);
           }}
         />
         {titikAwal && (

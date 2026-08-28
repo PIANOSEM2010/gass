@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 import { ImagePlus, Type, Loader2, X, Check } from "lucide-react";
+import Lapisan from "@/components/lapisan";
 
 // Penyusun story. Dua jenis: teks saja di atas latar berwarna, atau foto
 // dengan tulisan di bawahnya. Story teks tetap disimpan sebagai gambar hasil
@@ -126,6 +127,7 @@ export default function SusunStory({ tutup }: { tutup: () => void }) {
   const p = LATAR[latar];
 
   return (
+    <Lapisan>
     <div className="fixed inset-0 z-[4500] bg-black/85 backdrop-blur-sm flex flex-col" onClick={tutup}>
       <div className="flex-1 flex flex-col max-w-md w-full mx-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -185,5 +187,6 @@ export default function SusunStory({ tutup }: { tutup: () => void }) {
         </div>
       </div>
     </div>
+    </Lapisan>
   );
 }

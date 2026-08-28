@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
+import Lapisan from "@/components/lapisan";
 
 // Penjaga diam: bila jarak tidak bertambah selama lebih dari lima menit saat
 // perekaman berjalan, aplikasi bertanya lebih dulu, baru mengirim SOS.
@@ -74,6 +75,7 @@ export default function PenjagaDiam({ aktif, distanceM }: { aktif: boolean; dist
   if (!tanya) return null;
 
   return (
+    <Lapisan>
     <div className="fixed inset-0 z-[5000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-5">
       <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-[var(--kartu)] p-6 text-center">
         <span className="inline-flex w-16 h-16 rounded-full bg-red-500/15 text-red-400 items-center justify-center mb-4 animate-pulse">
@@ -101,5 +103,6 @@ export default function PenjagaDiam({ aktif, distanceM }: { aktif: boolean; dist
         </button>
       </div>
     </div>
+    </Lapisan>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Camera, Loader2, Check, X } from "lucide-react";
 import { Avatar } from "@/components/umpan-kartu";
+import Lapisan from "@/components/lapisan";
 import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 
 // Ubah foto profil dan informasi akun. Foto disimpan di wadah berkas
@@ -96,6 +97,7 @@ export default function EditProfil({ nama, asal, jenis, fotoUrl }: {
       {pesan && !buka && <p className="absolute left-5 -bottom-1 text-[10.5px] text-slate-400">{pesan}</p>}
 
       {buka && (
+        <Lapisan>
         <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
           <div className="kartu-bug cahaya-sudut w-full max-w-md p-5 muncul">
             <div className="flex items-center justify-between mb-4">
@@ -133,6 +135,7 @@ export default function EditProfil({ nama, asal, jenis, fotoUrl }: {
             </button>
           </div>
         </div>
+        </Lapisan>
       )}
     </>
   );

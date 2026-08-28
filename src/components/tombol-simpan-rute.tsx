@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Bookmark, Loader2, Check } from "lucide-react";
 import { simpanRute } from "@/lib/rute-tersimpan";
 import { type Titik } from "@/components/jejak-rute";
+import Lapisan from "@/components/lapisan";
 
 // Tombol simpan rute. Dipakai di Riwayat Perjalanan dan di Rekomendasi Rute.
 export default function TombolSimpanRute({
@@ -45,6 +46,7 @@ export default function TombolSimpanRute({
       </button>
 
       {buka && (
+        <Lapisan>
         <div className="fixed inset-0 z-[4000] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
           onClick={() => setBuka(false)}>
           <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-t-3xl sm:rounded-2xl w-full max-w-md p-5"
@@ -67,6 +69,7 @@ export default function TombolSimpanRute({
             </div>
           </div>
         </div>
+        </Lapisan>
       )}
     </>
   );

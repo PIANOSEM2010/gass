@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar, warnaDari } from "@/components/umpan-kartu";
 import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 import SusunStory from "@/components/susun-story";
+import Lapisan from "@/components/lapisan";
 
 export type Story = { id: string; user_id: string; nama: string; image_url: string; caption: string | null; created_at: string; foto?: string | null };
 type Grup = { user_id: string; nama: string; foto: string | null; items: Story[] };
@@ -122,6 +123,7 @@ function PenampilStory({ grup, idSaya, tutup, lanjut }: {
 
   const s = grup.items[ke];
   return (
+    <Lapisan>
     <div className="fixed inset-0 z-[2000] bg-black flex flex-col" onClick={berikutnya}>
       <div className="flex gap-1 p-3">
         {grup.items.map((_, i) => (
@@ -186,6 +188,7 @@ function PenampilStory({ grup, idSaya, tutup, lanjut }: {
         </div>
       )}
     </div>
+    </Lapisan>
   );
 
   async function hapus() {

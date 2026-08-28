@@ -12,7 +12,7 @@ import {
 // Catat Gowes dipindah ke tombol mengambang di halaman Umpan agar selalu
 // terlihat; Forum & Kampanye masuk ke tab atas halaman Umpan.
 const leftTabs = [
-  { href: "/", label: "Beranda", icon: IkonBeranda },
+  { href: "/", label: "Umpan", icon: IkonBeranda },
   { href: "/peta", label: "Peta", icon: IkonPeta },
 ];
 const rightTabs = [
