@@ -8,6 +8,7 @@ import { type Titik } from "@/components/jejak-rute";
 import PetakProfil from "./petak-profil";
 import EditProfil from "./edit-profil";
 import { IkonStreak, IkonTrofi, IkonRute, IkonEdukasi } from "@/components/bug-icons";
+import { IkonRuteLingkar } from "@/components/fitur-ikon";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +47,25 @@ export default async function ProfilPage() {
 
   const modulSelesai = new Set((modul || []).map((m) => String(m.module_id))).size;
 
+  // Lencana bertingkat. Begitu satu ambang tercapai, ambang berikutnya
+  // otomatis menjadi target - jadi pencapaian tidak pernah berhenti di satu
+  // titik dan selalu ada alasan untuk gowes lagi.
+  function tingkat(nilai: number, ambang: number[]) {
+    const tercapai = ambang.filter((a) => nilai >= a);
+    const berikut = ambang.find((a) => nilai < a) ?? null;
+    return { jumlah: tercapai.length, kini: tercapai[tercapai.length - 1] ?? null, berikut };
+  }
+
+  const tBeruntun = tingkat(beruntun, [3, 7, 14, 30, 60, 100]);
+  const tJarak = tingkat(totalKm, [10, 50, 100, 200, 500, 1000]);
+  const tRute = tingkat(jumlahPerjalanan, [5, 10, 25, 50, 100, 250]);
+  const tModul = tingkat(modulSelesai, [1, 3, 5, 7, 9]);
+
   const lencana = [
-    { aktif: beruntun >= 7, ikon: IkonStreak, judul: `${beruntun} hari`, ket: "beruntun", warna: "#FBBF24" },
-    { aktif: totalKm >= 100, ikon: IkonTrofi, judul: "100 km", ket: "terkumpul", warna: "#B4FF3A" },
-    { aktif: jumlahPerjalanan >= 10, ikon: IkonRute, judul: `${jumlahPerjalanan} rute`, ket: "tercatat", warna: "#38BDF8" },
-    { aktif: modulSelesai >= 1, ikon: IkonEdukasi, judul: `${modulSelesai} modul`, ket: "edukasi", warna: "#A78BFA" },
+    { t: tBeruntun, ikon: IkonStreak, satuan: "hari", ket: "beruntun", warna: "#FBBF24", nilai: beruntun },
+    { t: tJarak, ikon: IkonTrofi, satuan: "km", ket: "terkumpul", warna: "#B4FF3A", nilai: Math.round(totalKm) },
+    { t: tRute, ikon: IkonRute, satuan: "rute", ket: "tercatat", warna: "#38BDF8", nilai: jumlahPerjalanan },
+    { t: tModul, ikon: IkonEdukasi, satuan: "modul", ket: "edukasi", warna: "#A78BFA", nilai: modulSelesai },
   ];
 
   const petak = daftar.slice(0, 9).map((a) => ({
@@ -96,17 +111,44 @@ export default async function ProfilPage() {
       <div className="max-w-md mx-auto px-5">
         <h2 className="eyebrow text-slate-500 !text-[10px] mt-6 mb-3">Lencana</h2>
         <div className="grid grid-cols-4 gap-2.5 jenjang">
-          {lencana.map((b) => (
-            <div key={b.ket}
-              className={`rounded-xl border p-2.5 text-center transition-all ${b.aktif ? "border-white/10 bg-[var(--kartu)] shadow-[0_0_18px_rgba(0,0,0,.35)]" : "border-white/5 bg-[var(--kartu-2)] opacity-40 grayscale"}`}>
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg mb-1.5"
-                style={{ background: `${b.warna}1F`, color: b.warna }}>
-                <b.ikon size={18} />
-              </span>
-              <p className="display-title text-[11px] text-white leading-tight">{b.judul}</p>
-              <p className="text-[9px] text-slate-500 leading-tight">{b.ket}</p>
-            </div>
-          ))}
+          {lencana.map((b) => {
+            const aktif = b.t.jumlah > 0;
+            const dari = b.t.kini ?? 0;
+            const maju = b.t.berikut
+              ? Math.min(100, Math.max(0, ((b.nilai - dari) / (b.t.berikut - dari)) * 100))
+              : 100;
+            return (
+              <div key={b.ket}
+                className={`relative rounded-xl border p-2.5 text-center overflow-hidden ${aktif ? "border-white/10 bg-[var(--kartu)]" : "border-white/5 bg-[var(--kartu-2)] opacity-45"}`}>
+                {/* Bintang kecil menandakan sudah tingkat ke berapa */}
+                {b.t.jumlah > 1 && (
+                  <span className="absolute top-1.5 right-1.5 display-num text-[10px] px-1 rounded"
+                    style={{ background: `${b.warna}26`, color: b.warna }}>
+                    {b.t.jumlah}
+                  </span>
+                )}
+                <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg mb-1.5"
+                  style={{ background: `${b.warna}1F`, color: b.warna }}>
+                  <b.ikon size={18} />
+                </span>
+                <p className="display-title text-[11px] text-white leading-tight">
+                  {aktif ? `${b.t.kini} ${b.satuan}` : `${b.t.berikut} ${b.satuan}`}
+                </p>
+                <p className="text-[9px] text-slate-500 leading-tight">{aktif ? b.ket : "belum"}</p>
+
+                {b.t.berikut !== null && (
+                  <>
+                    <div className="h-1 rounded-full bg-white/8 mt-1.5 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${maju}%`, background: b.warna }} />
+                    </div>
+                    <p className="text-[8.5px] text-slate-500 mt-1 leading-tight">
+                      {b.t.berikut - b.nilai} lagi ke {b.t.berikut}
+                    </p>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <PetakProfil petak={petak} />
@@ -124,7 +166,19 @@ export default async function ProfilPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 mt-4">
+        <Link href="/rute"
+          className="mt-4 flex items-center gap-3 rounded-xl border border-violet-400/30 bg-violet-400/8 px-4 py-3.5">
+          <span className="w-10 h-10 rounded-xl bg-violet-400/15 text-violet-300 flex items-center justify-center flex-shrink-0">
+            <IkonRuteLingkar size={20} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="display-title text-[14px] text-white">RUTE TERSIMPAN</p>
+            <p className="text-[11px] text-slate-400">Putar ulang, pakai lagi, atau bagikan rutemu</p>
+          </div>
+          <span className="text-slate-500">›</span>
+        </Link>
+
+        <div className="grid grid-cols-2 gap-2.5 mt-3">
           <Link href="/catat/riwayat" className="rounded-xl border border-lime-400/25 text-lime-300 py-3 text-center display-title text-sm">
             RIWAYAT GOWES
           </Link>

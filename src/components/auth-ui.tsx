@@ -38,11 +38,16 @@ export function TandaSah({ tampil, kanan = 14 }: { tampil: boolean; kanan?: numb
   return (
     <span
       aria-hidden="true"
-      className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full bg-lime-400 text-slate-950"
+      className="absolute flex items-center justify-center w-5 h-5 rounded-full bg-lime-400 text-slate-950"
       style={{
         right: kanan,
+        // Dipusatkan lewat top:50% dengan margin negatif setengah tinggi,
+        // bukan lewat transform, supaya animasi skala tidak menggeser
+        // posisinya dari garis tengah kolom.
+        top: "50%",
+        marginTop: -10,
         opacity: tampil ? 1 : 0,
-        transform: `translateY(-50%) scale(${tampil ? 1 : 0.5})`,
+        transform: `scale(${tampil ? 1 : 0.5})`,
         transition: "opacity .22s ease, transform .28s cubic-bezier(.22,1.6,.36,1)",
       }}
     >

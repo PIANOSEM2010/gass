@@ -10,7 +10,7 @@ import { IkonCatatGowes } from "@/components/fitur-ikon";
 // pengguna berpindah dan tetap di tempat saat halaman digulir. Bisa dikecilkan
 // menjadi bulatan kecil bila menghalangi isi halaman, dan pilihan itu diingat
 // di peranti.
-const SEMBUNYI = ["/auth", "/catat", "/sos/panggil", "/pantau/"];
+const SEMBUNYI = ["/auth", "/catat", "/peta", "/sos/panggil", "/pantau/"];
 
 export default function TombolCatat() {
   const pathname = usePathname();

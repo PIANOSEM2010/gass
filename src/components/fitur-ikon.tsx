@@ -104,3 +104,12 @@ export const IkonDaruratSos = ({ size, aksen = "#F87171" }: P) => (
     <path d="M12 8.4v3.8M12 15.6v.1" stroke={aksen} strokeWidth="2.4" />
   </Bingkai>
 );
+
+// Dasbor Keselamatan: tiga batang data dengan garis marka di bawahnya
+export const IkonDasbor = ({ size, aksen = "#FB7185" }: P) => (
+  <Bingkai size={size}>
+    <path d="M3.4 4.6h17.2v14.8H3.4z" />
+    <path d="M7.4 15.6v-4.2M12 15.6V7.8M16.6 15.6v-6" stroke={aksen} strokeWidth="2.2" />
+    <path d="M3.4 19.4h17.2" opacity=".45" />
+  </Bingkai>
+);

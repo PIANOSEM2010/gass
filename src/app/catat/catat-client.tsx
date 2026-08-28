@@ -12,6 +12,9 @@ import { placeNameFromPath } from "@/lib/place-name";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
 import { IkonCatatGowes } from "@/components/fitur-ikon";
 import { periksaRekorPribadi, type Rekor } from "@/lib/rekor-pribadi";
+import { Podium, type Peserta } from "@/app/leaderboard/podium";
+import PenjagaDiam from "@/components/penjaga-diam";
+import { Avatar } from "@/components/umpan-kartu";
 import { meter } from "@/lib/angka";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
 import RodaLatar from "@/components/roda-latar";
@@ -284,6 +287,7 @@ export default function CatatClient({
 
   return (
     <div className="min-h-screen bg-[var(--latar)] px-4 pt-5 max-w-md mx-auto pb-8">
+      <PenjagaDiam aktif={status === "tracking"} distanceM={distance} />
       {/* Ringkasan beruntun: ringkas, tidak mencuri perhatian dari angka jarak */}
       <div className="kartu-bug px-4 py-3 mb-3 flex items-center gap-4">
         <div className="flex items-center gap-2">
@@ -573,22 +577,43 @@ export default function CatatClient({
           )}
         </>
       ) : (
-        <div className="space-y-2">
+        /* Tab Peringkat memakai mimbar juara yang sama dengan halaman
+           /leaderboard, supaya tidak ada dua tampilan peringkat berbeda. */
+        <div>
           {board.length === 0 ? (
             <p className="text-center text-slate-500 py-12 text-sm">Belum ada peserta. Catat perjalanan pertamamu!</p>
-          ) : board.map((r, i) => {
-            const me = r.user_id === userId;
+          ) : (() => {
+            const peserta: Peserta[] = board.map((r) => ({
+              user_id: r.user_id, nama: r.name, asal: r.org, foto: null,
+              streak: r.streak, km: r.km, rides: r.rides, saya: r.user_id === userId,
+            }));
+            const sisa = peserta.slice(3);
             return (
-              <div key={r.user_id} className={`flex items-center gap-3 rounded-xl px-3 py-3 shadow-sm ${me ? "bg-lime-400/10 border border-lime-400/40" : "bg-[var(--kartu)] border border-white/5"}`}>
-                <div className="w-7 text-center display-num text-lg text-slate-400">{i < 3 ? medal[i] : i + 1}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white truncate">{r.name}{me ? " (kamu)" : ""}</p>
-                  <p className="text-xs text-slate-400 truncate">{r.org} · {r.km.toFixed(1)} km · {r.rides}x</p>
-                </div>
-                <div className="flex items-center gap-1 text-orange-600 display-num text-xl"><Flame size={18} /> {r.streak}</div>
-              </div>
+              <>
+                <Podium tiga={peserta.slice(0, 3)} />
+                {sisa.length > 0 && (
+                  <>
+                    <h2 className="eyebrow text-slate-500 !text-[10px] mt-6 mb-2.5">Peringkat 4 ke bawah</h2>
+                    <div className="rounded-2xl border border-white/8 bg-[var(--kartu)] divide-y divide-white/5 overflow-hidden">
+                      {sisa.map((r, i) => (
+                        <div key={r.user_id} className={`flex items-center gap-3 px-3.5 py-3 ${r.saya ? "bg-lime-400/8" : ""}`}>
+                          <span className="display-num text-base text-slate-500 w-7 text-center">{i + 4}</span>
+                          <Avatar nama={r.nama} ukuran={32} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-white truncate">{r.nama}{r.saya ? " (kamu)" : ""}</p>
+                            <p className="text-[10.5px] text-slate-500 truncate">{r.asal || "-"} · {r.km.toFixed(1).replace(".", ",")} km · {r.rides}x</p>
+                          </div>
+                          <span className="flex items-center gap-1 text-amber-400 flex-shrink-0">
+                            <Flame size={15} /><span className="display-num text-base">{r.streak}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             );
-          })}
+          })()}
         </div>
       )}
     </div>

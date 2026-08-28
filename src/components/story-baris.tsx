@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, warnaDari } from "@/components/umpan-kartu";
 import { kecilkanGambar } from "@/lib/kecilkan-gambar";
+import SusunStory from "@/components/susun-story";
 
 export type Story = { id: string; user_id: string; nama: string; image_url: string; caption: string | null; created_at: string; foto?: string | null };
 type Grup = { user_id: string; nama: string; foto: string | null; items: Story[] };
@@ -16,6 +17,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
   const [unggah, setUnggah] = useState(false);
   const [pesan, setPesan] = useState("");
   const [buka, setBuka] = useState<number | null>(null);
+  const [susun, setSusun] = useState(false);
 
   // Kelompokkan per pengguna; story milik sendiri diletakkan paling depan.
   const grup: Grup[] = [];
@@ -55,7 +57,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
   return (
     <>
       <div className="flex gap-4 overflow-x-auto px-5 py-3 no-scrollbar">
-        <button onClick={() => (masuk ? berkasRef.current?.click() : router.push("/auth/login"))}
+        <button onClick={() => (masuk ? setSusun(true) : router.push("/auth/login"))}
           disabled={unggah} className="flex flex-col items-center gap-1.5 flex-shrink-0">
           <span className="relative w-14 h-14 rounded-full border-2 border-dashed border-lime-400/50 bg-lime-400/10 flex items-center justify-center text-lime-300">
             {unggah
@@ -79,6 +81,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
         )}
       </div>
       {pesan && <p className="px-5 pb-2 text-[11px] text-red-400">{pesan}</p>}
+      {susun && <SusunStory tutup={() => setSusun(false)} />}
       {buka !== null && grup[buka] && (
         <PenampilStory grup={grup[buka]} idSaya={idSaya} tutup={() => setBuka(null)}
           lanjut={() => setBuka((v) => (v !== null && v + 1 < grup.length ? v + 1 : null))} />

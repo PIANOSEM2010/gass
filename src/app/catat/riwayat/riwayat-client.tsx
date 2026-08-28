@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, Clock, Mountain, ChevronDown, Bike } from "lucide-react";
 import ShareRide from "./share-ride";
+import TombolSimpanRute from "@/components/tombol-simpan-rute";
 
 const RouteMap = dynamic(() => import("../route-map"), {
   ssr: false,
@@ -94,8 +95,13 @@ export default function RiwayatClient({ rides }: { rides: Ride[] }) {
                           <div className="h-full flex items-center justify-center text-slate-500 text-sm">Rute tidak tersedia</div>
                         )}
                       </div>
-                      <div className="p-3 border-t border-white/5">
-                        <ShareRide ride={r} />
+                      <div className="p-3 border-t border-white/5 flex gap-2">
+                        <div className="flex-1"><ShareRide ride={r} /></div>
+                        <TombolSimpanRute
+                          path={r.path} distanceM={r.distance_m}
+                          elevM={r.elevation_gain_m} durationS={r.duration_s}
+                          namaAwal={`Gowes ${new Date(r.started_at || Date.now()).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`}
+                          ringkas />
                       </div>
                     </>
                   )}

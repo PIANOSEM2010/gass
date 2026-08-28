@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { Siren, MapPin, Loader2, CheckCircle2, WifiOff, Phone, MessageSquare } from "lucide-react";
 import { getPositionOnce } from "@/lib/native-geo";
 import { createClient } from "@/lib/supabase/client";
@@ -188,6 +189,21 @@ export default function SosButton({
 
   let pressTimer: NodeJS.Timeout | null = null;
   let progressInterval: NodeJS.Timeout | null = null;
+
+  // Dipanggil oleh penjaga diam lewat /sos?otomatis=1. SOS langsung berangkat
+  // tanpa menahan tombol, karena pengguna sudah diberi hitungan mundur 60 detik
+  // dan memilih untuk tidak membatalkannya.
+  const params = useSearchParams();
+  const sudahOtomatis = useRef(false);
+  useEffect(() => {
+    if (sudahOtomatis.current) return;
+    if (params?.get("otomatis") === "1") {
+      sudahOtomatis.current = true;
+      triggerSos();
+    }
+    // triggerSos sengaja tidak masuk dep: cukup dijalankan sekali saat masuk.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
 
   function startHold() {
     if (status !== "idle" && status !== "error" && status !== "sent" && status !== "offline-ready") return;

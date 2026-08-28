@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   IkonPetaJalur, IkonModul, IkonTemanPantau, IkonRuteLingkar,
-  IkonLaporJalan, IkonPapanPeringkat, IkonKampanyeJalan, IkonForumGowes,
+  IkonLaporJalan, IkonDasbor, IkonKampanyeJalan, IkonForumGowes,
 } from "@/components/fitur-ikon";
 
 // Geser fitur di puncak halaman Umpan. Semua fitur BUG tetap satu ketukan
@@ -14,7 +14,7 @@ const FITUR = [
   { href: "/pantau", label: "Teman Pantau", ket: "Keluarga memantau langsung", ikon: IkonTemanPantau, warna: "#2DD4BF" },
   { href: "/peta?rekomendasi=1", label: "Rekomendasi Rute", ket: "Rute melingkar otomatis", ikon: IkonRuteLingkar, warna: "#A78BFA" },
   { href: "/lapor", label: "Lapor Jalan", ket: "Laporkan jalan rusak", ikon: IkonLaporJalan, warna: "#FBBF24" },
-  { href: "/leaderboard", label: "Papan Peringkat", ket: "Peringkat goweser Bulungan", ikon: IkonPapanPeringkat, warna: "#FB7185" },
+  { href: "/dashboard", label: "Dasbor Keselamatan", ket: "Data keselamatan pesepeda Bulungan", ikon: IkonDasbor, warna: "#FB7185" },
   { href: "/kampanye", label: "Kampanye", ket: "Berbagi jalan untuk pesepeda", ikon: IkonKampanyeJalan, warna: "#FB923C" },
   { href: "/forum", label: "Forum", ket: "Komunitas pesepeda", ikon: IkonForumGowes, warna: "#60A5FA" },
 ];

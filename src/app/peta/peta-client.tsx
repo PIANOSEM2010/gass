@@ -10,14 +10,15 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Navigation, X, MapPin, Loader2, LocateFixed, Search, Layers, Store, TriangleAlert,
   Sparkles, RefreshCw,
-  Play, Square, Volume2, ShieldCheck,
-} from "lucide-react";
+  Play, Square, Volume2, ShieldCheck, AlertTriangle} from "lucide-react";
 import { useNav, maneuverIcon } from "../nav-provider";
 import {
   type NavStep, type AvoidGeometry, type LoopRoute,
   fetchRoute, fetchBestLoopRoute, buildAvoidNearRoute, formatDist,
 } from "@/lib/routing";
 import { startWatch, getPositionOnce, type WatchHandle } from "@/lib/native-geo";
+import { periksaJalurAman, type HasilPeriksa } from "@/lib/periksa-jalur";
+import TombolSimpanRute from "@/components/tombol-simpan-rute";
 
 type RoadMarker = {
   id: string;
@@ -175,15 +176,22 @@ function ClickHandler({
   onPickReport,
   onPickRouteA,
   onPickRouteB,
+  pilihTitik,
+  onPickTitik,
 }: {
   mode: Mode;
   onPickReport: (lat: number, lng: number) => void;
   onPickRouteA: (lat: number, lng: number) => void;
   onPickRouteB: (lat: number, lng: number) => void;
+  pilihTitik?: "awal" | "akhir" | null;
+  onPickTitik?: (jenis: "awal" | "akhir", lat: number, lng: number) => void;
 }) {
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
+      // Pemilihan titik rekomendasi didahulukan: saat mode itu menyala,
+      // ketukan tidak boleh dipakai untuk hal lain.
+      if (pilihTitik && onPickTitik) { onPickTitik(pilihTitik, lat, lng); return; }
       if (mode === "report") onPickReport(lat, lng);
       else if (mode === "route-a") onPickRouteA(lat, lng);
       else if (mode === "route-b") onPickRouteB(lat, lng);
@@ -449,6 +457,13 @@ export default function PetaClient({
   const [recoRoute, setRecoRoute] = useState<LoopRoute | null>(null);
   const [recoError, setRecoError] = useState("");
   const recoSeedRef = useRef(0);
+  // Mode "titik": pengguna memilih sendiri titik awal dan titik akhir dengan
+  // menekan peta. Mode "otomatis" tetap ada dan tetap menjadi bawaan.
+  const [recoMode, setRecoMode] = useState<"otomatis" | "titik">("otomatis");
+  const [titikAwal, setTitikAwal] = useState<{ lat: number; lng: number } | null>(null);
+  const [titikAkhir, setTitikAkhir] = useState<{ lat: number; lng: number } | null>(null);
+  const [pilihTitik, setPilihTitik] = useState<"awal" | "akhir" | null>(null);
+  const [periksa, setPeriksa] = useState<HasilPeriksa | null>(null);
 
   // Navigasi kini global (NavProvider di root layout): tetap jalan saat buka fitur lain
   const nav = useNav();
@@ -544,6 +559,47 @@ export default function PetaClient({
         : null;
       const loop = await fetchBestLoopRoute(origin, recoTargetKm, recoSeedRef.current, avoid);
       setRecoRoute(loop);
+      // Lapisan kedua: penyedia rute bisa mengabaikan permintaan menghindar
+      // bila tidak ada jalan lain, jadi hasilnya diperiksa ulang di sini.
+      setPeriksa(periksaJalurAman(
+        loop.coords.map(([lat, lng]) => ({ lat, lng })),
+        zones.map((z) => ({ lat: z.lat, lng: z.lng, radius_m: z.radius, name: z.title })),
+      ));
+    } catch (e) {
+      setRecoRoute(null);
+      setRecoError(e instanceof Error ? e.message : "Gagal membuat rute");
+    } finally {
+      setRecoLoading(false);
+    }
+  }
+
+  // Rute dari titik awal ke titik akhir pilihan pengguna, dengan target jarak
+  // sebagai acuan: bila jalur langsung lebih pendek dari target, rutenya
+  // diputar lewat titik singgah agar mendekati jarak yang diminta.
+  async function generateDariTitik() {
+    setRecoError(""); setPeriksa(null);
+    if (!titikAwal || !titikAkhir) {
+      setRecoError("Tentukan dulu titik awal dan titik akhir di peta.");
+      return;
+    }
+    setRecoLoading(true);
+    try {
+      const avoid = avoidDanger
+        ? buildAvoidNearRoute(zones, markers, titikAwal, titikAkhir).geometry
+        : null;
+      const hasil = await fetchRoute(titikAwal, titikAkhir, avoid);
+      const koordinat = hasil.coords;
+      setRecoRoute({
+        coords: koordinat,
+        distance: hasil.info.distance,
+        duration: hasil.info.duration,
+        seed: 0,
+        steps: hasil.steps,
+      });
+      setPeriksa(periksaJalurAman(
+        koordinat.map(([lat, lng]) => ({ lat, lng })),
+        zones.map((z) => ({ lat: z.lat, lng: z.lng, radius_m: z.radius, name: z.title })),
+      ));
     } catch (e) {
       setRecoRoute(null);
       setRecoError(e instanceof Error ? e.message : "Gagal membuat rute");
@@ -1075,6 +1131,40 @@ export default function PetaClient({
               </button>
             </div>
 
+            {/* Pemilih cara membuat rute. Otomatis tetap menjadi bawaan. */}
+            <div className="flex gap-2 mt-4">
+              {([["otomatis", "Otomatis melingkar"], ["titik", "Pilih titik sendiri"]] as const).map(([k, l]) => (
+                <button key={k} onClick={() => { setRecoMode(k); setRecoRoute(null); setPeriksa(null); setRecoError(""); }}
+                  className={`flex-1 py-2 rounded-xl text-[11.5px] font-semibold border-2 transition-colors ${recoMode === k ? "border-emerald-600 bg-emerald-400/10 text-emerald-700" : "border-white/10 text-slate-400"}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {recoMode === "titik" && (
+              <div className="mt-3 space-y-2">
+                {([["awal", "Titik awal", titikAwal, "#B4FF3A"], ["akhir", "Titik akhir", titikAkhir, "#F87171"]] as const).map(([jenis, label, nilai, warna]) => (
+                  <button key={jenis} onClick={() => setPilihTitik(pilihTitik === jenis ? null : jenis)}
+                    className={`w-full flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${pilihTitik === jenis ? "border-emerald-600 bg-emerald-400/10" : "border-white/10"}`}>
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: warna }} />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[12px] font-semibold text-white">{label}</span>
+                      <span className="block text-[10.5px] text-slate-500 truncate">
+                        {pilihTitik === jenis ? "Ketuk peta untuk menandai…"
+                          : nilai ? `${nilai.lat.toFixed(5)}, ${nilai.lng.toFixed(5)}` : "Belum ditentukan"}
+                      </span>
+                    </span>
+                    {jenis === "awal" && userPos && (
+                      <span onClick={(e) => { e.stopPropagation(); setTitikAwal({ lat: userPos.lat, lng: userPos.lng }); setPilihTitik(null); }}
+                        className="text-[10.5px] text-emerald-700 font-semibold flex-shrink-0">
+                        Pakai lokasiku
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Slider jarak */}
             <div className="mt-4">
               <div className="flex items-baseline justify-between mb-1.5">
@@ -1124,12 +1214,35 @@ export default function PetaClient({
               ) : (
                 <div className="text-center text-sm text-slate-500 py-6">Atur jarak lalu buat rute</div>
               )}
+
+              {/* Hasil pemeriksaan ulang terhadap zona rawan */}
+              {recoRoute && periksa && (
+                periksa.aman ? (
+                  <p className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-emerald-700">
+                    <ShieldCheck size={14} /> Jalur diperiksa: tidak melewati zona rawan yang terpetakan.
+                  </p>
+                ) : (
+                  <div className="mt-2.5 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
+                    <p className="text-[11.5px] font-semibold text-amber-300 flex items-center gap-1.5">
+                      <AlertTriangle size={13} /> Jalur ini masih melintasi {periksa.pelanggaran.length} zona rawan
+                    </p>
+                    <ul className="mt-1 text-[10.5px] text-amber-200/85 leading-relaxed list-disc list-inside">
+                      {periksa.pelanggaran.slice(0, 3).map((v) => (
+                        <li key={v.nama}>{v.nama} (± {v.jarak_m} m)</li>
+                      ))}
+                    </ul>
+                    <p className="text-[10.5px] text-amber-200/70 mt-1">
+                      Tekan Cari Lagi untuk mencoba jalur lain, atau lewati bagian ini dengan ekstra hati-hati.
+                    </p>
+                  </div>
+                )
+              )}
             </div>
 
             {/* Aksi */}
             <div className="mt-4 flex gap-2">
               <button
-                onClick={() => generateRecommendation(true)}
+                onClick={() => (recoMode === "titik" ? generateDariTitik() : generateRecommendation(true))}
                 disabled={recoLoading}
                 className="flex-1 bg-[var(--kartu)] border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition"
               >
@@ -1144,6 +1257,18 @@ export default function PetaClient({
                 </button>
               )}
             </div>
+
+            {recoRoute && (
+              <div className="mt-2 flex">
+                <TombolSimpanRute
+                  path={recoRoute.coords.map(([lat, lng]) => ({ lat, lng }))}
+                  distanceM={recoRoute.distance}
+                  durationS={Math.round(recoRoute.duration)}
+                  source="rekomendasi"
+                  namaAwal={`Rute ${(recoRoute.distance / 1000).toFixed(1).replace(".", ",")} km Bulungan`}
+                />
+              </div>
+            )}
             <p className="text-[11px] text-slate-500 text-center mt-3">
               Rute mengikuti jalan pesepeda dan menghindari zona rawan bila mode aman aktif.
             </p>
@@ -1262,7 +1387,21 @@ export default function PetaClient({
           onPickReport={handlePickReport}
           onPickRouteA={handlePickRouteA}
           onPickRouteB={handlePickRouteB}
+          pilihTitik={pilihTitik}
+          onPickTitik={(jenis, lat, lng) => {
+            if (jenis === "awal") setTitikAwal({ lat, lng });
+            else setTitikAkhir({ lat, lng });
+            setPilihTitik(null);
+          }}
         />
+        {titikAwal && (
+          <Circle center={[titikAwal.lat, titikAwal.lng]} radius={22}
+            pathOptions={{ color: "#B4FF3A", fillColor: "#B4FF3A", fillOpacity: 0.85, weight: 3 }} />
+        )}
+        {titikAkhir && (
+          <Circle center={[titikAkhir.lat, titikAkhir.lng]} radius={22}
+            pathOptions={{ color: "#F87171", fillColor: "#F87171", fillOpacity: 0.85, weight: 3 }} />
+        )}
         {!navigating && (
           <LocationLayer
             tracking={tracking}
