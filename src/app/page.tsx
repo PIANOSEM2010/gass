@@ -90,9 +90,9 @@ export default async function Umpan() {
     <div className="min-h-screen bg-[var(--latar)] pb-8">
       {/* Kepala aplikasi */}
       <div className="sticky top-0 z-[900] bg-[var(--latar)]/85 backdrop-blur-xl border-b border-lime-400/10 cahaya-sudut">
-        <div className="max-w-md mx-auto flex items-center gap-2.5 px-5 pt-4 pb-2.5 relative">
-          <LogoBug size={38} />
-          <span className="display-title text-[22px] text-white leading-none">
+        <div className="max-w-md mx-auto flex items-center gap-2.5 px-5 pt-4 pb-2.5 relative lg:pt-2 lg:pb-1">
+          <span className="lg:hidden"><LogoBug size={38} /></span>
+          <span className="display-title text-[22px] text-white leading-none lg:hidden">
             BUG
             <span className="block eyebrow !text-[7.5px] text-lime-400/70 mt-1">Bulungan untuk Goweser</span>
           </span>
@@ -100,10 +100,10 @@ export default async function Umpan() {
               sudah menjadi tombol tengah navbar. Ruang ini dipakai pengalih
               tema supaya tidak ada tombol yang menganggur. */}
           <Link href="/cari" prefetch={false} aria-label="Cari goweser"
-            className="ml-auto w-9 h-9 rounded-xl bg-sky-400/15 text-sky-300 flex items-center justify-center">
+            className="ml-auto lg:ml-0 w-9 h-9 rounded-xl bg-sky-400/15 text-sky-300 flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.6-3.6" /></svg>
           </Link>
-          <div><TombolTema /></div>
+          <div className="lg:hidden"><TombolTema /></div>
         </div>
         <div className="max-w-md mx-auto flex gap-5 px-5">
           {[

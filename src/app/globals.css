@@ -451,3 +451,32 @@ body > * { max-width: 100vw; }
 [data-tema="terang"] .text-amber-100 { color: #6E4204 !important; }
 [data-tema="terang"] .placeholder\:text-slate-500::placeholder { color: #7A8C83 !important; }
 [data-tema="terang"] .nav-loading-backdrop { backdrop-filter: blur(14px) saturate(1.05); }
+
+
+/* ==========================================================================
+   Rasio tampilan di layar lebar.
+   Seluruh halaman ditulis sebagai satu kolom 448px (max-w-md) karena aplikasi
+   ini dirancang untuk ponsel. Di monitor, kolom sesempit itu terlihat seperti
+   halaman ponsel yang dipaksa masuk ke desktop. Aturan di bawah melebarkannya
+   di satu tempat, jadi tiap halaman tidak perlu diubah satu per satu.
+   ========================================================================== */
+@media (min-width: 1024px) {
+  main .max-w-md { max-width: 100%; }
+
+  /* Kepala halaman yang menempel di atas ikut mengikuti kolom, bukan layar */
+  main .sticky.top-0 { border-radius: 1rem 1rem 0 0; }
+
+  /* Petak aktivitas dan lencana punya ruang lebih, jadi kolomnya ditambah */
+  main .grid-cols-3.gap-2 { gap: .75rem; }
+
+  /* Kartu terasa terlalu rapat bila padding ponsel dipakai apa adanya */
+  main .kartu-bug { border-radius: 1.25rem; }
+
+  /* Halaman peta tetap setinggi layar penuh di dalam kolomnya */
+  main .h-\[calc\(100vh-4rem\)\] { height: calc(100vh - 3rem); border-radius: 1rem; overflow: hidden; }
+}
+
+/* Layar sangat lebar: kolom isi diberi napas tambahan */
+@media (min-width: 1440px) {
+  main .max-w-md { max-width: 100%; }
+}

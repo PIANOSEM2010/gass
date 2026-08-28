@@ -35,7 +35,7 @@ export default function TombolCatat() {
   if (!siap || SEMBUNYI.some((h) => pathname.startsWith(h))) return null;
 
   return (
-    <div className="fixed right-3 z-[1250] flex items-center gap-1.5"
+    <div className="lg:hidden fixed right-3 z-[1250] flex items-center gap-1.5"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)" }}>
       {/* Tombol pengecil, selalu di sisi kiri tombol utama */}
       <button onClick={ubah}

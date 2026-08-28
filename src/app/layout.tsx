@@ -1,4 +1,5 @@
 import GowesProvider from "./gowes-provider";
+import RangkaApp from "@/components/rangka-app";
 import IzinPanggilan from "@/components/izin-panggilan";
 import TombolCatat from "@/components/tombol-catat";
 import { SkripTema } from "@/components/tema";
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TombolCatat />
         <Navbar />
                 <ActivityDock />
-                <main className="pb-[68px]"><PeralihanHalaman>{children}</PeralihanHalaman></main>
+                <main className="pb-[68px] lg:pb-0"><RangkaApp><PeralihanHalaman>{children}</PeralihanHalaman></RangkaApp></main>
               </NavLoadingProvider>
             </NavProvider>
           </PantauProvider>

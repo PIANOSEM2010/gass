@@ -115,7 +115,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[1200] bg-[var(--navbar)]/92 backdrop-blur-xl border-t border-lime-400/12 shadow-[0_-6px_20px_rgba(0,0,0,0.25)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[1200] bg-[var(--navbar)]/92 backdrop-blur-xl border-t border-lime-400/12 shadow-[0_-6px_20px_rgba(0,0,0,0.25)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       <div ref={wadahRef} className="relative max-w-md mx-auto h-[56px]">
         <SoketMeniskus />
 
