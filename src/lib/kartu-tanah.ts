@@ -28,6 +28,10 @@ export type OpsiKartu = {
   kalori?: number;
   kecMaks?: number;
   rekor?: string | null;
+  // Penanda titik pada jalur: A = mulai, huruf berikutnya = titik lewat,
+  // huruf terakhir = selesai. Dipakai pada kartu rute yang dibagikan supaya
+  // pembaca langsung tahu gowes dari mana ke mana.
+  penanda?: { label: string; nama?: string }[];
   photo?: HTMLImageElement | null;
   transparent?: boolean;
   date?: Date;
@@ -179,13 +183,131 @@ export function gambarKartuTanah(canvas: HTMLCanvasElement, o: OpsiKartu) {
     garis(tebal - 11, warnaAspal);                 // badan aspal
     garis(3.4, warnaJalan, [14, 18]);              // marka tengah
 
-    const [sx, sy] = xy[0], [ex, ey] = xy[xy.length - 1];
-    c.fillStyle = warnaJalan;
-    c.beginPath(); c.arc(sx, sy, 13, 0, Math.PI * 2); c.fill();
-    c.fillStyle = warnaAspal;
-    c.beginPath(); c.arc(sx, sy, 6, 0, Math.PI * 2); c.fill();
-    c.fillStyle = warnaJalan;
-    c.beginPath(); c.arc(ex, ey, 15, 0, Math.PI * 2); c.fill();
+    // Penanda titik. Bila tidak disebutkan, dipakai A untuk mulai dan B untuk
+    // selesai; bila ada lebih banyak, huruf tengah dibagi merata di sepanjang
+    // jalur sehingga urutannya terbaca dari kiri ke kanan mengikuti rute.
+    const label = o.penanda?.length && o.penanda.length >= 2
+      ? o.penanda.map((t) => t.label)
+      : ["A", "B"];
+    const jumlah = label.length;
+
+    // Posisi penanda dihitung dari PANJANG jalur di layar, bukan dari nomor
+    // titik. Pada rute melingkar, titik ke-separuh sering jatuh berdekatan
+    // dengan titik awal sehingga hurufnya bertumpuk; ukuran panjang membuat
+    // jaraknya merata seperti yang terlihat mata.
+    const panjangSampai: number[] = [0];
+    for (let i = 1; i < xy.length; i++) {
+      const dx = xy[i][0] - xy[i - 1][0], dy = xy[i][1] - xy[i - 1][1];
+      panjangSampai.push(panjangSampai[i - 1] + Math.hypot(dx, dy));
+    }
+    const total = panjangSampai[panjangSampai.length - 1] || 1;
+    const indeksPada = (bagian: number) => {
+      const target = bagian * total;
+      let lo = 0, hi = panjangSampai.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (panjangSampai[mid] < target) lo = mid + 1; else hi = mid;
+      }
+      return lo;
+    };
+
+    const dipakai: [number, number][] = [];
+    for (let i = 0; i < jumlah; i++) {
+      let posisi = jumlah === 1 ? 0 : indeksPada(i / (jumlah - 1));
+      // Bila masih terlalu dekat dengan penanda sebelumnya, digeser maju
+      // sampai terpisah setidaknya 165 px pada kanvas 1080 (sekitar 60 px saat
+      // kartunya ditampilkan seukuran layar ponsel).
+      if (i > 0 && i < jumlah - 1) {
+        let putar = 0;
+        while (putar < 60 && dipakai.some(([ax, ay]) =>
+          Math.hypot(xy[posisi][0] - ax, xy[posisi][1] - ay) < 165)) {
+          posisi = Math.min(xy.length - 2, posisi + Math.max(2, Math.ceil(xy.length / 60)));
+          putar++;
+        }
+      }
+      const [px, py] = xy[posisi];
+      dipakai.push([px, py]);
+      const akhir = i === jumlah - 1;
+      const r = akhir ? 26 : 23;
+
+      c.save();
+      c.shadowColor = "rgba(0,0,0,.4)";
+      c.shadowBlur = 12;
+      c.shadowOffsetY = 4;
+      c.fillStyle = akhir ? warnaJalan : warnaJalan;
+      c.beginPath(); c.arc(px, py, r, 0, Math.PI * 2); c.fill();
+      c.restore();
+
+      // Titik selesai diberi cincin ganda agar berbeda dari titik lewat.
+      if (akhir) {
+        c.strokeStyle = warnaAspal; c.lineWidth = 4;
+        c.beginPath(); c.arc(px, py, r - 8, 0, Math.PI * 2); c.stroke();
+      }
+
+      c.fillStyle = warnaAspal;
+      c.textAlign = "center";
+      c.font = fSans(akhir ? 26 : 27, 800);
+      c.fillText(label[i], px, py + (akhir ? 9 : 10));
+      c.textAlign = "left";
+    }
+
+    // Keterangan nama jalan di kaki blok peta: "A JL DURIAN -> B JL RAMBUTAN".
+    // Hanya digambar bila nama jalannya memang tersedia, supaya kartu tidak
+    // menampilkan huruf tanpa keterangan.
+    const berNama = (o.penanda || []).filter((t) => t.nama && t.nama.trim());
+    if (berNama.length >= 2) {
+      const tinggiPita = 62;
+      const yPita = by + bh - tinggiPita + 12;
+      c.save();
+      c.fillStyle = "rgba(0,0,0,.30)";
+      c.beginPath();
+      const r = 18, xk = bx, wk = bw;
+      c.moveTo(xk + r, yPita);
+      c.arcTo(xk + wk, yPita, xk + wk, yPita + tinggiPita, r);
+      c.arcTo(xk + wk, yPita + tinggiPita, xk, yPita + tinggiPita, r);
+      c.arcTo(xk, yPita + tinggiPita, xk, yPita, r);
+      c.arcTo(xk, yPita, xk + wk, yPita, r);
+      c.closePath();
+      c.fill();
+
+      // Nama jalan disusun berurutan dan dipendekkan bila melebihi lebar pita.
+      let x = xk + 22;
+      const batas = xk + wk - 22;
+      for (let i = 0; i < berNama.length; i++) {
+        const t = berNama[i];
+        c.font = fSans(24, 800);
+        const lebarHuruf = 30;
+        if (x + lebarHuruf > batas) break;
+
+        // Bulatan huruf
+        c.fillStyle = warnaJalan;
+        c.beginPath(); c.arc(x + 11, yPita + tinggiPita / 2, 13, 0, Math.PI * 2); c.fill();
+        c.fillStyle = warnaAspal;
+        c.textAlign = "center";
+        c.fillText(t.label, x + 11, yPita + tinggiPita / 2 + 8);
+        c.textAlign = "left";
+        x += lebarHuruf;
+
+        // Nama jalan
+        c.fillStyle = warnaJalan;
+        c.font = fSans(25, 700);
+        let nama = (t.nama || "").toUpperCase();
+        while (nama.length > 4 && x + c.measureText(nama).width > batas - (i < berNama.length - 1 ? 34 : 0)) {
+          nama = nama.slice(0, -2);
+        }
+        if (nama !== (t.nama || "").toUpperCase()) nama = nama.trimEnd() + "…";
+        c.fillText(nama, x, yPita + tinggiPita / 2 + 8);
+        x += c.measureText(nama).width + 14;
+
+        if (i < berNama.length - 1) {
+          c.fillStyle = `${warnaJalan}99`;
+          c.font = fSans(24, 700);
+          c.fillText("→", x, yPita + tinggiPita / 2 + 8);
+          x += 30;
+        }
+      }
+      c.restore();
+    }
   };
 
   // --- Lencana BUG ---------------------------------------------------------

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Phone, MapPin, Copy, Check, Loader2 } from "lucide-react";
 import { getPositionOnce } from "@/lib/native-geo";
 import { reverseGeocodePlace } from "@/lib/place-name";
+import { teleponDarurat } from "@/lib/panggilan-darurat";
 
 // Panggilan terpandu ke 110.
 //
@@ -118,10 +119,10 @@ export default function PanggilanTerpandu({ namaDepan }: { namaDepan: string }) 
         </button>
 
         {/* Tombol panggil */}
-        <a href="tel:110"
+        <button onClick={() => { void teleponDarurat("110"); }}
           className="mt-4 w-full bg-red-600 text-white py-4 rounded-2xl display-title text-lg flex items-center justify-center gap-2.5 shadow-[0_0_26px_rgba(220,38,38,.35)] active:scale-[.98] transition-transform teks-terang">
           <Phone size={20} /> TELEPON 110 SEKARANG
-        </a>
+        </button>
         <p className="text-[11px] text-slate-500 text-center mt-2">
           Panggilan dilakukan dari nomormu sendiri. Aplikasi tidak bisa berbicara mewakilimu.
         </p>

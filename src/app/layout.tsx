@@ -1,4 +1,5 @@
 import GowesProvider from "./gowes-provider";
+import IzinPanggilan from "@/components/izin-panggilan";
 import TombolCatat from "@/components/tombol-catat";
 import { SkripTema } from "@/components/tema";
 import PeralihanHalaman from "@/components/peralihan-halaman";
@@ -48,7 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SessionKeeper />
                 <PushRegistrar />
                 <InstallPrompt />
-                <TombolCatat />
+                <IzinPanggilan />
+        <TombolCatat />
         <Navbar />
                 <ActivityDock />
                 <main className="pb-[68px]"><PeralihanHalaman>{children}</PeralihanHalaman></main>

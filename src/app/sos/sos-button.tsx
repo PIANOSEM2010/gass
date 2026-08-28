@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Siren, MapPin, Loader2, CheckCircle2, WifiOff, Phone, MessageSquare } from "lucide-react";
 import { getPositionOnce } from "@/lib/native-geo";
 import { createClient } from "@/lib/supabase/client";
+import { teleponDarurat } from "@/lib/panggilan-darurat";
 
 type Contact = {
   id: string;
@@ -190,7 +191,9 @@ export default function SosButton({
       // lanjutan dari tekanan tombol pengguna - kalau ditunda lebih lama,
       // sebagian peramban memblokir perpindahan ke tel: karena dianggap bukan
       // hasil interaksi.
-      requestAnimationFrame(() => { window.location.href = "tel:110"; });
+      // Di dalam APK, panggilan berangkat sendiri lewat izin CALL_PHONE.
+      // Di peramban, fungsi ini otomatis kembali membuka aplikasi telepon.
+      requestAnimationFrame(() => { void teleponDarurat("110"); });
     } catch (err) {
       setStatus("error");
       setErrorMsg(err instanceof Error ? err.message : "Terjadi kesalahan");
@@ -259,7 +262,7 @@ export default function SosButton({
         <div className="space-y-2">
           
           <button
-            onClick={() => { window.location.href = "tel:110"; }}
+            onClick={() => { void teleponDarurat("110"); }}
             className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 teks-terang"
           >
             <Phone size={18} /> Telepon 110 (Polisi)

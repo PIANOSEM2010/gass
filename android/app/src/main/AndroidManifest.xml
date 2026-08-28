@@ -38,6 +38,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Panggilan darurat langsung ke 110 saat tombol SOS ditekan.
+         Tanpa izin ini, aplikasi hanya bisa membuka penelepon dan pengguna
+         masih harus menekan tombol panggil sendiri. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

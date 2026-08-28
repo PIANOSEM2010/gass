@@ -5,6 +5,7 @@ import { Play, Pause, Share2, Download, Loader2, Trash2, Map as MapIcon } from "
 import { type Titik } from "@/components/jejak-rute";
 import { gambarKartuTanah } from "@/lib/kartu-tanah";
 import { tautanRute } from "@/lib/rute-tersimpan";
+import { namaBeberapaJalan } from "@/lib/nama-jalan";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -21,8 +22,26 @@ export default function PemutarRute({
   const [maju, setMaju] = useState(1);      // 0..1
   const [main, setMain] = useState(false);
   const [pesan, setPesan] = useState("");
+  const [namaJalanTitik, setNamaJalanTitik] = useState<string[]>([]);
   const [sibuk, setSibuk] = useState(false);
   const kanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Penanda titik pada jalur. Rute pendek cukup A ke B; rute panjang diberi
+  // titik lewat di tengah supaya arah gowesnya jelas terbaca di kartu.
+  const penandaDasar = (() => {
+    const km = distanceM / 1000;
+    const jumlah = km >= 20 ? 4 : km >= 8 ? 3 : 2;
+    const huruf = ["A", "B", "C", "D"];
+    return Array.from({ length: jumlah }, (_, i) => ({
+      label: huruf[i],
+      peran: i === 0 ? "Mulai" : i === jumlah - 1 ? "Selesai" : `Melewati`,
+    }));
+  })();
+
+  // Penanda akhir: huruf + peran + nama jalan (bila sudah didapat).
+  const penandaTitik = penandaDasar.map((t, i) => ({
+    ...t, nama: namaJalanTitik[i] || "",
+  }));
 
   const W = 340, H = 240;
   const xy = (() => {
@@ -37,6 +56,21 @@ export default function PemutarRute({
     return path.map((p) => [ox + (p.lng - miLo) * sc, oy + (maLa - p.lat) * sc] as [number, number]);
   })();
 
+  // Nama jalan tiap penanda diambil sekali, berurutan dengan jeda, karena
+  // Nominatim membatasi satu permintaan per detik.
+  useEffect(() => {
+    if (path.length < 2) return;
+    let hidup = true;
+    const titik = penandaDasar.map((_, i) => {
+      const bagian = penandaDasar.length === 1 ? 0 : i / (penandaDasar.length - 1);
+      return path[Math.round(bagian * (path.length - 1))];
+    });
+    namaBeberapaJalan(titik).then((n) => { if (hidup) setNamaJalanTitik(n); }).catch(() => null);
+    return () => { hidup = false; };
+    // penandaDasar hanya bergantung pada jarak, jadi cukup dihitung sekali.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path.length, distanceM]);
+
   useEffect(() => {
     if (!main) return;
     const t = setInterval(() => {
@@ -47,6 +81,21 @@ export default function PemutarRute({
     }, 40);
     return () => clearInterval(t);
   }, [main]);
+
+  // Penanda diletakkan berdasarkan panjang jalur agar tidak bertumpuk.
+  const indeksPanjang = (() => {
+    const kum: number[] = [0];
+    for (let i = 1; i < xy.length; i++) {
+      kum.push(kum[i - 1] + Math.hypot(xy[i][0] - xy[i - 1][0], xy[i][1] - xy[i - 1][1]));
+    }
+    const total = kum[kum.length - 1] || 1;
+    return (bagian: number) => {
+      const target = bagian * total;
+      let lo = 0, hi = kum.length - 1;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (kum[m] < target) lo = m + 1; else hi = m; }
+      return lo;
+    };
+  })();
 
   const sampai = Math.max(2, Math.round(xy.length * maju));
   const d = xy.slice(0, sampai).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
@@ -109,8 +158,9 @@ export default function PemutarRute({
       template: "blok", warna: "terakota", rasio: "1:1", path,
       distanceM, durationS: durationS ?? 0, elevM, place: "Bulungan",
       kalori: Math.round((distanceM / 1000) * 35),
+      penanda: penandaTitik,
     });
-  }, [path, distanceM, durationS, elevM]);
+  }, [path, distanceM, durationS, elevM, penandaTitik]);
 
   return (
     <div className="min-h-screen bg-[var(--latar)] pb-10">
@@ -127,8 +177,22 @@ export default function PemutarRute({
             <path d={xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ")}
               fill="none" stroke="rgba(148,163,184,.22)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
             <path d={d} fill="none" stroke="#B4FF3A" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-            {xy[0] && <circle cx={xy[0][0]} cy={xy[0][1]} r="6" fill="#ffffff" />}
-            {ujung && <circle cx={ujung[0]} cy={ujung[1]} r="7" fill="#B4FF3A" />}
+            {/* Penanda huruf pada jalur: A mulai, huruf terakhir selesai */}
+            {penandaTitik.map((t, i) => {
+              const pos = indeksPanjang(i / (penandaTitik.length - 1));
+              const p = xy[pos];
+              if (!p) return null;
+              const akhir = i === penandaTitik.length - 1;
+              return (
+                <g key={t.label}>
+                  <circle cx={p[0]} cy={p[1]} r={akhir ? 12 : 11}
+                    fill={akhir ? "#B4FF3A" : "#ffffff"} stroke="#0A1410" strokeWidth="2" />
+                  <text x={p[0]} y={p[1] + 4.5} textAnchor="middle" fontSize="11"
+                    fontWeight="800" fill="#0A1410">{t.label}</text>
+                </g>
+              );
+            })}
+            {ujung && <circle cx={ujung[0]} cy={ujung[1]} r="4" fill="#B4FF3A" opacity=".9" />}
           </svg>
 
           <div className="flex items-center gap-3 mt-1">
@@ -141,6 +205,23 @@ export default function PemutarRute({
               className="flex-1 accent-lime-400" aria-label="Geser posisi pemutaran" />
             <span className="display-num text-sm text-slate-400 w-10 text-right">{Math.round(maju * 100)}%</span>
           </div>
+        </div>
+
+        {/* Keterangan penanda, supaya jelas gowes dari mana ke mana */}
+        <div className="mt-3 rounded-2xl border border-white/8 bg-[var(--kartu)] px-4 py-3 space-y-2">
+          {penandaTitik.map((t, i) => (
+            <div key={t.label} className="flex items-center gap-2.5">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center display-title text-[11px] flex-shrink-0 ${i === penandaTitik.length - 1 ? "bg-lime-400 text-slate-950" : "bg-white text-slate-950"}`}>
+                {t.label}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] text-white truncate">
+                  {t.nama || (namaJalanTitik.length ? "Nama jalan tidak diketahui" : "Mencari nama jalan…")}
+                </span>
+                <span className="block text-[10.5px] text-slate-500">{t.peran}</span>
+              </span>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-3 gap-2 mt-3">
