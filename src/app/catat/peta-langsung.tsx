@@ -1,9 +1,11 @@
 "use client";
-import { MapContainer, TileLayer, Polyline, CircleMarker, Circle, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, CircleMarker, Circle, Marker, useMap } from "react-leaflet";
+import L from "leaflet";
 import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import { createClient } from "@/lib/supabase/client";
 import type { Titik } from "@/components/jejak-rute";
+import { cekPoint, type TitikEvent } from "@/lib/titik-event";
 
 type Zona = { id: string; lat: number; lng: number; radius: number; category: string };
 
@@ -28,9 +30,26 @@ function Ikuti({ posisi, ikut }: { posisi: Titik | null; ikut: boolean }) {
 // harus berpindah sendiri ke halaman Peta Jalur untuk melihat posisinya.
 // Sekarang keduanya berjalan bersamaan dalam satu layar: angka jarak di atas,
 // peta yang mengikuti di bawahnya, lengkap dengan zona rawan di sekitarnya.
+// Penanda cek point event di peta langsung.
+function ikonCek(huruf: string, akhir: boolean) {
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      background:${akhir ? "#B4FF3A" : "#FB923C"};color:#0A1410;font-weight:800;font-size:12px;
+      border:3px solid #0A1410;box-shadow:0 2px 6px rgba(0,0,0,.45)">${huruf}</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  });
+}
+
 export default function PetaLangsung({
-  jejak, aktif,
-}: { jejak: Titik[] | null; aktif: boolean }) {
+  jejak, aktif, rute,
+}: {
+  jejak: Titik[] | null;
+  aktif: boolean;
+  /** Jalur event yang sedang diikuti, digambar sebagai acuan di bawah jejak. */
+  rute?: TitikEvent[] | null;
+}) {
   const [zona, setZona] = useState<Zona[]>([]);
   const [ikut, setIkut] = useState(true);
 
@@ -54,7 +73,11 @@ export default function PetaLangsung({
 
   const titik = jejak && jejak.length ? jejak : null;
   const kini = titik ? titik[titik.length - 1] : null;
-  const pusat: [number, number] = kini ? [kini.lat, kini.lng] : [2.8450, 117.3680];
+  const pusat: [number, number] = kini
+    ? [kini.lat, kini.lng]
+    : rute && rute.length
+      ? [rute[0].lat, rute[0].lng]
+      : [2.8450, 117.3680];
   const malam = new Date().getHours() < 6 || new Date().getHours() >= 18;
 
   return (
@@ -72,6 +95,21 @@ export default function PetaLangsung({
               fillOpacity: 0.14, weight: 1.5,
             }} />
         ))}
+
+        {/* Jalur event digambar lebih dulu supaya berada di bawah jejak
+            pengguna: acuan oranye putus-putus, jejak sendiri hijau pekat. */}
+        {rute && rute.length > 1 && (
+          <>
+            <Polyline positions={rute.map((t) => [t.lat, t.lng] as [number, number])}
+              pathOptions={{ color: "#0A1410", weight: 11, opacity: 0.5 }} />
+            <Polyline positions={rute.map((t) => [t.lat, t.lng] as [number, number])}
+              pathOptions={{ color: "#FB923C", weight: 5, opacity: 0.95, dashArray: "12 10" }} />
+            {cekPoint(rute).map((cp, i, arr) => (
+              <Marker key={cp.indeks} position={[cp.titik.lat, cp.titik.lng]}
+                icon={ikonCek(cp.huruf, i === arr.length - 1)} />
+            ))}
+          </>
+        )}
 
         {titik && titik.length > 1 && (
           <Polyline positions={titik.map((t) => [t.lat, t.lng] as [number, number])}
@@ -98,6 +136,13 @@ export default function PetaLangsung({
         className="absolute top-3 right-3 z-[500] rounded-full bg-black/55 backdrop-blur px-3 py-1.5 eyebrow !text-[8px] text-white teks-terang">
         {ikut ? "Kunci: aktif" : "Kunci: mati"}
       </button>
+
+      {rute && rute.length > 1 && (
+        <div className="absolute bottom-3 left-3 z-[500] flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur px-2.5 py-1 teks-terang">
+          <span className="w-3 h-[3px] rounded-full bg-orange-400" />
+          <span className="eyebrow !text-[8px] text-white">Jalur event</span>
+        </div>
+      )}
 
       {!kini && (
         <div className="absolute inset-0 z-[400] flex items-center justify-center bg-black/45 pointer-events-none teks-terang">

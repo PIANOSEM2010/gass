@@ -109,7 +109,7 @@ export default function RuteDariNamaJalan({
         titik[dekat] = { ...titik[dekat], cek: true, nama: t.nama };
       }
 
-      const cek = periksaJalurAman(titik, zona, 60);
+      const cek = periksaJalurAman(titik, zona);
       setPeriksa(cek);
       setJarak(total);
       selesai(titik, total);

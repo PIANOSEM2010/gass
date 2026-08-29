@@ -10,6 +10,7 @@ import { drawCard, loadImage, fmtDuration, PALETTES, PALETTE_KEYS, TEMPLATES } f
 import { gambarKartuTanah, TEMPLATE_TANAH, WARNA_TANAH, WARNA_TANAH_KEYS, type Rasio } from "@/lib/kartu-tanah";
 import { placeNameFromPath } from "@/lib/place-name";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
+import { type TitikEvent } from "@/lib/titik-event";
 import { IkonCatatGowes } from "@/components/fitur-ikon";
 import { periksaRekorPribadi, type Rekor } from "@/lib/rekor-pribadi";
 import { Podium, type Peserta } from "@/app/leaderboard/podium";
@@ -71,6 +72,7 @@ export default function CatatClient({
   const params = useSearchParams();
   const eventId = params?.get("event") || null;
   const [namaEvent, setNamaEvent] = useState("");
+  const [jalurEvent, setJalurEvent] = useState<TitikEvent[] | null>(null);
   const sudahMulaiOtomatis = useRef(false);
   const [warnaTanah, setWarnaTanah] = useState("terakota");
   const [template, setTemplate] = useState("blok");
@@ -251,8 +253,10 @@ export default function CatatClient({
     (async () => {
       try {
         const sb = createClient();
-        const { data } = await sb.from("events").select("name").eq("id", eventId).maybeSingle();
+        const { data } = await sb.from("events").select("name,waypoints").eq("id", eventId).maybeSingle();
         if (data?.name) setNamaEvent(String(data.name));
+        // Jalur event ikut diambil agar tergambar sebagai acuan di peta.
+        if (Array.isArray(data?.waypoints)) setJalurEvent(data.waypoints as TitikEvent[]);
       } catch { /* nama event hanya hiasan, jangan menghalangi perekaman */ }
     })();
     if (params?.get("mulai") === "1" && status === "idle") {
@@ -337,6 +341,9 @@ export default function CatatClient({
             {namaEvent || "Memuat nama event…"}
           </p>
           <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+            {jalurEvent && jalurEvent.length > 1
+              ? "Jalur event tergambar oranye putus-putus di peta. Jejakmu sendiri hijau pekat. "
+              : ""}
             Perjalanan ini otomatis tersimpan sebagai bagian dari event begitu kamu menekan Selesai lalu Simpan.
           </p>
         </div>
@@ -427,7 +434,7 @@ export default function CatatClient({
               sekaligus, jadi pesepeda tidak perlu berpindah halaman. */}
           <div className="mt-3">
             {status === "tracking" || status === "paused" ? (
-              <PetaLangsung jejak={(getPath() as Titik[] | null)} aktif={status === "tracking"} />
+              <PetaLangsung jejak={(getPath() as Titik[] | null)} aktif={status === "tracking"} rute={jalurEvent} />
             ) : (
               <div className="relative rounded-3xl overflow-hidden border border-white/8 bg-[var(--relung)]">
                 <div className="flex flex-col items-center pt-7 pb-4">

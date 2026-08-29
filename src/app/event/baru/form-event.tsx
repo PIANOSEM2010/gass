@@ -30,7 +30,8 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
   const [pesan, setPesan] = useState("");
 
   // Jalur diperiksa langsung terhadap zona rawan yang sudah dipetakan.
-  const periksa = periksaJalurAman(titik, zona, 120);
+  // Toleransi kecil saja: yang dilaporkan hanya zona yang benar-benar dilintasi.
+  const periksa = periksaJalurAman(titik, zona);
   const jarak = panjangRute(titik);
   const cek = cekPoint(titik);
   // Etika disusun sistem dari sifat jalur: panjangnya, jam berangkat, jumlah
@@ -76,7 +77,7 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
       const catatanRawan = periksa.aman
         ? "Jalur ini tidak melewati zona rawan yang terpetakan di BUG."
         : periksa.pelanggaran
-            .map((v) => `${v.nama} - jalur melintas sekitar ${v.jarak_m} m dari titik ini.`)
+            .map((v) => `${v.nama} - jalur event melintasi zona ini. Turunkan kecepatan dan berbaris satu banjar di bagian ini.`)
             .join("\n");
 
       // Cegah pengajuan ganda: nama yang sama dari pengaju yang sama, selama
