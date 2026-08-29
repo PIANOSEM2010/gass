@@ -17,22 +17,54 @@ const DIAM_MS = 5 * 60 * 1000;   // lima menit tanpa perpindahan berarti
 const HITUNG_MUNDUR = 60;        // detik untuk membatalkan
 const GESER_MIN_M = 25;          // toleransi lompatan GPS saat diam
 
-export default function PenjagaDiam({ aktif, distanceM }: { aktif: boolean; distanceM: number }) {
+export default function PenjagaDiam({ aktif, distanceM, posisi }: {
+  aktif: boolean;
+  /** Dipakai halaman Catat Gowes: jarak tempuh yang terus bertambah. */
+  distanceM?: number;
+  /** Dipakai halaman Peta Jalur: koordinat terkini pengguna. */
+  posisi?: { lat: number; lng: number } | null;
+}) {
   const router = useRouter();
   const [tanya, setTanya] = useState(false);
   const [sisa, setSisa] = useState(HITUNG_MUNDUR);
   const [nonaktif, setNonaktif] = useState(false);
-  const jarakTerakhir = useRef(distanceM);
+  const jarakTerakhir = useRef(distanceM ?? 0);
+  const posisiTerakhir = useRef<{ lat: number; lng: number } | null>(posisi ?? null);
   const waktuGerak = useRef(Date.now());
 
   // Catat kapan terakhir kali pengguna benar-benar berpindah.
+  //
+  // Dua sumber gerakan didukung, karena penjaga ini dipakai di dua tempat:
+  // halaman Catat Gowes yang punya jarak tempuh, dan halaman Peta Jalur yang
+  // hanya punya koordinat. Keduanya memakai ambang yang sama.
   useEffect(() => {
-    if (!aktif) { jarakTerakhir.current = distanceM; waktuGerak.current = Date.now(); return; }
-    if (Math.abs(distanceM - jarakTerakhir.current) >= GESER_MIN_M) {
-      jarakTerakhir.current = distanceM;
+    if (!aktif) {
+      jarakTerakhir.current = distanceM ?? 0;
+      posisiTerakhir.current = posisi ?? null;
       waktuGerak.current = Date.now();
+      return;
     }
-  }, [distanceM, aktif]);
+    if (typeof distanceM === "number") {
+      if (Math.abs(distanceM - jarakTerakhir.current) >= GESER_MIN_M) {
+        jarakTerakhir.current = distanceM;
+        waktuGerak.current = Date.now();
+      }
+      return;
+    }
+    if (posisi) {
+      const a = posisiTerakhir.current;
+      if (!a) { posisiTerakhir.current = posisi; waktuGerak.current = Date.now(); return; }
+      const dLat = ((posisi.lat - a.lat) * Math.PI) / 180;
+      const dLng = ((posisi.lng - a.lng) * Math.PI) / 180;
+      const lat = ((a.lat + posisi.lat) / 2) * (Math.PI / 180);
+      const x = dLng * Math.cos(lat);
+      const meter = Math.sqrt(dLat * dLat + x * x) * 6371000;
+      if (meter >= GESER_MIN_M) {
+        posisiTerakhir.current = posisi;
+        waktuGerak.current = Date.now();
+      }
+    }
+  }, [distanceM, posisi, aktif]);
 
   // Periksa tiap 15 detik, bukan tiap perubahan posisi, agar hemat baterai.
   useEffect(() => {
@@ -69,7 +101,8 @@ export default function PenjagaDiam({ aktif, distanceM }: { aktif: boolean; dist
   function akuAman() {
     setTanya(false);
     waktuGerak.current = Date.now();
-    jarakTerakhir.current = distanceM;
+    jarakTerakhir.current = distanceM ?? 0;
+    posisiTerakhir.current = posisi ?? null;
   }
 
   if (!tanya) return null;

@@ -19,6 +19,7 @@ import {
 import { startWatch, getPositionOnce, type WatchHandle } from "@/lib/native-geo";
 import { periksaJalurAman, type HasilPeriksa } from "@/lib/periksa-jalur";
 import TombolSimpanRute from "@/components/tombol-simpan-rute";
+import PenjagaDiam from "@/components/penjaga-diam";
 
 type RoadMarker = {
   id: string;
@@ -1296,6 +1297,14 @@ export default function PetaClient({
           </div>
         </div>
       )}
+
+      {/* Penjaga diam juga berlaku di Peta Jalur, bukan hanya saat mencatat
+          gowes: banyak pesepeda memakai peta untuk menavigasi tanpa merekam,
+          dan justru di situ mereka tetap butuh perlindungan. */}
+      <PenjagaDiam
+        aktif={(tracking || navigating) && Boolean(userPos)}
+        posisi={userPos ? { lat: userPos.lat, lng: userPos.lng } : null}
+      />
 
       {/* Bilah tipis saat panel dikecilkan: peta terlihat penuh, dan bilah ini
           sekaligus menjadi penuntun saat pengguna sedang memilih titik. */}

@@ -148,8 +148,10 @@ export default function SusunStory({ tutup }: { tutup: () => void }) {
         <input ref={berkasRef} type="file" accept="image/*" className="hidden" onChange={pilihFoto} />
 
         {/* Pratinjau */}
-        <div className="flex-1 min-h-0 px-4 py-3">
-          <div className="h-full rounded-2xl overflow-hidden border border-white/12 flex items-center justify-center"
+        {/* Tinggi pratinjau dibatasi supaya kolom keterangan dan tombol
+            Bagikan tetap terlihat di layar ponsel yang pendek. */}
+        <div className="flex-1 min-h-0 px-4 py-3 overflow-hidden">
+          <div className="h-full max-h-[46vh] rounded-2xl overflow-hidden border border-white/12 flex items-center justify-center"
             style={jenis === "teks" ? { background: `linear-gradient(135deg, ${p.dari}, ${p.ke})` } : { background: "#000" }}>
             {jenis === "teks" ? (
               <p className="display-title px-6 text-center leading-tight break-words"

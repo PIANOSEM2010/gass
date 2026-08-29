@@ -14,6 +14,7 @@ import { IkonCatatGowes } from "@/components/fitur-ikon";
 import { periksaRekorPribadi, type Rekor } from "@/lib/rekor-pribadi";
 import { Podium, type Peserta } from "@/app/leaderboard/podium";
 import PenjagaDiam from "@/components/penjaga-diam";
+import { useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/umpan-kartu";
 import { meter } from "@/lib/angka";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
@@ -57,6 +58,13 @@ export default function CatatClient({
   const [sharingStory, setSharingStory] = useState(false);
   const [storyMsg, setStoryMsg] = useState("");
   const [rasio, setRasio] = useState<Rasio>("1:1");
+  // Datang dari tombol "Mulai Event": perekaman dijalankan sendiri, dan
+  // perjalanan yang tersimpan diberi penanda event supaya bisa dihitung
+  // sebagai keikutsertaan.
+  const params = useSearchParams();
+  const eventId = params?.get("event") || null;
+  const [namaEvent, setNamaEvent] = useState("");
+  const sudahMulaiOtomatis = useRef(false);
   const [warnaTanah, setWarnaTanah] = useState("terakota");
   const [template, setTemplate] = useState("blok");
   const [palette, setPalette] = useState("hijau");
@@ -158,6 +166,7 @@ export default function CatatClient({
           userId, fullName, organization,
           distance_m: Math.round(st.distanceM), duration_s: st.durationS,
           elevation_gain_m: Math.round(st.elevM), path: getPath(),
+          event_id: eventId,
           started_at: new Date(st.startedAt).toISOString(),
           ended_at: new Date(st.endedAt).toISOString(),
         }),
@@ -172,6 +181,14 @@ export default function CatatClient({
       router.refresh();
       // Rekor diperiksa setelah tersimpan, supaya perjalanan ini sudah ada di
       // basis data dan bisa dikeluarkan dari daftar pembanding.
+      // Catat bahwa peserta menyelesaikan event ini.
+      if (eventId && data?.id) {
+        void createClient().from("event_participants").update({
+          finished_at: new Date().toISOString(),
+          activity_id: data.id,
+        }).eq("event_id", eventId).eq("user_id", userId);
+      }
+
       periksaRekorPribadi(userId, {
         distanceM: st.distanceM,
         durationS: st.durationS,
@@ -220,6 +237,23 @@ export default function CatatClient({
       setStoryMsg(err instanceof Error ? err.message : "Gagal membuat story.");
     } finally { setSharingStory(false); }
   }
+
+  useEffect(() => {
+    if (!eventId || sudahMulaiOtomatis.current) return;
+    sudahMulaiOtomatis.current = true;
+    (async () => {
+      try {
+        const sb = createClient();
+        const { data } = await sb.from("events").select("name").eq("id", eventId).maybeSingle();
+        if (data?.name) setNamaEvent(String(data.name));
+      } catch { /* nama event hanya hiasan, jangan menghalangi perekaman */ }
+    })();
+    if (params?.get("mulai") === "1" && status === "idle") {
+      // Ditunda satu putaran agar izin lokasi sempat siap lebih dulu.
+      setTimeout(() => { void start(); }, 600);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
 
   function shareCard() {
     const canvas = cardRef.current;
@@ -288,6 +322,18 @@ export default function CatatClient({
   return (
     <div className="min-h-screen bg-[var(--latar)] px-4 pt-5 max-w-md mx-auto pb-8">
       <PenjagaDiam aktif={status === "tracking"} distanceM={distance} />
+
+      {eventId && (
+        <div className="mb-3 rounded-2xl border border-orange-400/30 bg-orange-400/10 px-4 py-3">
+          <p className="eyebrow !text-[9px] text-orange-300">Sedang mengikuti event</p>
+          <p className="display-title text-[14px] text-white mt-0.5">
+            {namaEvent || "Memuat nama event…"}
+          </p>
+          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+            Perjalanan ini otomatis tersimpan sebagai bagian dari event begitu kamu menekan Selesai lalu Simpan.
+          </p>
+        </div>
+      )}
       {/* Ringkasan beruntun: ringkas, tidak mencuri perhatian dari angka jarak */}
       <div className="kartu-bug px-4 py-3 mb-3 flex items-center gap-4">
         <div className="flex items-center gap-2">

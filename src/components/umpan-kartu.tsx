@@ -133,8 +133,11 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
       <div className="flex items-center gap-4 px-4 py-3 mt-2 border-t border-white/5">
         <button onClick={tekanKudos} disabled={!masuk}
           aria-pressed={sudah}
+          aria-label={sudah ? "Batalkan semangat" : "Beri semangat"}
           className={`flex items-center gap-1.5 text-xs transition-colors ${sudah ? "text-amber-400" : "text-slate-400"} disabled:opacity-50`}>
-          <IkonStreak size={17} /> {kudos}
+          <IkonStreak size={17} />
+          <span className="display-num">{kudos}</span>
+          <span className="text-[11px]">Semangat</span>
         </button>
         <Link href={`/umpan/${a.id}`} className="flex items-center gap-1.5 text-xs text-slate-400">
           <IkonForum size={17} /> {a.komentar}

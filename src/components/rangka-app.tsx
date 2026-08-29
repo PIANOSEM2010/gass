@@ -28,6 +28,7 @@ const LAIN = [
   { href: "/cari", label: "Cari Goweser", ikon: IkonProfil },
   { href: "/rute", label: "Rute Tersimpan", ikon: IkonRuteLingkar },
   { href: "/pantau", label: "Teman Pantau", ikon: IkonTemanPantau },
+  { href: "/event", label: "Event Gowes", ikon: IkonKampanyeJalan },
   { href: "/forum", label: "Forum", ikon: IkonForumGowes },
   { href: "/kampanye", label: "Kampanye", ikon: IkonKampanyeJalan },
   { href: "/lapor", label: "Lapor Jalan", ikon: IkonLaporJalan },

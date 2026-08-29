@@ -15,7 +15,8 @@ const FITUR = [
   { href: "/peta?rekomendasi=1", label: "Rekomendasi Rute", ket: "Rute melingkar otomatis", ikon: IkonRuteLingkar, warna: "#A78BFA" },
   { href: "/lapor", label: "Lapor Jalan", ket: "Laporkan jalan rusak", ikon: IkonLaporJalan, warna: "#FBBF24" },
   { href: "/dashboard", label: "Dasbor Keselamatan", ket: "Data keselamatan pesepeda Bulungan", ikon: IkonDasbor, warna: "#FB7185" },
-  { href: "/kampanye", label: "Kampanye", ket: "Berbagi jalan untuk pesepeda", ikon: IkonKampanyeJalan, warna: "#FB923C" },
+  { href: "/event", label: "Event Gowes", ket: "Gowes bareng di Bulungan", ikon: IkonKampanyeJalan, warna: "#FB923C" },
+  { href: "/kampanye", label: "Kampanye", ket: "Berbagi jalan untuk pesepeda", ikon: IkonKampanyeJalan, warna: "#F472B6" },
   { href: "/forum", label: "Forum", ket: "Komunitas pesepeda", ikon: IkonForumGowes, warna: "#60A5FA" },
 ];
 

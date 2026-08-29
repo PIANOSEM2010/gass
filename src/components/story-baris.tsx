@@ -124,7 +124,7 @@ function PenampilStory({ grup, idSaya, tutup, lanjut }: {
   const s = grup.items[ke];
   return (
     <Lapisan>
-    <div className="fixed inset-0 z-[2000] bg-black flex flex-col" onClick={berikutnya}>
+    <div className="fixed inset-0 z-[2000] bg-black flex flex-col overflow-hidden" onClick={berikutnya}>
       <div className="flex gap-1 p-3">
         {grup.items.map((_, i) => (
           <span key={i} className="flex-1 h-[3px] rounded-full bg-white/25 overflow-hidden">
@@ -163,7 +163,15 @@ function PenampilStory({ grup, idSaya, tutup, lanjut }: {
           className="max-h-full max-w-full rounded-xl object-contain transition-opacity duration-300"
           style={{ opacity: siap ? 1 : 0 }} />
       </div>
-      {s.caption && <p className="px-5 pb-8 text-center text-sm text-white/90">{s.caption}</p>}
+      {/* Keterangan diletakkan menumpang di atas foto. Sebelumnya ia berada di
+          bawah gambar dalam susunan menurun, sehingga pada foto tegak ia
+          terdorong keluar layar dan tidak pernah terbaca. */}
+      {s.caption && (
+        <div className="absolute inset-x-0 bottom-0 pt-16 pb-8 px-5 pointer-events-none"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.55) 45%, transparent 100%)" }}>
+          <p className="text-center text-[14px] leading-relaxed text-white">{s.caption}</p>
+        </div>
+      )}
 
       {tanya && (
         <div className="absolute inset-0 z-10 bg-black/80 flex items-end justify-center p-4"
