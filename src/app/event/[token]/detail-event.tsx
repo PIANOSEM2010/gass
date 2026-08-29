@@ -4,17 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { gambarKartuEvent } from "@/lib/kartu-event";
-import { type Titik } from "@/components/jejak-rute";
+import { type TitikEvent, cekPoint } from "@/lib/titik-event";
 import {
   Share2, Download, Loader2, Users, MapPin, CalendarDays,
   AlertTriangle, ShieldCheck, Play, Check,
 } from "lucide-react";
 
-const HURUF = "ABCDEFGHIJ";
 
 export default function DetailEvent(p: {
   id: string; token: string; nama: string; logo: string | null; deskripsi: string | null;
-  mulai: string | null; titikKumpul: string | null; titik: Titik[]; distanceM: number;
+  mulai: string | null; titikKumpul: string | null; titik: TitikEvent[]; distanceM: number;
   catatanRawan: string; catatanEtika: string; status: string; pengaju: string;
   jumlahPeserta: number; sudahIkut: boolean; masuk: boolean;
 }) {
@@ -116,7 +115,7 @@ export default function DetailEvent(p: {
           <div className="grid grid-cols-3 gap-2 mt-5">
             {[
               { n: (p.distanceM / 1000).toFixed(1).replace(".", ","), l: "km jalur" },
-              { n: String(p.titik.length), l: "titik" },
+              { n: String(cekPoint(p.titik).length), l: "cek point" },
               { n: String(p.jumlahPeserta), l: "peserta" },
             ].map((s) => (
               <div key={s.l}>
@@ -155,17 +154,21 @@ export default function DetailEvent(p: {
         {/* Informasi rute */}
         <div className="kartu-bug p-4">
           <p className="display-title text-[14px] text-white mb-3">INFORMASI RUTE</p>
+          <p className="text-[11.5px] text-slate-500 mb-2.5">
+            Jalur dibentuk dari {p.titik.length} titik. Yang tercantum di bawah adalah cek point,
+            tempat rombongan berkumpul kembali sebelum melanjutkan.
+          </p>
           <ol className="space-y-1.5">
-            {p.titik.map((t, i) => (
-              <li key={i} className="flex items-center gap-2.5">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center display-title text-[11px] flex-shrink-0 ${i === p.titik.length - 1 ? "bg-lime-400 text-slate-950" : "bg-white text-slate-950"}`}>
-                  {HURUF[i]}
+            {cekPoint(p.titik).map((cp, i, arr) => (
+              <li key={cp.indeks} className="flex items-center gap-2.5">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center display-title text-[11px] flex-shrink-0 ${i === arr.length - 1 ? "bg-lime-400 text-slate-950" : "bg-white text-slate-950"}`}>
+                  {cp.huruf}
                 </span>
-                <span className="text-[12px] text-slate-400 flex-1">
-                  {t.lat.toFixed(5)}, {t.lng.toFixed(5)}
+                <span className="text-[12px] text-slate-300 flex-1 truncate">
+                  {cp.titik.nama || `${cp.titik.lat.toFixed(5)}, ${cp.titik.lng.toFixed(5)}`}
                 </span>
-                <span className="text-[10px] text-slate-600">
-                  {i === 0 ? "Start" : i === p.titik.length - 1 ? "Finish" : "Lewat"}
+                <span className="text-[10px] text-slate-600 flex-shrink-0">
+                  {i === 0 ? "Start" : i === arr.length - 1 ? "Finish" : "Cek point"}
                 </span>
               </li>
             ))}

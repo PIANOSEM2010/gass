@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import type { Titik } from "@/components/jejak-rute";
+import { type TitikEvent, cekPoint } from "@/lib/titik-event";
 
 // Kartu bagikan event.
 //
@@ -12,7 +12,6 @@ import type { Titik } from "@/components/jejak-rute";
 // berkait untuk angka besar.
 const SERIF = '"Georgia", "Times New Roman", serif';
 const SANS = '"Barlow Condensed", "Arial Narrow", system-ui, sans-serif';
-const HURUF = "ABCDEFGHIJ";
 
 const TANAH = "#C0632C";
 const TANAH_TUA = "#9E4A1C";
@@ -41,7 +40,7 @@ function potong(c: CanvasRenderingContext2D, teks: string, lebar: number) {
 export async function gambarKartuEvent(
   kanvas: HTMLCanvasElement,
   o: {
-    nama: string; titik: Titik[]; distanceM: number;
+    nama: string; titik: TitikEvent[]; distanceM: number;
     mulai: string | null; titikKumpul: string | null;
     etika: string; rawan: string; tautan: string;
   },
@@ -151,17 +150,62 @@ export async function gambarKartuEvent(
     garis(27, TANAH_TUA);
     garis(3.4, KERTAS, [14, 18]);
 
-    xy.forEach(([x, yy], i) => {
-      const akhir = i === xy.length - 1;
+    // Hanya cek point yang diberi huruf. Titik lain adalah pembentuk jalur,
+    // dan memberinya huruf akan membuat kartu penuh lingkaran tanpa arti.
+    //
+    // Di samping tiap huruf ditempelkan nama tempatnya, supaya penerima kartu
+    // langsung tahu "A itu di mana" tanpa harus membuka tautan.
+    const kiriKotak = 62, kananKotak = W - 62;
+    const labelTerpakai: { x: number; y: number; w: number }[] = [];
+
+    for (const cp of cekPoint(o.titik)) {
+      const t = xy[cp.indeks];
+      if (!t) continue;
+      const [x, yy] = t;
+      const akhir = cp.indeks === xy.length - 1;
+
+      // Nama tempat, ditempel sebagai pelat kecil di samping bulatan huruf.
+      const nama = (cp.titik.nama || "").trim();
+      if (nama) {
+        c.font = fSans(23, 700);
+        const lebarTeks = Math.min(c.measureText(nama).width, 250);
+        const wPelat = lebarTeks + 22;
+        const hPelat = 34;
+
+        // Ditaruh di kanan bila muat, kalau tidak di kiri. Bila bertabrakan
+        // dengan pelat lain, digeser ke atas atau ke bawah.
+        let px = x + 34;
+        if (px + wPelat > kananKotak - 12) px = x - 34 - wPelat;
+        if (px < kiriKotak + 12) px = Math.min(x + 34, kananKotak - 12 - wPelat);
+        let py = yy - hPelat / 2;
+        let putar = 0;
+        while (putar < 6 && labelTerpakai.some((l) =>
+          Math.abs(l.y - py) < hPelat + 4 && Math.abs(l.x - px) < Math.max(l.w, wPelat))) {
+          py += hPelat + 8;
+          putar++;
+        }
+        labelTerpakai.push({ x: px, y: py, w: wPelat });
+
+        c.save();
+        c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = 8; c.shadowOffsetY = 3;
+        jalurBulat(c, px, py, wPelat, hPelat, 17);
+        c.fillStyle = "rgba(10,20,16,.86)";
+        c.fill();
+        c.restore();
+        c.fillStyle = "#F2E7D2";
+        c.font = fSans(23, 700);
+        c.fillText(potong(c, nama, 250), px + 11, py + 23);
+      }
+
       c.save();
       c.shadowColor = "rgba(0,0,0,.4)"; c.shadowBlur = 12; c.shadowOffsetY = 4;
       c.fillStyle = akhir ? "#B4FF3A" : KERTAS;
       c.beginPath(); c.arc(x, yy, 25, 0, Math.PI * 2); c.fill();
       c.restore();
       c.fillStyle = "#0A1410"; c.textAlign = "center"; c.font = fSans(26, 800);
-      c.fillText(HURUF[i] || "?", x, yy + 9);
+      c.fillText(cp.huruf, x, yy + 9);
       c.textAlign = "left";
-    });
+    }
   } else {
     c.fillStyle = "rgba(253,246,232,.6)"; c.textAlign = "center"; c.font = fSans(30, 600);
     c.fillText("Jalur belum ditandai", W / 2, by + bh / 2);
@@ -204,9 +248,29 @@ export async function gambarKartuEvent(
     c.textAlign = "left"; spasi(0);
   } catch { /* tanpa QR, sisa kartu tetap berguna */ }
 
-  // Catatan daerah rawan
+  // Daftar cek point, supaya penerima tahu titik berkumpulnya di mana
   const lebarTeks = W - 124 - 68 - qrUkuran - 34;
   let ty = cy + 62;
+  const cp = cekPoint(o.titik);
+  if (cp.length > 0) {
+    spasi(3); c.font = fSans(22, 800); c.fillStyle = TEKS_KERTAS;
+    c.fillText("CEK POINT", 96, ty);
+    spasi(0); ty += 28;
+    c.font = fSans(22, 600); c.fillStyle = "#6B4423";
+    const potongan = cp.map((x, i) =>
+      `${x.huruf} ${x.titik.nama?.trim() || (i === 0 ? "Start" : i === cp.length - 1 ? "Finish" : "Cek point")}`);
+    // Disusun jadi paling banyak dua baris agar nama tempat tidak terpotong.
+    const barisCek: string[] = [];
+    let kiniCek = "";
+    for (const bagian of potongan) {
+      const coba = kiniCek ? `${kiniCek}  →  ${bagian}` : bagian;
+      if (c.measureText(coba).width > lebarTeks && kiniCek) { barisCek.push(kiniCek); kiniCek = bagian; }
+      else kiniCek = coba;
+    }
+    if (kiniCek) barisCek.push(kiniCek);
+    for (const b of barisCek.slice(0, 2)) { c.fillText(potong(c, b, lebarTeks), 96, ty); ty += 28; }
+    ty += 8;
+  }
   const aman = /tidak melewati zona rawan/i.test(o.rawan);
   spasi(3); c.font = fSans(22, 800);
   c.fillStyle = aman ? "#3F7A12" : "#A0521A";

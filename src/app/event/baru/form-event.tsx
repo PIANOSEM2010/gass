@@ -8,14 +8,9 @@ import { panjangRute } from "@/lib/rute-tersimpan";
 import PilihTitikPeta from "@/components/pilih-titik-peta";
 import KepalaHalaman from "@/components/kepala-halaman";
 import { IkonKampanyeJalan } from "@/components/fitur-ikon";
-import { type Titik } from "@/components/jejak-rute";
-import { Loader2, ImagePlus, AlertTriangle, ShieldCheck, Send } from "lucide-react";
-
-const ETIKA_BAWAAN = `Berjajar paling banyak dua orang, dan menyusut jadi satu banjar bila ada kendaraan hendak menyusul.
-Teruskan aba-aba bahaya dari depan ke belakang: lubang, pasir, atau kendaraan berhenti.
-Peserta paling berpengalaman berada di barisan paling belakang.
-Nyalakan lampu belakang merah bila berangkat sebelum pukul 06.00 atau selesai setelah pukul 17.30.
-Rombongan berjalan mengikuti kecepatan peserta paling lambat.`;
+import { type TitikEvent, cekPoint } from "@/lib/titik-event";
+import { susunEtikaEvent } from "@/lib/etika-event";
+import { Loader2, ImagePlus, AlertTriangle, ShieldCheck, Send, Flag } from "lucide-react";
 
 type Zona = { lat: number; lng: number; radius_m: number; name: string };
 
@@ -25,8 +20,7 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
   const [tanggal, setTanggal] = useState("");
   const [titikKumpul, setTitikKumpul] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
-  const [etika, setEtika] = useState(ETIKA_BAWAAN);
-  const [titik, setTitik] = useState<Titik[]>([]);
+  const [titik, setTitik] = useState<TitikEvent[]>([]);
   const [logo, setLogo] = useState<File | null>(null);
   const [pratinjau, setPratinjau] = useState<string | null>(null);
   const [sibuk, setSibuk] = useState(false);
@@ -35,6 +29,14 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
   // Jalur diperiksa langsung terhadap zona rawan yang sudah dipetakan.
   const periksa = periksaJalurAman(titik, zona, 120);
   const jarak = panjangRute(titik);
+  const cek = cekPoint(titik);
+  // Etika disusun sistem dari sifat jalur: panjangnya, jam berangkat, jumlah
+  // cek point, dan zona rawan yang dilewati. Pengaju tidak mengetiknya.
+  const etikaOtomatis = susunEtikaEvent({
+    titik, distanceM: jarak, mulai: tanggal || null,
+    adaZonaRawan: !periksa.aman,
+    namaZona: periksa.pelanggaran.map((v) => v.nama),
+  });
 
   function pilihLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -84,7 +86,7 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
         waypoints: titik,
         distance_m: jarak,
         catatan_rawan: catatanRawan,
-        catatan_etika: etika.trim() || null,
+        catatan_etika: etikaOtomatis.join("\n"),
         status: "menunggu",
       });
       if (error) throw error;
@@ -137,7 +139,10 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
 
           {titik.length >= 2 && (
             <>
-              <p className="display-num text-[20px] text-lime-300 mt-3">
+              <p className="text-[11.5px] text-slate-400 mt-3 flex items-center gap-1.5">
+                <Flag size={13} className="text-lime-400" /> {cek.length} cek point ditandai
+              </p>
+              <p className="display-num text-[20px] text-lime-300 mt-1">
                 ± {(jarak / 1000).toFixed(2).replace(".", ",")} km
                 <span className="display-title text-[11px] text-slate-500 ml-2">jarak antar titik</span>
               </p>
@@ -183,14 +188,28 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
           </div>
         </div>
 
-        {/* Etika */}
+        {/* Etika, disusun sistem */}
         <div className="kartu-bug p-4">
           <p className="display-title text-[14px] text-white mb-1">ETIKA BERSEPEDA SELAMA EVENT</p>
-          <p className="text-[11.5px] text-slate-400 mb-2.5 leading-relaxed">
-            Sudah diisi dengan aturan dasar rombongan. Silakan tambah atau ubah sesuai eventmu.
+          <p className="text-[11.5px] text-slate-400 mb-3 leading-relaxed">
+            Disusun sendiri oleh sistem dari panjang jalur, jam berangkat, jumlah cek point,
+            dan zona rawan yang dilewati. Daftar ini ikut tampil di halaman event dan di kartu bagikan.
           </p>
-          <textarea value={etika} onChange={(e) => setEtika(e.target.value)} rows={7} maxLength={1200}
-            className="w-full bg-[var(--isian)] border border-lime-400/15 rounded-xl px-4 py-3 text-[12.5px] leading-relaxed text-white focus:outline-none focus:border-lime-400/50 resize-none" />
+          <ul className="space-y-2">
+            {etikaOtomatis.map((b, i) => (
+              <li key={i} className="flex gap-2.5 text-[12px] text-slate-300 leading-relaxed">
+                <span className="w-5 h-5 rounded-md bg-lime-400/15 text-lime-300 display-title text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {i + 1}
+                </span>
+                {b}
+              </li>
+            ))}
+          </ul>
+          {titik.length < 2 && (
+            <p className="text-[11px] text-slate-600 mt-3">
+              Daftar ini akan bertambah setelah jalur dan waktu ditentukan.
+            </p>
+          )}
         </div>
 
         {pesan && <p className="text-[12px] text-red-400">{pesan}</p>}

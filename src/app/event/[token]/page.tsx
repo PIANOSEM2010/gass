@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DetailEvent from "./detail-event";
-import { type Titik } from "@/components/jejak-rute";
+import { type TitikEvent } from "@/lib/titik-event";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export default async function HalamanDetailEvent({
       deskripsi={(e.description as string) || null}
       mulai={(e.start_at as string) || null}
       titikKumpul={(e.meeting_point as string) || null}
-      titik={Array.isArray(e.waypoints) ? (e.waypoints as Titik[]) : []}
+      titik={Array.isArray(e.waypoints) ? (e.waypoints as TitikEvent[]) : []}
       distanceM={Number(e.distance_m) || 0}
       catatanRawan={(e.catatan_rawan as string) || ""}
       catatanEtika={(e.catatan_etika as string) || ""}
