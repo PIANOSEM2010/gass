@@ -140,8 +140,8 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     try {
       const km = (ride.distance_m / 1000).toFixed(2);
       const text = place
-        ? `Gowes ${km} km di ${place} bersama BUG! 🚴 #GoweserAman${place.replace(/\s+/g, "")}`
-        : `Gowes ${km} km bersama BUG! 🚴`;
+        ? `Gowes ${km} km di ${place} bersama BUG! #GoweserAman${place.replace(/\s+/g, "")}`
+        : `Gowes ${km} km bersama BUG!`;
       const r = await shareImageDataUrl(canvas.toDataURL("image/png"), "gowes-bug.png", text);
       if (r.status === "failed") alert(`Gagal membagikan: ${r.error || "tidak diketahui"}`);
     } finally {

@@ -5,6 +5,7 @@ import { Play, Pause, Share2, Download, Loader2, Trash2, Map as MapIcon } from "
 import { type Titik } from "@/components/jejak-rute";
 import { gambarKartuTanah } from "@/lib/kartu-tanah";
 import { tautanRute } from "@/lib/rute-tersimpan";
+import { shareImageDataUrl } from "@/lib/native-share";
 import { namaBeberapaJalan } from "@/lib/nama-jalan";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -107,24 +108,25 @@ export default function PemutarRute({
   }
 
   async function bagikan() {
-    const tautan = tautanRute(token);
-    const teks = `Rute ${nama} - ${(distanceM / 1000).toFixed(2).replace(".", ",")} km di Bulungan`;
-    // Kartu rute ikut dibagikan supaya tautannya punya wajah, bukan tautan polos.
-    const kanvas = kanvasRef.current;
+    const k = kanvasRef.current;
+    if (!k || sibuk) return;
+    setSibuk(true); setPesan("");
     try {
-      if (kanvas && navigator.canShare) {
-        const blob: Blob = await new Promise((res, rej) =>
-          kanvas.toBlob((b) => (b ? res(b) : rej(new Error("gagal"))), "image/png"));
-        const berkas = new File([blob], "rute-bug.png", { type: "image/png" });
-        if (navigator.canShare({ files: [berkas] })) {
-          await navigator.share({ files: [berkas], title: nama, text: `${teks}\n${tautan}` });
-          return;
-        }
+      const teks =
+        `Rute ${nama}\n${(distanceM / 1000).toFixed(2).replace(".", ",")} km di Bulungan.\n` +
+        `Buka rutenya: ${tautanRute(token)}`;
+      const r = await shareImageDataUrl(
+        k.toDataURL("image/png"),
+        `rute-${nama.replace(/\s+/g, "-").toLowerCase()}.png`,
+        teks,
+      );
+      if (r.status === "downloaded") {
+        await navigator.clipboard.writeText(teks).catch(() => null);
+        setPesan("Peranti ini belum bisa membuka pilihan berbagi. Gambar sudah diunduh dan tautannya disalin.");
+      } else if (r.status === "failed") {
+        setPesan(`Gagal membagikan: ${r.error || "tidak diketahui"}`);
       }
-      if (navigator.share) { await navigator.share({ title: nama, text: teks, url: tautan }); return; }
-      await navigator.clipboard.writeText(`${teks}\n${tautan}`);
-      setPesan("Tautan rute disalin.");
-    } catch { /* dibatalkan pengguna */ }
+    } finally { setSibuk(false); }
   }
 
   function unduh() {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { gambarKartuEvent } from "@/lib/kartu-event";
+import { shareImageDataUrl } from "@/lib/native-share";
 import { type TitikEvent, cekPoint } from "@/lib/titik-event";
 import {
   Share2, Download, Loader2, Users, MapPin, CalendarDays,
@@ -59,21 +60,26 @@ export default function DetailEvent(p: {
 
   async function bagikan() {
     const k = kanvasRef.current;
-    const teks = `${p.nama} - gowes bareng ${(p.distanceM / 1000).toFixed(1).replace(".", ",")} km di Bulungan`;
+    if (!k || sibuk) return;
+    setSibuk(true); setPesan("");
     try {
-      if (k && navigator.canShare) {
-        const blob: Blob = await new Promise((res, rej) =>
-          k.toBlob((b) => (b ? res(b) : rej(new Error("gagal"))), "image/png"));
-        const berkas = new File([blob], "event-bug.png", { type: "image/png" });
-        if (navigator.canShare({ files: [berkas] })) {
-          await navigator.share({ files: [berkas], title: p.nama, text: `${teks}\n${tautan}` });
-          return;
-        }
+      // Tautan ikut di dalam teks, supaya penerima bisa membuka halaman event
+      // dan bergabung, bukan hanya melihat gambarnya.
+      const teks =
+        `${p.nama}\nGowes bareng ${(p.distanceM / 1000).toFixed(1).replace(".", ",")} km di Bulungan.\n` +
+        `Gabung di sini: ${tautan}`;
+      const r = await shareImageDataUrl(
+        k.toDataURL("image/png"),
+        `event-${p.nama.replace(/\s+/g, "-").toLowerCase()}.png`,
+        teks,
+      );
+      if (r.status === "downloaded") {
+        await navigator.clipboard.writeText(teks).catch(() => null);
+        setPesan("Peranti ini belum bisa membuka pilihan berbagi. Gambar sudah diunduh dan tautannya disalin.");
+      } else if (r.status === "failed") {
+        setPesan(`Gagal membagikan: ${r.error || "tidak diketahui"}`);
       }
-      if (navigator.share) { await navigator.share({ title: p.nama, text: teks, url: tautan }); return; }
-      await navigator.clipboard.writeText(`${teks}\n${tautan}`);
-      setPesan("Tautan event disalin.");
-    } catch { /* dibatalkan pengguna */ }
+    } finally { setSibuk(false); }
   }
 
   function unduh() {

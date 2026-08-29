@@ -6,6 +6,7 @@ import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 import { periksaJalurAman } from "@/lib/periksa-jalur";
 import { panjangRute } from "@/lib/rute-tersimpan";
 import PilihTitikPeta from "@/components/pilih-titik-peta";
+import RuteDariNamaJalan from "@/components/rute-dari-nama-jalan";
 import KepalaHalaman from "@/components/kepala-halaman";
 import { IkonKampanyeJalan } from "@/components/fitur-ikon";
 import { type TitikEvent, cekPoint } from "@/lib/titik-event";
@@ -23,6 +24,8 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
   const [titik, setTitik] = useState<TitikEvent[]>([]);
   const [logo, setLogo] = useState<File | null>(null);
   const [pratinjau, setPratinjau] = useState<string | null>(null);
+  // Dua cara menyusun jalur: ketik nama jalan, atau tandai sendiri di peta.
+  const [caraJalur, setCaraJalur] = useState<"nama" | "peta">("nama");
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
 
@@ -156,9 +159,33 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
         <div className="kartu-bug p-4">
           <p className="display-title text-[14px] text-white mb-1">JALUR EVENT</p>
           <p className="text-[11.5px] text-slate-400 mb-3 leading-relaxed">
-            Tandai titik-titik yang akan dilewati, berurutan dari start sampai finish.
+            Susun jalur dengan menuliskan nama jalannya, atau tandai sendiri di peta.
           </p>
-          <PilihTitikPeta titik={titik} ubah={setTitik} />
+
+          <div className="flex gap-2 mb-3">
+            {([["nama", "Tulis nama jalan"], ["peta", "Tandai di peta"]] as const).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setCaraJalur(k)}
+                className={`flex-1 py-2 rounded-xl text-[11.5px] font-semibold border-2 transition-colors ${caraJalur === k
+                  ? "border-lime-400/60 bg-lime-400/10 text-lime-300"
+                  : "border-white/10 text-slate-400"}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {caraJalur === "nama" ? (
+            <>
+              <RuteDariNamaJalan zona={zona} selesai={(t) => setTitik(t)} />
+              {titik.length > 0 && (
+                <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
+                  Rute tersusun dari {titik.length} titik mengikuti jalan sungguhan.
+                  Ganti ke &ldquo;Tandai di peta&rdquo; bila ingin memeriksa atau menyesuaikan cek pointnya.
+                </p>
+              )}
+            </>
+          ) : (
+            <PilihTitikPeta titik={titik} ubah={setTitik} />
+          )}
 
           {titik.length >= 2 && (
             <>

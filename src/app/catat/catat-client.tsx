@@ -19,6 +19,13 @@ import { Avatar } from "@/components/umpan-kartu";
 import { meter } from "@/lib/angka";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
 import RodaLatar from "@/components/roda-latar";
+import dynamic from "next/dynamic";
+
+// Peta hanya dimuat di peramban; Leaflet tidak bisa dirender di server.
+const PetaLangsung = dynamic(() => import("./peta-langsung"), {
+  ssr: false,
+  loading: () => <div className="rounded-3xl bg-[var(--relung)] animate-pulse" style={{ height: 260 }} />,
+});
 import {
   Play, Pause, Square, Loader2, Save, Trash2, CheckCircle2,
   Flame, AlertTriangle, Trophy, Bike, Share2, MessageSquarePlus, History,
@@ -415,16 +422,21 @@ export default function CatatClient({
             </div>
           </div>
 
-          {/* Blok peta: jejak hari ini, gelap dan penuh */}
-          <div className="relative mt-3 rounded-3xl overflow-hidden border border-white/8 bg-[var(--relung)]">
-            <div className="flex flex-col items-center pt-7 pb-4">
-              <JejakRute path={(getPath() as Titik[] | null)} width={276} height={(getPath() as Titik[] | null)?.length ? 124 : 64} tebal={3} />
-            </div>
-            <div className="absolute top-3 left-4 eyebrow !text-[8.5px] text-slate-600">Jalur hari ini</div>
-            {status === "tracking" && (
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-black/40 px-2 py-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
-                <span className="eyebrow !text-[8px] text-lime-300">GPS aktif</span>
+          {/* Peta langsung selama merekam; jejak ringkas saat belum mulai.
+              Menekan Mulai Gowes kini menjalankan pencatatan DAN peta
+              sekaligus, jadi pesepeda tidak perlu berpindah halaman. */}
+          <div className="mt-3">
+            {status === "tracking" || status === "paused" ? (
+              <PetaLangsung jejak={(getPath() as Titik[] | null)} aktif={status === "tracking"} />
+            ) : (
+              <div className="relative rounded-3xl overflow-hidden border border-white/8 bg-[var(--relung)]">
+                <div className="flex flex-col items-center pt-7 pb-4">
+                  <JejakRute path={(getPath() as Titik[] | null)}
+                    width={276} height={(getPath() as Titik[] | null)?.length ? 124 : 64} tebal={3} />
+                </div>
+                <div className="absolute top-3 left-4 eyebrow !text-[8.5px] text-slate-600">
+                  {status === "saved" ? "Jalur perjalanan ini" : "Peta akan terbuka saat kamu mulai"}
+                </div>
               </div>
             )}
           </div>
