@@ -11,6 +11,9 @@ import { gambarKartuTanah, TEMPLATE_TANAH, WARNA_TANAH, WARNA_TANAH_KEYS, type R
 import { placeNameFromPath } from "@/lib/place-name";
 import { kirimKartuKeStory } from "@/lib/kirim-story";
 import { type TitikEvent } from "@/lib/titik-event";
+import { useNav } from "../nav-provider";
+import { fetchRoute } from "@/lib/routing";
+import PanduanBelok from "@/components/panduan-belok";
 import { IkonCatatGowes } from "@/components/fitur-ikon";
 import { periksaRekorPribadi, type Rekor } from "@/lib/rekor-pribadi";
 import { Podium, type Peserta } from "@/app/leaderboard/podium";
@@ -73,6 +76,8 @@ export default function CatatClient({
   const eventId = params?.get("event") || null;
   const [namaEvent, setNamaEvent] = useState("");
   const [jalurEvent, setJalurEvent] = useState<TitikEvent[] | null>(null);
+  const nav = useNav();
+  const [siapkanPanduan, setSiapkanPanduan] = useState(false);
   const sudahMulaiOtomatis = useRef(false);
   const [warnaTanah, setWarnaTanah] = useState("terakota");
   const [template, setTemplate] = useState("blok");
@@ -187,6 +192,8 @@ export default function CatatClient({
       setSavedTodayKm(typeof data.today_km === "number" ? data.today_km : 0);
       setSavedElev(typeof data.elevation_gain_m === "number" ? data.elevation_gain_m : null);
       setStatus("saved");
+      // Panduan belok dimatikan begitu perjalanan tersimpan.
+      if (nav.navigating) nav.stop();
       router.refresh();
       // Rekor diperiksa setelah tersimpan, supaya perjalanan ini sudah ada di
       // basis data dan bisa dikeluarkan dari daftar pembanding.
@@ -256,7 +263,13 @@ export default function CatatClient({
         const { data } = await sb.from("events").select("name,waypoints").eq("id", eventId).maybeSingle();
         if (data?.name) setNamaEvent(String(data.name));
         // Jalur event ikut diambil agar tergambar sebagai acuan di peta.
-        if (Array.isArray(data?.waypoints)) setJalurEvent(data.waypoints as TitikEvent[]);
+        if (Array.isArray(data?.waypoints)) {
+          const titikEvent = data.waypoints as TitikEvent[];
+          setJalurEvent(titikEvent);
+          // Panduan belok disusun dari cek point event: tiap ruas dihitung
+          // lewat mesin rute, lalu petunjuk beloknya disambung jadi satu.
+          void susunPanduan(titikEvent, String(data.name || "Jalur event"));
+        }
       } catch { /* nama event hanya hiasan, jangan menghalangi perekaman */ }
     })();
     if (params?.get("mulai") === "1" && status === "idle") {
@@ -265,6 +278,53 @@ export default function CatatClient({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
+
+  // Menyusun panduan belok dari titik-titik jalur event.
+  //
+  // Yang dipakai sebagai titik singgah hanyalah CEK POINT, bukan seluruh titik
+  // pembentuk jalur: mesin rute hanya menerima dua titik sekali jalan, dan
+  // memintanya untuk ratusan titik akan lambat sekaligus menghabiskan kuota.
+  async function susunPanduan(titikEvent: TitikEvent[], label: string) {
+    const singgah = titikEvent.filter((t) => t.cek);
+    const daftar = singgah.length >= 2
+      ? singgah
+      : [titikEvent[0], titikEvent[titikEvent.length - 1]].filter(Boolean);
+    if (daftar.length < 2) return;
+
+    setSiapkanPanduan(true);
+    try {
+      const koordinat: [number, number][] = [];
+      const langkah: Awaited<ReturnType<typeof fetchRoute>>["steps"] = [];
+      let jarak = 0, durasi = 0;
+
+      for (let i = 0; i < daftar.length - 1; i++) {
+        const ruas = await fetchRoute(
+          { lat: daftar[i].lat, lng: daftar[i].lng },
+          { lat: daftar[i + 1].lat, lng: daftar[i + 1].lng },
+          null,
+        );
+        // Titik sambungan antar ruas jangan digandakan.
+        koordinat.push(...(i === 0 ? ruas.coords : ruas.coords.slice(1)));
+        langkah.push(...ruas.steps);
+        jarak += ruas.info.distance;
+        durasi += ruas.info.duration;
+      }
+
+      const akhir = daftar[daftar.length - 1];
+      nav.begin({
+        coords: koordinat,
+        steps: langkah,
+        info: { distance: jarak, duration: durasi },
+        dest: { lat: akhir.lat, lng: akhir.lng },
+        label,
+      }, null);
+    } catch {
+      // Panduan gagal disusun bukan alasan menghentikan pencatatan gowes.
+      setError("Panduan belok tidak bisa disusun. Pencatatan gowes tetap berjalan.");
+    } finally {
+      setSiapkanPanduan(false);
+    }
+  }
 
   function shareCard() {
     const canvas = cardRef.current;
@@ -333,6 +393,14 @@ export default function CatatClient({
   return (
     <div className="min-h-screen bg-[var(--latar)] px-4 pt-5 max-w-md mx-auto pb-8">
       <PenjagaDiam aktif={status === "tracking"} distanceM={distance} />
+
+      {eventId && <PanduanBelok />}
+
+      {eventId && siapkanPanduan && (
+        <p className="mb-3 rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-2.5 text-[11.5px] text-sky-200">
+          Menyusun panduan belok dari jalur event…
+        </p>
+      )}
 
       {eventId && (
         <div className="mb-3 rounded-2xl border border-orange-400/30 bg-orange-400/10 px-4 py-3">
