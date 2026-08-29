@@ -106,3 +106,14 @@ create policy "logo event diunggah pengguna" on storage.objects
 drop policy if exists "logo event dibaca semua" on storage.objects;
 create policy "logo event dibaca semua" on storage.objects
   for select using (bucket_id = 'event');
+
+-- ============================================================
+-- Tambahan: cegah pengajuan event ganda
+--
+-- Satu pengaju tidak boleh mengajukan event dengan nama yang sama dua kali
+-- selama pengajuan sebelumnya belum ditolak. Event yang sudah ditolak boleh
+-- diajukan ulang dengan nama yang sama setelah diperbaiki.
+-- ============================================================
+create unique index if not exists events_unik_pengaju_nama
+  on public.events (creator_id, lower(name))
+  where status <> 'ditolak';

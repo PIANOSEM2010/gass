@@ -76,6 +76,22 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
             .map((v) => `${v.nama} - jalur melintas sekitar ${v.jarak_m} m dari titik ini.`)
             .join("\n");
 
+      // Cegah pengajuan ganda: nama yang sama dari pengaju yang sama, selama
+      // pengajuan sebelumnya belum ditolak, dianggap event yang sama.
+      const { data: sudahAda } = await sb.from("events")
+        .select("id,status")
+        .eq("creator_id", user.id)
+        .ilike("name", nama.trim())
+        .neq("status", "ditolak")
+        .maybeSingle();
+      if (sudahAda) {
+        throw new Error(
+          sudahAda.status === "menunggu"
+            ? "Kamu sudah mengajukan event dengan nama ini dan masih menunggu tinjauan admin."
+            : "Event dengan nama ini sudah disetujui dan tayang. Pakai nama lain bila ini event berbeda.",
+        );
+      }
+
       const { error } = await sb.from("events").insert({
         creator_id: user.id,
         name: nama.trim(),
@@ -89,7 +105,14 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
         catatan_etika: etikaOtomatis.join("\n"),
         status: "menunggu",
       });
-      if (error) throw error;
+      if (error) {
+        // 23505 = pelanggaran indeks unik, yaitu nama event yang sama.
+        throw new Error(
+          error.code === "23505"
+            ? "Event dengan nama ini sudah pernah kamu ajukan."
+            : error.message,
+        );
+      }
 
       router.push("/event?diajukan=1");
       router.refresh();

@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { MapPin, Trash2, Undo2, Flag } from "lucide-react";
-import { type TitikEvent, cekPoint, tandaiUjung } from "@/lib/titik-event";
+import { type TitikEvent, cekPoint } from "@/lib/titik-event";
 
 const PetaTitik = dynamic(() => import("./peta-titik"), {
   ssr: false,
@@ -26,11 +26,13 @@ export default function PilihTitikPeta({
   function tambah(lat: number, lng: number) {
     if (titik.length >= MAKS) { setPesan(`Maksimal ${MAKS} titik.`); return; }
     setPesan("");
-    ubah(tandaiUjung([...titik, { lat, lng }]));
+    // Titik baru selalu titik jalur biasa. Cek point hanya lahir dari
+    // tombol "Tandai titik ini sebagai cek point", tidak pernah otomatis.
+    ubah([...titik, { lat, lng }]);
   }
 
   function ubahSatu(i: number, isi: Partial<TitikEvent>) {
-    ubah(tandaiUjung(titik.map((t, k) => (k === i ? { ...t, ...isi } : t))));
+    ubah(titik.map((t, k) => (k === i ? { ...t, ...isi } : t)));
   }
 
   const cek = cekPoint(titik);
@@ -44,11 +46,11 @@ export default function PilihTitikPeta({
         <p className="text-[11.5px] text-slate-500 flex-1 leading-relaxed">
           {titik.length === 0
             ? "Ketuk peta untuk menandai titik pertama. Tandai sesering mungkin mengikuti belokan jalan agar jalurnya rapi."
-            : `${titik.length} titik · ${cek.length} cek point. Titik pertama dan terakhir otomatis jadi cek point.`}
+            : `${titik.length} titik · ${cek.length} cek point. Tandai sendiri titik mana yang jadi cek point.`}
         </p>
         {titik.length > 0 && (
           <>
-            <button type="button" onClick={() => ubah(tandaiUjung(titik.slice(0, -1)))}
+            <button type="button" onClick={() => ubah(titik.slice(0, -1))}
               className="rounded-lg border border-white/12 text-slate-300 px-2.5 py-1.5 text-[11px] flex items-center gap-1 flex-shrink-0">
               <Undo2 size={13} /> Batal 1
             </button>
@@ -60,12 +62,17 @@ export default function PilihTitikPeta({
         )}
       </div>
       {pesan && <p className="text-[11px] text-amber-300 mt-1">{pesan}</p>}
+      {titik.length >= 2 && cek.length === 0 && (
+        <p className="mt-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] text-amber-200 leading-relaxed">
+          Belum ada cek point. Tandai setidaknya titik awal dan titik akhir supaya
+          peserta tahu di mana berkumpul dan di mana selesai.
+        </p>
+      )}
 
       {titik.length > 0 && (
         <ol className="mt-3 space-y-1.5 max-h-72 overflow-y-auto pr-1">
           {titik.map((t, i) => {
-            const ujung = i === 0 || i === titik.length - 1;
-            const huruf = hurufDari(i);
+                      const huruf = hurufDari(i);
             return (
               <li key={i} className={`rounded-xl border px-3 py-2 ${t.cek ? "border-lime-400/35 bg-lime-400/8" : "border-white/8 bg-[var(--kartu)]"}`}>
                 <div className="flex items-center gap-2.5">
@@ -78,11 +85,11 @@ export default function PilihTitikPeta({
                     {t.lat.toFixed(5)}, {t.lng.toFixed(5)}
                   </span>
                   <span className="text-[10px] text-slate-600 flex-shrink-0">
-                    {i === 0 ? "Start" : i === titik.length - 1 ? "Finish" : t.cek ? "Cek point" : "Titik jalur"}
+                    {t.cek ? "Cek point" : i === 0 ? "Awal jalur" : i === titik.length - 1 ? "Akhir jalur" : "Titik jalur"}
                   </span>
                 </div>
 
-                {!ujung && (
+                {(
                   <button type="button" onClick={() => ubahSatu(i, { cek: !t.cek, nama: t.cek ? "" : t.nama })}
                     className={`mt-2 w-full rounded-lg py-1.5 text-[11px] font-semibold flex items-center justify-center gap-1.5 border ${t.cek
                       ? "border-lime-400/40 text-lime-300"
