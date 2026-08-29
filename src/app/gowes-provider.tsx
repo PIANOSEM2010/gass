@@ -1,6 +1,7 @@
 "use client";
 import { type ReactNode, createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
-import { type GeoPos, type WatchHandle, startWatch, isNativeApp } from "@/lib/native-geo";
+import { type GeoPos, type WatchHandle, startWatch, isNativeApp, getPositionOnce } from "@/lib/native-geo";
+import { nyalakanPenjagaLatar, matikanPenjagaLatar, penjagaLatarAktif } from "@/lib/penjaga-latar";
 
 export type Pt = { lat: number; lng: number };
 export type GowesStatus = "idle" | "tracking" | "paused" | "finished" | "saving" | "saved";
@@ -29,6 +30,10 @@ interface GowesContextValue {
   speed: number;    // km/jam
   elev: number;     // meter
   error: string;
+  /** Meter yang ditambahkan sebagai perkiraan garis lurus akibat layar mati. */
+  perkiraanM: number;
+  /** Penjaga latar aktif: perekaman berpeluang tetap jalan walau layar mati. */
+  penjagaLatar: boolean;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -66,6 +71,12 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const distRef = useRef(0);
   const elevRef = useRef(0);
   const pathRef = useRef<Pt[]>([]);
+  const [perkiraanM, setPerkiraanM] = useState(0);
+  const [penjagaLatar, setPenjagaLatar] = useState(false);
+  const perkiraanRef = useRef(0);
+  // Kapan halaman terakhir disembunyikan. Dipakai untuk menambal jarak yang
+  // hilang selama layar terkunci.
+  const sembunyiSejakRef = useRef(0);
   const wakeRef = useRef<WakeLockLike | null>(null);
   // Dukungan jeda: total durasi jeda + kapan jeda terakhir dimulai
   const pausedMsRef = useRef(0);
@@ -99,8 +110,56 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
 
   // Saat layar aktif lagi, ambil ulang wake lock (browser melepasnya saat tab disembunyikan)
   useEffect(() => {
+    // Menambal jarak yang hilang selama layar terkunci.
+    //
+    // Di peramban, JavaScript dibekukan saat layar dimatikan, jadi GPS berhenti
+    // melapor. Ketika halaman hidup lagi, posisi baru bisa jauh dari posisi
+    // terakhir dan selama ini lompatan itu dibuang karena dianggap kesalahan
+    // sinyal. Akibatnya jarak yang benar-benar ditempuh ikut hilang.
+    //
+    // Sekarang celahnya ditambal: bila kecepatan rata-rata selama celah masih
+    // masuk akal untuk sepeda, jaraknya dihitung sebagai garis lurus antara dua
+    // titik GPS yang keduanya nyata. Bentuk jalannya memang tidak terekam, dan
+    // itu diakui terbuka lewat nilai `perkiraanM` yang ditampilkan ke pengguna.
+    async function tambalCelah() {
+      const mulaiSembunyi = sembunyiSejakRef.current;
+      sembunyiSejakRef.current = 0;
+      if (!mulaiSembunyi || statusRef.current !== "tracking") return;
+      const celahDetik = (Date.now() - mulaiSembunyi) / 1000;
+      if (celahDetik < 20) return;
+
+      try {
+        const p = await getPositionOnce(15000);
+        const pt = { lat: p.coords.latitude, lng: p.coords.longitude };
+        const last = lastPtRef.current;
+        if (!last) { lastPtRef.current = pt; lastTimeRef.current = Date.now(); return; }
+
+        const d = haversine(last, pt);
+        if (d < 25) return;                               // praktis tidak berpindah
+        const kmj = (d / 1000) / (celahDetik / 3600);
+        if (kmj > 45) return;                             // terlalu cepat untuk sepeda: abaikan
+
+        distRef.current += d;
+        perkiraanRef.current += d;
+        setDistance(distRef.current);
+        setPerkiraanM(perkiraanRef.current);
+        pathRef.current.push(pt);
+        lastPtRef.current = pt;
+        lastTimeRef.current = Date.now();
+      } catch { /* GPS belum siap; biarkan pemantau biasa yang melanjutkan */ }
+    }
+
     function onVis() {
-      if (document.visibilityState === "visible" && watchRef.current !== null && !isNativeApp()) acquireWake();
+      if (document.visibilityState === "hidden") {
+        if (statusRef.current === "tracking") sembunyiSejakRef.current = Date.now();
+        return;
+      }
+      if (watchRef.current !== null && !isNativeApp()) {
+        acquireWake();
+        // Penjaga latar bisa dihentikan sistem atau pengguna; periksa lagi.
+        setPenjagaLatar(penjagaLatarAktif());
+        void tambalCelah();
+      }
     }
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -118,6 +177,8 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     watchRef.current?.stop(); watchRef.current = null;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     releaseWake();
+    matikanPenjagaLatar();
+    setPenjagaLatar(false);
   }, [releaseWake]);
 
   // Durasi aktif = waktu berjalan dikurangi total waktu jeda
@@ -181,11 +242,19 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const start = useCallback(() => {
     setError("");
     distRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastTimeRef.current = 0;
+    perkiraanRef.current = 0; setPerkiraanM(0); sembunyiSejakRef.current = 0;
     elevRef.current = 0; lastAltRef.current = null;
     pausedMsRef.current = 0; pauseStartRef.current = 0;
     setDistance(0); setDuration(0); setSpeed(0); setElev(0);
     startRef.current = Date.now(); endRef.current = 0; setStatus("tracking");
     acquireWake();
+    // Penjaga latar hanya diperlukan di peramban; aplikasi Android sudah punya
+    // layanan lokasi latar belakang sungguhan. Dipanggil di sini karena masih
+    // berada dalam rangkaian ketukan tombol Mulai Gowes - peramban menolak
+    // memulai audio di luar interaksi pengguna.
+    if (!isNativeApp()) {
+      void nyalakanPenjagaLatar("Mencatat gowes").then(setPenjagaLatar);
+    }
     beginTimer();
     beginWatch();
   }, [acquireWake, beginTimer, beginWatch]);
@@ -230,6 +299,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     stopTracking();
     setStatus("idle"); setDistance(0); setDuration(0); setSpeed(0); setElev(0); setError("");
     distRef.current = 0; elevRef.current = 0; pathRef.current = []; lastPtRef.current = null; lastAltRef.current = null;
+    perkiraanRef.current = 0; setPerkiraanM(0); sembunyiSejakRef.current = 0;
     startRef.current = 0; endRef.current = 0; pausedMsRef.current = 0; pauseStartRef.current = 0;
   }, [stopTracking]);
 
@@ -337,6 +407,8 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const getPath = useCallback((): Pt[] => pathRef.current, []);
 
   const value: GowesContextValue = {
+    perkiraanM,
+    penjagaLatar,
     status, distance, duration, speed, elev, error,
     start, pause, resume, finish, discard, setStatus, setError, getStats, getPath,
   };

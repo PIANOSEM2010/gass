@@ -38,6 +38,69 @@ import {
 
 type BoardItem = { user_id: string; name: string; org: string; km: number; rides: number; streak: number };
 
+// Pemberitahuan jujur tentang perekaman saat layar terkunci.
+//
+// Di peramban, JavaScript dibekukan begitu layar dimatikan, dan tidak ada cara
+// mengubah itu dari sisi web: pembatasan ini dibuat sistem operasi demi baterai
+// dan privasi. Yang bisa dilakukan aplikasi hanyalah menahan layar tetap menyala
+// selama merekam, dan menambal jarak yang hilang bila layar sempat terkunci.
+// Perekaman penuh dengan layar mati hanya tersedia lewat aplikasi Android, yang
+// memakai layanan lokasi latar belakang.
+function CatatanLayarTerkunci({ perkiraanM, merekam, penjagaLatar }: { perkiraanM: number; merekam: boolean; penjagaLatar: boolean }) {
+  const [diAplikasi, setDiAplikasi] = useState(true);
+  const [layarTertahan, setLayarTertahan] = useState(true);
+
+  useEffect(() => {
+    try {
+      const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+      setDiAplikasi(Boolean(w.Capacitor?.isNativePlatform?.()));
+      setLayarTertahan("wakeLock" in navigator);
+    } catch { setDiAplikasi(false); }
+  }, []);
+
+  if (diAplikasi) return null;
+
+  return (
+    <>
+      {merekam && penjagaLatar && (
+        <div className="mb-3 rounded-2xl border border-lime-400/35 bg-lime-400/10 px-4 py-3">
+          <p className="display-title text-[13px] text-lime-300">PENJAGA LATAR AKTIF</p>
+          <p className="text-[11.5px] text-lime-100/85 mt-1 leading-relaxed">
+            Kamu boleh mengunci layar; pencatatan tetap berjalan. Akan muncul pemberitahuan
+            pemutar media dari BUG di bilah notifikasi &mdash; <strong>jangan ditutup</strong>,
+            karena itulah yang menjaga pencatatan tetap hidup. Baterai akan lebih boros
+            daripada biasanya.
+          </p>
+        </div>
+      )}
+
+      {merekam && !penjagaLatar && (
+        <div className="mb-3 rounded-2xl border border-amber-400/35 bg-amber-400/10 px-4 py-3">
+          <p className="display-title text-[13px] text-amber-300">JANGAN KUNCI LAYAR</p>
+          <p className="text-[11.5px] text-amber-100/85 mt-1 leading-relaxed">
+            Peramban ini tidak bisa menjaga pencatatan saat layar mati
+            {layarTertahan ? ", jadi layar ditahan tetap menyala" : ""}. Kalau layar dikunci,
+            jaraknya ditambal sebagai perkiraan. Pasang aplikasi BUG untuk perekaman penuh
+            dengan layar mati.
+          </p>
+        </div>
+      )}
+
+      {perkiraanM > 0 && (
+        <div className="mb-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3">
+          <p className="display-title text-[13px] text-sky-300">
+            {Math.round(perkiraanM)} M DIHITUNG SEBAGAI PERKIRAAN
+          </p>
+          <p className="text-[11.5px] text-sky-100/85 mt-1 leading-relaxed">
+            Layar sempat terkunci, jadi bagian itu diukur sebagai garis lurus antara dua
+            titik GPS. Jaraknya ikut terhitung, tetapi bentuk jalannya tidak terekam.
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function CatatClient({
   userId, fullName, organization, myStreak, longest, totalKm, totalRides, board,
 }: {
@@ -46,7 +109,7 @@ export default function CatatClient({
 }) {
   const router = useRouter();
   // Mesin gowes global (provider di root layout) agar tetap jalan saat buka menu lain
-  const { status, setStatus, distance, duration, speed, elev, error, setError, start, pause, resume, finish, discard, getStats, getPath } = useGowes();
+  const { perkiraanM, penjagaLatar, status, setStatus, distance, duration, speed, elev, error, setError, start, pause, resume, finish, discard, getStats, getPath } = useGowes();
 
   const [tab, setTab] = useState<"catat" | "papan">("catat");
   // Deteksi bila aplikasi/layar sempat tidak aktif saat merekam (GPS terjeda oleh sistem).
@@ -393,6 +456,8 @@ export default function CatatClient({
   return (
     <div className="min-h-screen bg-[var(--latar)] px-4 pt-5 max-w-md mx-auto pb-8">
       <PenjagaDiam aktif={status === "tracking"} distanceM={distance} />
+
+      <CatatanLayarTerkunci perkiraanM={perkiraanM} merekam={status === "tracking"} penjagaLatar={penjagaLatar} />
 
       {eventId && <PanduanBelok />}
 
