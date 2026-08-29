@@ -1435,14 +1435,17 @@ export default function PetaClient({
       )}
 
       {/* Map */}
-      <MapContainer center={[2.8450, 117.3680]} zoom={14} style={{ height: "100%", width: "100%" }}>
+      <MapContainer center={[2.8450, 117.3680]} zoom={14} style={{ height: "100%", width: "100%" }}
+        className={petaGelap ? "ubin-malam" : ""}>
         <MapSizeFixer />
+        {/* Satu sumber ubin saja: OpenStreetMap, yang memang bebas dipakai.
+            Mode gelap dihasilkan dengan menyaring warna ubinnya lewat CSS,
+            bukan dengan mengganti penyedia. Penyedia peta gelap gratis seperti
+            CARTO kini mewajibkan kunci API, dan tanpa kunci petanya bertuliskan
+            "API KEY REQUIRED" di seluruh permukaan. */}
         <TileLayer
-          key={petaGelap ? "ubin-gelap" : "ubin-terang"}
-          attribution='&copy; OpenStreetMap &copy; CARTO'
-          url={petaGelap
-            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
+          attribution='&copy; OpenStreetMap'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {showTraffic && tomtomKey && (
           <TileLayer

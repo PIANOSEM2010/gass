@@ -60,12 +60,8 @@ export default function PetaLangsung({
   return (
     <div className="relative rounded-3xl overflow-hidden border border-white/8" style={{ height: 260 }}>
       <MapContainer center={pusat} zoom={16} style={{ height: "100%", width: "100%" }}
-        zoomControl={false} attributionControl={false}>
-        <TileLayer
-          key={malam ? "gelap" : "terang"}
-          url={malam
-            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
+        zoomControl={false} attributionControl={false} className={malam ? "ubin-malam" : ""}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Ikuti posisi={kini} ikut={ikut} />
 
         {zona.map((z) => (

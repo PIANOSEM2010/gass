@@ -480,3 +480,15 @@ body > * { max-width: 100vw; }
 @media (min-width: 1440px) {
   main .max-w-md { max-width: 100%; }
 }
+
+
+/* ==========================================================================
+   Peta malam tanpa penyedia berbayar.
+   Ubin OpenStreetMap yang terang dibalik warnanya lewat penyaring CSS, jadi
+   hasilnya peta gelap tanpa perlu kunci API. Penyaring hanya dikenakan pada
+   lapisan ubin; penanda, garis rute, dan lingkaran zona rawan tetap memakai
+   warna aslinya karena berada di lapisan lain.
+   ========================================================================== */
+.ubin-malam .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.86) saturate(0.7);
+}
