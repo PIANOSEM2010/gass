@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { tanpaDemo } from "@/lib/tanpa-demo";
 
 // Rekor pribadi.
 //
@@ -15,13 +16,17 @@ export async function periksaRekorPribadi(
   sekarang: { distanceM: number; durationS: number; elevM: number },
 ): Promise<Rekor[]> {
   const sb = createClient();
-  const { data, error } = await sb
-    .from("activities")
-    .select("distance_m,duration_s,elevation_gain_m,started_at")
-    .eq("user_id", userId)
-    .eq("is_demo", false)
-    .order("started_at", { ascending: false })
-    .limit(400);
+  // Kolom penanda contoh bisa saja belum dipasang; bila begitu, kueri diulang
+  // tanpa penyaring itu agar rekor pribadi tetap bisa dihitung.
+  const { data, error } = await tanpaDemo((saring) => {
+    const q = sb
+      .from("activities")
+      .select("distance_m,duration_s,elevation_gain_m,started_at")
+      .eq("user_id", userId);
+    return (saring ? q.eq("is_demo", false) : q)
+      .order("started_at", { ascending: false })
+      .limit(400);
+  });
   if (error || !data || data.length < 2) return [];
 
   // Perjalanan terbaru adalah yang baru saja disimpan, jadi dikeluarkan dari

@@ -20,7 +20,8 @@ export default async function AdminDataContoh() {
       .select("id,name,waypoints,start_at,status")
       .eq("status", "disetujui")
       .order("start_at", { ascending: false }),
-    supabase.from("activities").select("id", { count: "exact", head: true }).eq("is_demo", true),
+    supabase.from("activities").select("id", { count: "exact", head: true }).eq("is_demo", true)
+      .then((r) => (r.error ? { count: 0 } : r)),
   ]);
 
   const daftar = (eventDb || []).map((e) => ({

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { tanpaDemo } from "@/lib/tanpa-demo";
 import { Avatar } from "@/components/umpan-kartu";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
 import { IkonStreak, IkonTrofi, IkonRute, IkonEdukasi } from "@/components/bug-icons";
@@ -26,9 +27,11 @@ export default async function ProfilPublik({ params }: { params: Promise<{ id: s
 
   const [{ data: aktivitas }, { data: streak }, { data: modul }, { data: pengikut }, { data: sudah }] =
     await Promise.all([
-      supabase.from("activities").select("id,distance_m,path,started_at")
-        .eq("user_id", id).eq("is_demo", false)
-        .order("started_at", { ascending: false }).limit(60),
+      tanpaDemo((saring) => {
+        const q = supabase.from("activities").select("id,distance_m,path,started_at").eq("user_id", id);
+        return (saring ? q.eq("is_demo", false) : q)
+          .order("started_at", { ascending: false }).limit(60);
+      }),
       supabase.from("user_streaks").select("current_streak,last_activity_date").eq("user_id", id).maybeSingle(),
       supabase.from("module_progress").select("module_id").eq("user_id", id),
       supabase.from("follows").select("follower_id").eq("followee_id", id),

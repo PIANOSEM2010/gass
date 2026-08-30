@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { tanpaDemo } from "@/lib/tanpa-demo";
 import { BUILD_TAG } from "@/lib/version";
 import { redirect } from "next/navigation";
 import LogoutButton from "./logout-button";
@@ -28,11 +29,15 @@ export default async function ProfilPage() {
 
   const [{ data: aktivitas }, { data: streak }, { data: modul }] = await Promise.all([
     // Perjalanan contoh tidak pernah ikut dihitung: statistik pribadi harus
-    // tetap mencerminkan gowes yang benar-benar dilakukan.
-    supabase.from("activities")
-      .select("id,distance_m,duration_s,path,started_at")
-      .eq("user_id", user.id).eq("is_demo", false)
-      .order("started_at", { ascending: false }).limit(60),
+    // tetap mencerminkan gowes yang benar-benar dilakukan. Bila kolom
+    // penandanya belum dipasang, kueri diulang tanpa penyaring itu.
+    tanpaDemo((saring) => {
+      const q = supabase.from("activities")
+        .select("id,distance_m,duration_s,path,started_at")
+        .eq("user_id", user.id);
+      return (saring ? q.eq("is_demo", false) : q)
+        .order("started_at", { ascending: false }).limit(60);
+    }),
     supabase.from("user_streaks")
       .select("current_streak,total_distance_m,last_activity_date").eq("user_id", user.id).maybeSingle(),
     supabase.from("module_progress").select("module_id").eq("user_id", user.id),

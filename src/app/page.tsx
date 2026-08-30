@@ -22,7 +22,10 @@ export default async function Umpan() {
   // dengan pesan yang jelas - bukan halaman error.
   const { data: rows, error: galat } = await supabase
     .from("activities")
-    .select("id,user_id,distance_m,duration_s,elevation_gain_m,path,started_at,note,is_demo,demo_name")
+    // Diambil seluruh kolom, bukan daftar tetap. Menyebut kolom satu per satu
+    // membuat seluruh umpan gagal begitu ada kolom yang belum dipasang di
+    // basis data - dan pesan galatnya menuduh berkas SQL yang salah.
+    .select("*")
     .order("started_at", { ascending: false })
     .limit(25);
 
@@ -69,11 +72,13 @@ export default async function Umpan() {
     const k = (kudos || []).filter((x) => String(x.activity_id) === id);
     const c = (komentar || []).filter((x) => String(x.activity_id) === id);
     const p = namaProfil.get(String(r.user_id));
+    const kontoh = Boolean((r as { is_demo?: boolean }).is_demo);
     return {
       id,
       // Perjalanan contoh memakai nama peserta yang diwakilinya, bukan nama
       // akun admin yang secara teknis memilikinya.
-      nama: r.is_demo ? String(r.demo_name || "Peserta contoh") : (p?.full_name || "Goweser"),
+      // `is_demo` hanya ada bila bug-data-contoh.sql sudah dijalankan.
+      nama: kontoh ? String(r.demo_name || "Peserta contoh") : (p?.full_name || "Goweser"),
       asal: p?.organization || "",
       catatan: (r.note as string) || null,
       distance_m: Number(r.distance_m) || 0,
@@ -85,8 +90,8 @@ export default async function Umpan() {
       sudahKudos: !!user && k.some((x) => String(x.user_id) === user.id),
       komentar: c.length,
       komentarTeratas: c.length ? { nama: nama(String(c[0].user_id)), body: c[0].body } : null,
-      foto: r.is_demo ? null : (p?.avatar_url || null),
-      contoh: Boolean(r.is_demo),
+      foto: kontoh ? null : (p?.avatar_url || null),
+      contoh: kontoh,
     };
   });
 
@@ -163,9 +168,19 @@ export default async function Umpan() {
 
         <div className="px-3 space-y-3 jenjang">
           {galat && (
-            <p className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-xs text-amber-200 leading-relaxed">
-              Tabel umpan sosial belum dipasang. Jalankan berkas <strong>bug-tabel-sosial.sql</strong> di Supabase → SQL Editor, lalu muat ulang halaman ini.
-            </p>
+            <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-xs text-amber-200 leading-relaxed">
+              <p className="font-semibold">Umpan gagal dimuat.</p>
+              <p className="mt-1">
+                Pastikan seluruh berkas SQL sudah dijalankan di Supabase → SQL Editor,
+                lalu muat ulang halaman ini.
+              </p>
+              {/* Pesan aslinya ditampilkan supaya penyebabnya jelas. Sebelumnya
+                  pesan ini selalu menuduh bug-tabel-sosial.sql, padahal galatnya
+                  bisa datang dari kolom lain yang belum dipasang. */}
+              <p className="mt-2 font-mono text-[10.5px] text-amber-100/70 break-words">
+                {galat.message}
+              </p>
+            </div>
           )}
           {!galat && aktivitas.length === 0 && (
             <div className="rounded-2xl border border-lime-400/12 bg-[var(--kartu)] p-8 text-center">

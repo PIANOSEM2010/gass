@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { tanpaDemo } from "@/lib/tanpa-demo";
 import { redirect } from "next/navigation";
 import RiwayatClient from "./riwayat-client";
 
@@ -9,13 +10,15 @@ export default async function RiwayatPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/catat/riwayat");
 
-  const { data } = await supabase
-    .from("activities")
-    .select("id,distance_m,duration_s,elevation_gain_m,path,started_at,activity_date")
-    .eq("user_id", user.id)
-    .eq("is_demo", false)
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const { data } = await tanpaDemo((saring) => {
+    const q = supabase
+      .from("activities")
+      .select("id,distance_m,duration_s,elevation_gain_m,path,started_at,activity_date")
+      .eq("user_id", user.id);
+    return (saring ? q.eq("is_demo", false) : q)
+      .order("created_at", { ascending: false })
+      .limit(100);
+  });
 
   const rides = (data || []).map((a) => ({
     id: String(a.id),
