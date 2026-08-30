@@ -28,6 +28,28 @@ import { createClient } from "@/lib/supabase/client";
 
 export const SKEMA_APLIKASI = "id.bulungan.bug://auth/callback";
 
+// Halaman tujuan disimpan di peranti, bukan diselipkan ke alamat pulang.
+//
+// Supabase mencocokkan alamat pulang dengan daftar izinnya secara persis,
+// termasuk bagian parameternya. Alamat berparameter seperti
+// "id.bulungan.bug://auth/callback?next=/profil" tidak akan cocok dengan
+// entri "id.bulungan.bug://auth/callback" di daftar izin, dan Supabase diam-diam
+// mengalihkan ke Site URL - yaitu situs webnya, bukan aplikasi. Menyimpan
+// tujuan di peranti membuat alamat pulangnya selalu sama persis.
+const KUNCI_TUJUAN = "bug-tujuan-setelah-masuk";
+
+function simpanTujuan(tujuan: string) {
+  try { window.localStorage.setItem(KUNCI_TUJUAN, tujuan); } catch { /* mode privat */ }
+}
+
+function ambilTujuan(): string {
+  try {
+    const t = window.localStorage.getItem(KUNCI_TUJUAN) || "";
+    window.localStorage.removeItem(KUNCI_TUJUAN);
+    return t.startsWith("/") && !t.startsWith("//") ? t : "/profil";
+  } catch { return "/profil"; }
+}
+
 /**
  * Memeriksa apakah plugin tautan dalam sudah ada di APK yang terpasang.
  * Bila belum, masuk dengan Google tidak akan bisa diselesaikan karena aplikasi
@@ -68,10 +90,12 @@ export async function masukGoogle(tujuan = "/profil"): Promise<void> {
   }
 
   // Aplikasi: minta alamatnya saja, lalu buka di peramban sistem.
+  simpanTujuan(tujuan);
   const { data, error } = await sb.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${SKEMA_APLIKASI}?next=${encodeURIComponent(tujuan)}`,
+      // Tanpa parameter apa pun, supaya cocok persis dengan daftar izin Supabase.
+      redirectTo: SKEMA_APLIKASI,
       skipBrowserRedirect: true,
     },
   });
@@ -121,6 +145,5 @@ export async function selesaikanMasukGoogle(alamat: string): Promise<string | nu
     await Browser.close();
   } catch { /* sebagian peranti menutupnya sendiri */ }
 
-  const tujuan = params.get("next") || "/profil";
-  return tujuan.startsWith("/") && !tujuan.startsWith("//") ? tujuan : "/profil";
+  return ambilTujuan();
 }
