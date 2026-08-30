@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import KepalaHalaman from "@/components/kepala-halaman";
 import { IkonKampanyeJalan } from "@/components/fitur-ikon";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
-import { Plus, Clock } from "lucide-react";
+import { Plus, Clock, CheckCircle2 } from "lucide-react";
+import { eventSelesai, eventHariIni } from "@/lib/status-event";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ export default async function HalamanEvent({
     .order("start_at", { ascending: true });
 
   const daftar = semua || [];
-  const disetujui = daftar.filter((e) => e.status === "disetujui");
+  const semuaDisetujui = daftar.filter((e) => e.status === "disetujui");
+  // Event yang tanggalnya sudah lewat dipindahkan ke daftar terpisah.
+  const disetujui = semuaDisetujui.filter((e) => !eventSelesai(e.start_at as string));
+  const selesai = semuaDisetujui
+    .filter((e) => eventSelesai(e.start_at as string))
+    .sort((a, b) => new Date(String(b.start_at)).getTime() - new Date(String(a.start_at)).getTime());
   const punyaku = user ? daftar.filter((e) => String(e.creator_id) === user.id && e.status !== "disetujui") : [];
 
   return (
@@ -96,6 +102,12 @@ export default async function HalamanEvent({
                         ? new Date(String(e.start_at)).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })
                         : "Waktu belum ditentukan"}
                     </p>
+                    {eventHariIni(e.start_at as string) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-lime-400/20 px-2 py-0.5 mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" />
+                        <span className="eyebrow !text-[8px] text-lime-300">Hari ini</span>
+                      </span>
+                    )}
                     <p className="text-[11px] text-lime-300 display-num mt-0.5">
                       {(Number(e.distance_m) / 1000).toFixed(1).replace(".", ",")} km
                     </p>
@@ -112,6 +124,39 @@ export default async function HalamanEvent({
               </div>
             ))}
           </div>
+        )}
+
+        {selesai.length > 0 && (
+          <>
+            <h2 className="eyebrow text-slate-500 !text-[10px] mt-7 mb-2.5">
+              Event sudah selesai ({selesai.length})
+            </h2>
+            <div className="rounded-2xl border border-white/8 bg-[var(--kartu)] divide-y divide-white/5 overflow-hidden">
+              {selesai.slice(0, 12).map((e) => (
+                <Link key={String(e.id)} href={`/event/${e.share_token}`}
+                  className="flex items-center gap-3 px-3.5 py-3 opacity-70">
+                  {e.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={String(e.logo_url)} alt="" className="w-10 h-10 rounded-lg object-cover grayscale flex-shrink-0" />
+                  ) : (
+                    <span className="w-10 h-10 rounded-lg bg-white/6 text-slate-500 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 size={18} />
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-slate-300 truncate">{String(e.name)}</p>
+                    <p className="text-[10.5px] text-slate-600">
+                      {e.start_at
+                        ? new Date(String(e.start_at)).toLocaleDateString("id-ID", { dateStyle: "medium" })
+                        : "-"}
+                      {" · "}{(Number(e.distance_m) / 1000).toFixed(1).replace(".", ",")} km
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-slate-600 flex-shrink-0">Selesai</span>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

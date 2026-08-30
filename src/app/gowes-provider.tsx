@@ -1,7 +1,7 @@
 "use client";
 import { type ReactNode, createContext, useContext, useState, useRef, useCallback, useEffect } from "react";
 import { type GeoPos, type WatchHandle, startWatch, isNativeApp, getPositionOnce } from "@/lib/native-geo";
-import { nyalakanPenjagaLatar, matikanPenjagaLatar, penjagaLatarAktif } from "@/lib/penjaga-latar";
+import { nyalakanPenjagaLatar, matikanPenjagaLatar, penjagaLatarAktif, mulaiDiagnosa, catatFix, bacaDiagnosa, type Diagnosa } from "@/lib/penjaga-latar";
 
 export type Pt = { lat: number; lng: number };
 export type GowesStatus = "idle" | "tracking" | "paused" | "finished" | "saving" | "saved";
@@ -34,6 +34,8 @@ interface GowesContextValue {
   perkiraanM: number;
   /** Penjaga latar aktif: perekaman berpeluang tetap jalan walau layar mati. */
   penjagaLatar: boolean;
+  /** Catatan apa yang terjadi selama perekaman, untuk memeriksa layar terkunci. */
+  diagnosa: Diagnosa;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -73,6 +75,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const pathRef = useRef<Pt[]>([]);
   const [perkiraanM, setPerkiraanM] = useState(0);
   const [penjagaLatar, setPenjagaLatar] = useState(false);
+  const [diagnosa, setDiagnosa] = useState<Diagnosa>(bacaDiagnosa());
   const perkiraanRef = useRef(0);
   // Kapan halaman terakhir disembunyikan. Dipakai untuk menambal jarak yang
   // hilang selama layar terkunci.
@@ -184,10 +187,13 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   // Durasi aktif = waktu berjalan dikurangi total waktu jeda
   const beginTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(
-      () => setDuration(Math.floor((Date.now() - startRef.current - pausedMsRef.current) / 1000)),
-      1000
-    );
+    let detik = 0;
+    timerRef.current = setInterval(() => {
+      setDuration(Math.floor((Date.now() - startRef.current - pausedMsRef.current) / 1000));
+      // Ringkasan diagnosa disegarkan tiap 5 detik saja; ia hanya keterangan,
+      // tidak perlu memicu gambar ulang setiap detik.
+      if (++detik % 5 === 0) setDiagnosa(bacaDiagnosa());
+    }, 1000);
   }, []);
 
   const beginWatch = useCallback(() => {
@@ -198,6 +204,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
         const acc = p.coords.accuracy;
         const pt = { lat: p.coords.latitude, lng: p.coords.longitude };
         const now = Date.now();
+        catatFix();
         if (acc && acc > 35) return;
 
         let inst = -1;
@@ -247,6 +254,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
     pausedMsRef.current = 0; pauseStartRef.current = 0;
     setDistance(0); setDuration(0); setSpeed(0); setElev(0);
     startRef.current = Date.now(); endRef.current = 0; setStatus("tracking");
+    mulaiDiagnosa();
     acquireWake();
     // Penjaga latar hanya diperlukan di peramban; aplikasi Android sudah punya
     // layanan lokasi latar belakang sungguhan. Dipanggil di sini karena masih
@@ -409,6 +417,7 @@ export default function GowesProvider({ children }: { children: ReactNode }) {
   const value: GowesContextValue = {
     perkiraanM,
     penjagaLatar,
+    diagnosa,
     status, distance, duration, speed, elev, error,
     start, pause, resume, finish, discard, setStatus, setError, getStats, getPath,
   };

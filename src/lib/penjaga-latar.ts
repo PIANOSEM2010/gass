@@ -19,6 +19,9 @@
 // aplikasi Android yang memakai layanan lokasi latar belakang sungguhan.
 
 let audio: HTMLAudioElement | null = null;
+// Menandai bahwa penjaga memang diinginkan hidup, agar pemutaran yang
+// dihentikan sistem bisa dipulihkan sendiri.
+let ingin = false;
 
 // Membuat berkas WAV satu detik berisi nada sangat pelan.
 // Bukan hening total: Chrome dapat menganggap audio hening sebagai tidak ada
@@ -29,9 +32,14 @@ function buatNadaPelan(): string {
   const jumlah = laju * detik;
   const data = new Int16Array(jumlah);
   for (let i = 0; i < jumlah; i++) {
-    // Gelombang 40 Hz dengan amplitudo sangat kecil: tidak terdengar di
-    // pengeras suara ponsel, tetapi tetap terhitung sebagai bunyi.
-    data[i] = Math.round(Math.sin((2 * Math.PI * 40 * i) / laju) * 8);
+    // Gelombang 50 Hz beramplitudo cukup besar.
+    //
+    // Percobaan pertama memakai amplitudo sangat kecil dan ternyata gagal:
+    // Chrome menilai tab tidak berbunyi, lalu tetap membekukannya saat layar
+    // mati. Amplitudo sekarang jauh lebih besar agar tab benar-benar ditandai
+    // "sedang berbunyi", sementara telinga tetap tidak mendengarnya karena
+    // pengeras suara ponsel praktis tidak mampu menghasilkan nada 50 Hz.
+    data[i] = Math.round(Math.sin((2 * Math.PI * 50 * i) / laju) * 6000);
   }
 
   const byteData = jumlah * 2;
@@ -62,13 +70,25 @@ function buatNadaPelan(): string {
  */
 export async function nyalakanPenjagaLatar(judul = "Mencatat gowes"): Promise<boolean> {
   if (typeof window === "undefined") return false;
+  ingin = true;
   try {
     if (!audio) {
       audio = new Audio(buatNadaPelan());
       audio.loop = true;
-      audio.volume = 0.02;
+      audio.volume = 0.35;
       // Supaya tetap diputar lewat pengeras suara meski headset dicabut.
       audio.setAttribute("playsinline", "true");
+      // Android kadang menghentikan pemutaran saat berpindah keluaran suara
+      // atau saat aplikasi lain memutar bunyi. Bila itu terjadi sementara
+      // perekaman masih berjalan, penjaga dinyalakan lagi sendiri.
+      audio.addEventListener("pause", () => {
+        if (!ingin) return;
+        catatAudioBerhenti();
+        void audio?.play().catch(() => null);
+      });
+      audio.addEventListener("ended", () => {
+        if (ingin) void audio?.play().catch(() => null);
+      });
     }
     await audio.play();
 
@@ -99,6 +119,7 @@ export async function nyalakanPenjagaLatar(judul = "Mencatat gowes"): Promise<bo
 
 /** Mematikan penjaga latar. */
 export function matikanPenjagaLatar() {
+  ingin = false;
   try {
     audio?.pause();
     if (audio) audio.currentTime = 0;
@@ -111,3 +132,38 @@ export function matikanPenjagaLatar() {
 export function penjagaLatarAktif(): boolean {
   return Boolean(audio && !audio.paused);
 }
+
+
+// ---------------------------------------------------------------------------
+// Catatan diagnosa.
+//
+// Perilaku layar terkunci berbeda-beda antar merek ponsel, dan tidak bisa
+// diuji dari sini. Catatan ini merekam apa yang benar-benar terjadi selama
+// perekaman, supaya bila pencatatan berhenti, penyebabnya bisa diketahui
+// alih-alih ditebak.
+export type Diagnosa = {
+  mulai: number;
+  fix: number;          // jumlah laporan GPS yang diterima
+  fixTerakhir: number;  // waktu laporan GPS terakhir
+  celahTerlama: number; // celah terlama antar laporan, dalam detik
+  audioBerhenti: number; // berapa kali pemutaran sempat berhenti
+};
+
+let diag: Diagnosa = { mulai: 0, fix: 0, fixTerakhir: 0, celahTerlama: 0, audioBerhenti: 0 };
+
+export function mulaiDiagnosa() {
+  diag = { mulai: Date.now(), fix: 0, fixTerakhir: Date.now(), celahTerlama: 0, audioBerhenti: 0 };
+}
+
+export function catatFix() {
+  const now = Date.now();
+  if (diag.fixTerakhir) {
+    const celah = (now - diag.fixTerakhir) / 1000;
+    if (celah > diag.celahTerlama) diag.celahTerlama = celah;
+  }
+  diag.fix += 1;
+  diag.fixTerakhir = now;
+}
+
+export function catatAudioBerhenti() { diag.audioBerhenti += 1; }
+export function bacaDiagnosa(): Diagnosa { return { ...diag }; }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DetailEvent from "./detail-event";
 import { type TitikEvent } from "@/lib/titik-event";
+import { eventSelesai } from "@/lib/status-event";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function HalamanDetailEvent({
       jumlahPeserta={(peserta || []).length}
       sudahIkut={Boolean(sudahIkut)}
       masuk={Boolean(user)}
+      selesai={eventSelesai((e.start_at as string) || null)}
     />
   );
 }

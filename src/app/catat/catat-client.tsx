@@ -46,7 +46,10 @@ type BoardItem = { user_id: string; name: string; org: string; km: number; rides
 // selama merekam, dan menambal jarak yang hilang bila layar sempat terkunci.
 // Perekaman penuh dengan layar mati hanya tersedia lewat aplikasi Android, yang
 // memakai layanan lokasi latar belakang.
-function CatatanLayarTerkunci({ perkiraanM, merekam, penjagaLatar }: { perkiraanM: number; merekam: boolean; penjagaLatar: boolean }) {
+function CatatanLayarTerkunci({ perkiraanM, merekam, penjagaLatar, diagnosa }: {
+  perkiraanM: number; merekam: boolean; penjagaLatar: boolean;
+  diagnosa: { fix: number; celahTerlama: number; audioBerhenti: number };
+}) {
   const [diAplikasi, setDiAplikasi] = useState(true);
   const [layarTertahan, setLayarTertahan] = useState(true);
 
@@ -78,12 +81,44 @@ function CatatanLayarTerkunci({ perkiraanM, merekam, penjagaLatar }: { perkiraan
         <div className="mb-3 rounded-2xl border border-amber-400/35 bg-amber-400/10 px-4 py-3">
           <p className="display-title text-[13px] text-amber-300">JANGAN KUNCI LAYAR</p>
           <p className="text-[11.5px] text-amber-100/85 mt-1 leading-relaxed">
-            Peramban ini tidak bisa menjaga pencatatan saat layar mati
+            Ponsel atau peramban ini menghentikan pencatatan saat layar mati
             {layarTertahan ? ", jadi layar ditahan tetap menyala" : ""}. Kalau layar dikunci,
-            jaraknya ditambal sebagai perkiraan. Pasang aplikasi BUG untuk perekaman penuh
-            dengan layar mati.
+            jaraknya ditambal sebagai perkiraan. Bila ponselmu Xiaomi, Oppo, Vivo, atau Realme,
+            buka Pengaturan &rarr; Baterai &rarr; Penghemat baterai, lalu setel Chrome ke
+            &ldquo;Tanpa batas&rdquo;. Cara paling andal tetap memasang aplikasi BUG.
           </p>
         </div>
+      )}
+
+      {merekam && penjagaLatar && (
+        <details className="mb-3 rounded-2xl border border-white/10 bg-[var(--kartu)] px-4 py-3">
+          <summary className="text-[11.5px] text-slate-400 cursor-pointer">
+            Periksa pencatatan saat layar terkunci
+          </summary>
+          <div className="mt-2.5 space-y-1.5 text-[11.5px]">
+            <p className="flex justify-between">
+              <span className="text-slate-500">Laporan GPS diterima</span>
+              <span className="display-num text-white">{diagnosa.fix}</span>
+            </p>
+            <p className="flex justify-between">
+              <span className="text-slate-500">Jeda terlama antar laporan</span>
+              <span className={`display-num ${diagnosa.celahTerlama > 60 ? "text-amber-300" : "text-white"}`}>
+                {Math.round(diagnosa.celahTerlama)} dtk
+              </span>
+            </p>
+            <p className="flex justify-between">
+              <span className="text-slate-500">Penjaga sempat berhenti</span>
+              <span className={`display-num ${diagnosa.audioBerhenti > 0 ? "text-amber-300" : "text-white"}`}>
+                {diagnosa.audioBerhenti}x
+              </span>
+            </p>
+          </div>
+          <p className="text-[10.5px] text-slate-500 mt-2.5 leading-relaxed">
+            Kunci layar sebentar lalu buka lagi. Bila jeda terlama tetap di bawah 30 detik,
+            pencatatan berjalan dengan layar mati. Bila melonjak sepanjang durasi layar
+            terkunci, ponselmu menghentikan halaman ini.
+          </p>
+        </details>
       )}
 
       {perkiraanM > 0 && (
@@ -109,7 +144,7 @@ export default function CatatClient({
 }) {
   const router = useRouter();
   // Mesin gowes global (provider di root layout) agar tetap jalan saat buka menu lain
-  const { perkiraanM, penjagaLatar, status, setStatus, distance, duration, speed, elev, error, setError, start, pause, resume, finish, discard, getStats, getPath } = useGowes();
+  const { perkiraanM, penjagaLatar, diagnosa, status, setStatus, distance, duration, speed, elev, error, setError, start, pause, resume, finish, discard, getStats, getPath } = useGowes();
 
   const [tab, setTab] = useState<"catat" | "papan">("catat");
   // Deteksi bila aplikasi/layar sempat tidak aktif saat merekam (GPS terjeda oleh sistem).
@@ -311,7 +346,7 @@ export default function CatatClient({
     setSharingStory(true); setStoryMsg("");
     try {
       await kirimKartuKeStory(canvas, `Gowes ${km} km di Bulungan`);
-      setStoryMsg("Story tayang 24 jam - cek di halaman Umpan.");
+      setStoryMsg("Story tayang 24 jam - cek di halaman Beranda.");
     } catch (err) {
       setStoryMsg(err instanceof Error ? err.message : "Gagal membuat story.");
     } finally { setSharingStory(false); }
@@ -457,7 +492,7 @@ export default function CatatClient({
     <div className="min-h-screen bg-[var(--latar)] px-4 pt-5 max-w-md mx-auto pb-8">
       <PenjagaDiam aktif={status === "tracking"} distanceM={distance} />
 
-      <CatatanLayarTerkunci perkiraanM={perkiraanM} merekam={status === "tracking"} penjagaLatar={penjagaLatar} />
+      <CatatanLayarTerkunci perkiraanM={perkiraanM} merekam={status === "tracking"} penjagaLatar={penjagaLatar} diagnosa={diagnosa} />
 
       {eventId && <PanduanBelok />}
 

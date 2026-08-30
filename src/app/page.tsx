@@ -6,6 +6,7 @@ import KartuAktivitas, { type Aktivitas } from "@/components/umpan-kartu";
 import BarisStory, { type Story } from "@/components/story-baris";
 import GeserFitur from "@/components/geser-fitur";
 import EventBeranda, { type EventRingkas } from "@/components/event-beranda";
+import { eventSelesai, eventHariIni } from "@/lib/status-event";
 import { type Titik } from "@/components/jejak-rute";
 
 export const dynamic = "force-dynamic";
@@ -86,11 +87,10 @@ export default async function Umpan() {
     };
   });
 
-  // Event dianggap berlangsung sejak waktu mulainya sampai enam jam sesudahnya;
-  // gowes bareng jarang lebih lama dari itu. Yang sudah lewat tidak ditampilkan.
-  const sekarang = Date.now();
-  const ENAM_JAM = 6 * 3600 * 1000;
+  // Event yang tanggalnya sudah lewat tidak ditampilkan di beranda sama sekali;
+  // yang berlangsung hari ini ditandai dan diletakkan paling atas.
   const eventBeranda: EventRingkas[] = (eventDb || [])
+    .filter((e) => !eventSelesai(e.start_at as string))
     .map((e) => {
       const mulai = e.start_at ? new Date(String(e.start_at)).getTime() : null;
       return {
@@ -101,11 +101,10 @@ export default async function Umpan() {
         mulai: (e.start_at as string) || null,
         jarakM: Number(e.distance_m) || 0,
         titik: Array.isArray(e.waypoints) ? (e.waypoints as Titik[]) : null,
-        berlangsung: mulai !== null && sekarang >= mulai && sekarang <= mulai + ENAM_JAM,
+        berlangsung: eventHariIni(e.start_at as string),
         _mulai: mulai,
       };
     })
-    .filter((e) => e.berlangsung || e._mulai === null || e._mulai > sekarang)
     .sort((a, b) => Number(b.berlangsung) - Number(a.berlangsung) || (a._mulai ?? Infinity) - (b._mulai ?? Infinity))
     .slice(0, 3)
     .map(({ _mulai, ...sisa }) => { void _mulai; return sisa; });
@@ -137,7 +136,7 @@ export default async function Umpan() {
         </div>
         <div className="max-w-md mx-auto flex gap-5 px-5">
           {[
-            { href: "/", label: "Umpan", aktif: true },
+            { href: "/", label: "Beranda", aktif: true },
             { href: "/forum", label: "Forum", aktif: false },
             { href: "/kampanye", label: "Kampanye", aktif: false },
           ].map((t) => (

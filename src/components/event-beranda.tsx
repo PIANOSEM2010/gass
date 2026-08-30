@@ -19,7 +19,7 @@ export default function EventBeranda({ daftar }: { daftar: EventRingkas[] }) {
       <div className="flex items-end justify-between px-2 mb-2">
         <div>
           <p className="eyebrow !text-[9px] text-orange-400/80">Gowes bareng</p>
-          <p className="display-title text-[16px] text-white leading-none mt-1">EVENT DI BULUNGAN</p>
+          <p className="display-title text-[16px] text-white leading-none mt-1">EVENT TERKINI</p>
         </div>
         <Link href="/event" className="text-[11px] text-slate-500 pb-0.5">semua →</Link>
       </div>

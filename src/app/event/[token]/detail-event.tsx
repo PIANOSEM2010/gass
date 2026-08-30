@@ -16,7 +16,7 @@ export default function DetailEvent(p: {
   id: string; token: string; nama: string; logo: string | null; deskripsi: string | null;
   mulai: string | null; titikKumpul: string | null; titik: TitikEvent[]; distanceM: number;
   catatanRawan: string; catatanEtika: string; status: string; pengaju: string;
-  jumlahPeserta: number; sudahIkut: boolean; masuk: boolean;
+  jumlahPeserta: number; sudahIkut: boolean; masuk: boolean; selesai: boolean;
 }) {
   const router = useRouter();
   const [ikut, setIkut] = useState(p.sudahIkut);
@@ -115,6 +115,11 @@ export default function DetailEvent(p: {
             <div className="min-w-0 flex-1">
               <h1 className="display-title text-[19px] text-white leading-tight">{p.nama}</h1>
               <p className="text-[11px] text-slate-500 mt-1">Diajukan oleh {p.pengaju}</p>
+              {p.selesai && (
+                <span className="inline-block mt-1.5 rounded-full bg-white/8 px-2.5 py-0.5 eyebrow !text-[8px] text-slate-400">
+                  Sudah selesai
+                </span>
+              )}
             </div>
           </div>
 
@@ -229,7 +234,21 @@ export default function DetailEvent(p: {
         {pesan && <p className="text-[12px] text-slate-400">{pesan}</p>}
 
         {/* Gabung & mulai */}
-        {p.masuk ? (
+        {p.selesai ? (
+          <div className="rounded-2xl border border-white/10 bg-[var(--kartu-2)] p-5 text-center">
+            <p className="display-title text-[15px] text-slate-300">EVENT SUDAH SELESAI</p>
+            <p className="text-[12px] text-slate-500 mt-1.5 leading-relaxed">
+              Event ini berlangsung pada{" "}
+              {p.mulai ? new Date(p.mulai).toLocaleDateString("id-ID", { dateStyle: "long" }) : "hari sebelumnya"}
+              {" "}dan tidak menerima peserta baru. Halaman ini tetap bisa dibuka sebagai catatan
+              jalur dan etika bersepedanya.
+            </p>
+            <Link href="/event"
+              className="inline-block mt-4 rounded-xl border border-lime-400/30 text-lime-300 px-5 py-2.5 display-title text-sm">
+              LIHAT EVENT LAIN
+            </Link>
+          </div>
+        ) : p.masuk ? (
           <div className="space-y-2.5 pt-1">
             <button onClick={gabung} disabled={sibuk}
               className={`w-full py-4 rounded-2xl display-title text-base flex items-center justify-center gap-2 disabled:opacity-60 ${ikut

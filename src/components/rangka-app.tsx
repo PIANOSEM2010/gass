@@ -18,7 +18,7 @@ import { IkonBeranda, IkonProfil } from "@/components/bug-icons";
 // navigasinya berpindah ke bilah samping dan kolom isinya dilebarkan.
 // Halaman-halamannya tidak perlu diubah satu per satu.
 const UTAMA = [
-  { href: "/", label: "Umpan", ikon: IkonBeranda },
+  { href: "/", label: "Beranda", ikon: IkonBeranda },
   { href: "/peta", label: "Peta Jalur", ikon: IkonPetaJalur },
   { href: "/catat", label: "Catat Gowes", ikon: IkonCatatGowes },
   { href: "/edukasi", label: "Edukasi", ikon: IkonModul },

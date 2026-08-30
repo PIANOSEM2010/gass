@@ -127,7 +127,7 @@ export default function ShareRide({ ride }: { ride: Ride }) {
     try {
       const km = (ride.distance_m / 1000).toFixed(2).replace(".", ",");
       await kirimKartuKeStory(canvas, place ? `Gowes ${km} km di ${place}` : `Gowes ${km} km`, ride.id);
-      setPesanStory("Story tayang 24 jam, cek di halaman Umpan.");
+      setPesanStory("Story tayang 24 jam, cek di halaman Beranda.");
     } catch (err) {
       setPesanStory(err instanceof Error ? err.message : "Gagal membuat story.");
     } finally { setBusy(false); }
