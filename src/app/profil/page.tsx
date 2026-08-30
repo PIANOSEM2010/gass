@@ -27,9 +27,12 @@ export default async function ProfilPage() {
   const namaLengkap = profile?.full_name || meta.full_name || "Goweser";
 
   const [{ data: aktivitas }, { data: streak }, { data: modul }] = await Promise.all([
+    // Perjalanan contoh tidak pernah ikut dihitung: statistik pribadi harus
+    // tetap mencerminkan gowes yang benar-benar dilakukan.
     supabase.from("activities")
       .select("id,distance_m,duration_s,path,started_at")
-      .eq("user_id", user.id).order("started_at", { ascending: false }).limit(60),
+      .eq("user_id", user.id).eq("is_demo", false)
+      .order("started_at", { ascending: false }).limit(60),
     supabase.from("user_streaks")
       .select("current_streak,total_distance_m,last_activity_date").eq("user_id", user.id).maybeSingle(),
     supabase.from("module_progress").select("module_id").eq("user_id", user.id),

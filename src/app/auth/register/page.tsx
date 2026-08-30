@@ -3,6 +3,7 @@ import { useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { masukGoogle } from "@/lib/masuk-google";
 import {
   KerangkaAuth, LogoGoogle, TandaSah, PetunjukTombol, kelasIsian, useTombolTali,
 } from "@/components/auth-ui";
@@ -89,14 +90,11 @@ function IsiRegisterPage() {
     setGoogleLoading(true);
     setError("");
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(tujuan)}` },
-      });
-      if (error) { setError(error.message); setGoogleLoading(false); }
-    } catch {
-      setError("Gagal membuka halaman Google. Coba lagi.");
+      // Di aplikasi Android, halaman Google dibuka di peramban sistem karena
+      // Google menolak WebView. Di peramban, alurnya seperti biasa.
+      await masukGoogle(tujuan);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal membuka halaman Google. Coba lagi.");
       setGoogleLoading(false);
     }
   }

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, MapPin, MessageSquare, Siren, Users, TriangleAlert, Landmark, Construction, CalendarDays} from "lucide-react";
+import { LayoutDashboard, MapPin, MessageSquare, Siren, Users, TriangleAlert, Landmark, Construction, CalendarDays, FlaskConical} from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -36,6 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/forum", label: "Forum", icon: MessageSquare },
     { href: "/admin/sos", label: "SOS Logs", icon: Siren },
     { href: "/admin/users", label: "Pengguna", icon: Users },
+    { href: "/admin/contoh", label: "Data Contoh", icon: FlaskConical },
   ];
 
   return (

@@ -27,7 +27,8 @@ export default async function ProfilPublik({ params }: { params: Promise<{ id: s
   const [{ data: aktivitas }, { data: streak }, { data: modul }, { data: pengikut }, { data: sudah }] =
     await Promise.all([
       supabase.from("activities").select("id,distance_m,path,started_at")
-        .eq("user_id", id).order("started_at", { ascending: false }).limit(60),
+        .eq("user_id", id).eq("is_demo", false)
+        .order("started_at", { ascending: false }).limit(60),
       supabase.from("user_streaks").select("current_streak,last_activity_date").eq("user_id", id).maybeSingle(),
       supabase.from("module_progress").select("module_id").eq("user_id", id),
       supabase.from("follows").select("follower_id").eq("followee_id", id),

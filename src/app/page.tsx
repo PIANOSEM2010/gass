@@ -22,7 +22,7 @@ export default async function Umpan() {
   // dengan pesan yang jelas - bukan halaman error.
   const { data: rows, error: galat } = await supabase
     .from("activities")
-    .select("id,user_id,distance_m,duration_s,elevation_gain_m,path,started_at,note")
+    .select("id,user_id,distance_m,duration_s,elevation_gain_m,path,started_at,note,is_demo,demo_name")
     .order("started_at", { ascending: false })
     .limit(25);
 
@@ -71,7 +71,9 @@ export default async function Umpan() {
     const p = namaProfil.get(String(r.user_id));
     return {
       id,
-      nama: p?.full_name || "Goweser",
+      // Perjalanan contoh memakai nama peserta yang diwakilinya, bukan nama
+      // akun admin yang secara teknis memilikinya.
+      nama: r.is_demo ? String(r.demo_name || "Peserta contoh") : (p?.full_name || "Goweser"),
       asal: p?.organization || "",
       catatan: (r.note as string) || null,
       distance_m: Number(r.distance_m) || 0,
@@ -83,7 +85,8 @@ export default async function Umpan() {
       sudahKudos: !!user && k.some((x) => String(x.user_id) === user.id),
       komentar: c.length,
       komentarTeratas: c.length ? { nama: nama(String(c[0].user_id)), body: c[0].body } : null,
-      foto: p?.avatar_url || null,
+      foto: r.is_demo ? null : (p?.avatar_url || null),
+      contoh: Boolean(r.is_demo),
     };
   });
 

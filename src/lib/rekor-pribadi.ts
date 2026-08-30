@@ -19,6 +19,7 @@ export async function periksaRekorPribadi(
     .from("activities")
     .select("distance_m,duration_s,elevation_gain_m,started_at")
     .eq("user_id", userId)
+    .eq("is_demo", false)
     .order("started_at", { ascending: false })
     .limit(400);
   if (error || !data || data.length < 2) return [];

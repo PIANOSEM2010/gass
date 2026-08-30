@@ -1,4 +1,5 @@
 import GowesProvider from "./gowes-provider";
+import PenerimaTautan from "@/components/penerima-tautan";
 import RangkaApp from "@/components/rangka-app";
 import IzinPanggilan from "@/components/izin-panggilan";
 import TombolCatat from "@/components/tombol-catat";
@@ -50,7 +51,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SessionKeeper />
                 <PushRegistrar />
                 <InstallPrompt />
-                <IzinPanggilan />
+                <PenerimaTautan />
+        <IzinPanggilan />
         <TombolCatat />
         <Navbar />
                 <ActivityDock />

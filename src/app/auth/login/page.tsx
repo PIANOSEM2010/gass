@@ -3,6 +3,7 @@ import { useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { masukGoogle } from "@/lib/masuk-google";
 import {
   KerangkaAuth, LogoGoogle, TandaSah, PetunjukTombol, kelasIsian, useTombolTali,
 } from "@/components/auth-ui";
@@ -33,6 +34,9 @@ function IsiLoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  // Galat dari proses masuk Google di aplikasi dikirim lewat alamat, karena
+  // saat itu halaman ini baru saja dibuka ulang.
+  const galatTautan = params?.get("galat") || "";
 
   const emailSah = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const sandiSah = password.length >= 6;
@@ -78,14 +82,11 @@ function IsiLoginPage() {
     setGoogleLoading(true);
     setError("");
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(tujuan)}` },
-      });
-      if (error) { setError(error.message); setGoogleLoading(false); }
-    } catch {
-      setError("Gagal membuka halaman Google. Coba lagi.");
+      // Di aplikasi Android, halaman Google dibuka di peramban sistem karena
+      // Google menolak WebView. Di peramban, alurnya seperti biasa.
+      await masukGoogle(tujuan);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal membuka halaman Google. Coba lagi.");
       setGoogleLoading(false);
     }
   }
@@ -125,7 +126,7 @@ function IsiLoginPage() {
           </button>
         </div>
 
-        {error && <p className="text-red-400 text-xs pt-1">{error}</p>}
+        {(error || galatTautan) && <p className="text-red-400 text-xs pt-1">{error || galatTautan}</p>}
 
         {/* Wadah lebih tinggi agar tombol punya ruang menghindar tanpa
             menggeser tata letak di sekitarnya. */}

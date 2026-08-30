@@ -21,6 +21,7 @@ export type Aktivitas = {
   komentar: number;
   komentarTeratas: { nama: string; body: string } | null;
   foto: string | null;
+  contoh: boolean;
 };
 
 const CINCIN = ["#B4FF3A", "#4ADE80", "#FBBF24", "#A78BFA", "#38BDF8", "#FB7185"];
@@ -98,7 +99,14 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
       <header className="flex items-center gap-3 px-4 pt-4">
         <Avatar nama={a.nama} foto={a.foto} />
         <div className="min-w-0 flex-1">
-          <p className="display-title text-[15px] text-white truncate">{a.nama}</p>
+          <p className="display-title text-[15px] text-white truncate flex items-center gap-1.5">
+            {a.nama}
+            {a.contoh && (
+              <span className="rounded-full bg-amber-400/20 text-amber-300 px-2 py-0.5 eyebrow !text-[8px] flex-shrink-0">
+                Contoh
+              </span>
+            )}
+          </p>
           <p className="text-[11px] text-slate-500 truncate">
             {a.asal}{a.asal && a.waktu ? " · " : ""}{selisihWaktu(a.waktu)}
           </p>

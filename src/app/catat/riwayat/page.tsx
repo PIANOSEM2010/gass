@@ -13,6 +13,7 @@ export default async function RiwayatPage() {
     .from("activities")
     .select("id,distance_m,duration_s,elevation_gain_m,path,started_at,activity_date")
     .eq("user_id", user.id)
+    .eq("is_demo", false)
     .order("created_at", { ascending: false })
     .limit(100);
 

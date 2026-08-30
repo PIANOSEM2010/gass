@@ -22,6 +22,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Tautan dalam untuk masuk dengan Google.
+                 Google menolak halaman masuknya dibuka di dalam WebView, jadi
+                 halaman itu dibuka di peramban sistem. Setelah pengguna
+                 menyetujui, Google mengembalikannya ke alamat berskema ini,
+                 dan penyaring inilah yang membuat Android membangunkan BUG
+                 alih-alih membuka peramban lagi. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="id.bulungan.bug" android:host="auth" />
+            </intent-filter>
+
         </activity>
 
         <provider
