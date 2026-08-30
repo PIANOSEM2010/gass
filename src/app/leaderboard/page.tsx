@@ -15,7 +15,7 @@ function witaDate(off = 0): string {
 export default async function LeaderboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/leaderboard");
 
   const { data: rows } = await supabase
     .from("user_streaks")

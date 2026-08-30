@@ -58,7 +58,7 @@ export default function BarisStory({ stories, masuk, namaSaya, idSaya }: {
   return (
     <>
       <div className="flex gap-4 overflow-x-auto px-5 py-3 no-scrollbar">
-        <button onClick={() => (masuk ? setSusun(true) : router.push("/auth/login"))}
+        <button onClick={() => (masuk ? setSusun(true) : router.push("/auth/login?next=/"))}
           disabled={unggah} className="flex flex-col items-center gap-1.5 flex-shrink-0">
           <span className="relative w-14 h-14 rounded-full border-2 border-dashed border-lime-400/50 bg-lime-400/10 flex items-center justify-center text-lime-300">
             {unggah

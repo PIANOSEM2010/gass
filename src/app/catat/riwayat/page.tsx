@@ -7,7 +7,7 @@ type Pt = { lat: number; lng: number };
 export default async function RiwayatPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/catat/riwayat");
 
   const { data } = await supabase
     .from("activities")

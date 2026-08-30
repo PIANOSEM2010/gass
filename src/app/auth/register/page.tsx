@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -8,7 +9,22 @@ import {
 
 type MemberType = "pelajar" | "pekerja";
 
+// useSearchParams membuat halaman ini harus dirender di peramban. Tanpa
+// pembungkus Suspense, proses pranata halaman saat build akan gagal.
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <IsiRegisterPage />
+    </Suspense>
+  );
+}
+
+function IsiRegisterPage() {
+  const params = useSearchParams();
+  const tujuan = (() => {
+    const n = params?.get("next") || "";
+    return n.startsWith("/") && !n.startsWith("//") ? n : "/profil";
+  })();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,7 +78,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name: fullName, member_type: memberType, organization },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(tujuan)}`,
       },
     });
     if (error) { setError(error.message); setLoading(false); }
@@ -76,7 +92,7 @@ export default function RegisterPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(tujuan)}` },
       });
       if (error) { setError(error.message); setGoogleLoading(false); }
     } catch {
@@ -97,7 +113,7 @@ export default function RegisterPage() {
           <p className="text-sm text-slate-300 mt-2 leading-relaxed">
             Tautan konfirmasi sudah dikirim ke <strong className="text-white">{email}</strong>. Buka tautan itu, lalu kamu bisa masuk.
           </p>
-          <Link href="/auth/login"
+          <Link href={`/auth/login?next=${encodeURIComponent(tujuan)}`}
             className="mt-5 block text-center bg-gradient-to-r from-lime-400 to-emerald-500 text-slate-950 rounded-xl py-3 display-title text-sm tracking-wide">
             KE HALAMAN MASUK
           </Link>
@@ -183,7 +199,7 @@ export default function RegisterPage() {
       </form>
 
       <p className="text-center text-xs text-slate-400 mt-5">
-        Sudah punya akun? <Link href="/auth/login" className="text-lime-400 font-semibold">Masuk di sini</Link>
+        Sudah punya akun? <Link href={`/auth/login?next=${encodeURIComponent(tujuan)}`} className="text-lime-400 font-semibold">Masuk di sini</Link>
       </p>
     </KerangkaAuth>
   );

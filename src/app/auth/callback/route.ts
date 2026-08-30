@@ -9,5 +9,11 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     await supabase.auth.exchangeCodeForSession(code);
   }
-  return NextResponse.redirect(`${origin}/profil`);
+
+  // Kembalikan ke halaman yang tadi dituju pengguna, bukan selalu ke Profil.
+  // Hanya jalur dalam aplikasi yang diterima, supaya tautan masuk tidak bisa
+  // disalahgunakan untuk mengarahkan orang ke situs lain.
+  const next = searchParams.get("next") || "";
+  const aman = next.startsWith("/") && !next.startsWith("//") ? next : "/profil";
+  return NextResponse.redirect(`${origin}${aman}`);
 }

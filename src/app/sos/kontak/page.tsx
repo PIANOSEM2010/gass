@@ -5,7 +5,7 @@ import KontakManager from "./kontak-manager";
 export default async function KontakPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/sos/kontak");
 
   const { data: contacts } = await supabase
     .from("emergency_contacts")

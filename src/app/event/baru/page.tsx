@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function AjukanEvent() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/event/baru");
 
   // Zona rawan dipakai untuk memeriksa jalur yang ditandai pengaju.
   const { data: zona } = await supabase

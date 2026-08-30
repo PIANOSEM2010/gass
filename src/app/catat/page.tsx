@@ -9,7 +9,7 @@ function witaDate(off = 0): string {
 export default async function GowesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/catat");
 
   const { data: profile } = await supabase.from("profiles").select("full_name, school").eq("id", user.id).single();
   const meta = user.user_metadata || {};

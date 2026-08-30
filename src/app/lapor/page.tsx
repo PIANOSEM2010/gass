@@ -5,7 +5,7 @@ import LaporClient from "./lapor-client";
 export default async function LaporPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/lapor");
 
   const { data } = await supabase
     .from("infra_reports")

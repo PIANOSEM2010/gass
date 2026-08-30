@@ -1,14 +1,32 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   KerangkaAuth, LogoGoogle, TandaSah, PetunjukTombol, kelasIsian, useTombolTali,
 } from "@/components/auth-ui";
 
+// useSearchParams membuat halaman ini harus dirender di peramban. Tanpa
+// pembungkus Suspense, proses pranata halaman saat build akan gagal.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <IsiLoginPage />
+    </Suspense>
+  );
+}
+
+function IsiLoginPage() {
   const router = useRouter();
+  // Ke mana pengguna dikembalikan setelah masuk. Hanya jalur dalam aplikasi
+  // yang diterima; alamat luar ditolak agar tautan masuk tidak bisa dipakai
+  // mengarahkan orang ke situs lain.
+  const params = useSearchParams();
+  const tujuan = (() => {
+    const n = params?.get("next") || "";
+    return n.startsWith("/") && !n.startsWith("//") ? n : "/profil";
+  })();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [lihatSandi, setLihatSandi] = useState(false);
@@ -49,7 +67,7 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/profil");
+      router.push(tujuan);
       router.refresh();
     }
   }
@@ -63,7 +81,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(tujuan)}` },
       });
       if (error) { setError(error.message); setGoogleLoading(false); }
     } catch {
@@ -125,7 +143,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-between mt-5 text-xs">
         <Link href="/auth/lupa-password" className="text-slate-400">Lupa kata sandi?</Link>
         <span className="text-slate-400">
-          Baru di BUG? <Link href="/auth/register" className="text-lime-400 font-semibold">Buat akun</Link>
+          Baru di BUG? <Link href={`/auth/register?next=${encodeURIComponent(tujuan)}`} className="text-lime-400 font-semibold">Buat akun</Link>
         </span>
       </div>
     </KerangkaAuth>

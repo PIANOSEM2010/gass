@@ -5,7 +5,7 @@ import PantauClient from "./pantau-client";
 export default async function PantauPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/pantau");
   const meta = user.user_metadata || {};
   const fullName = String(meta.full_name || "Goweser");
   return <PantauClient userId={user.id} fullName={fullName} />;

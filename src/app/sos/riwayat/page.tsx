@@ -5,7 +5,7 @@ import { MapPin, Clock } from "lucide-react";
 export default async function RiwayatPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/sos/riwayat");
 
   const { data: logs } = await supabase
     .from("sos_logs")

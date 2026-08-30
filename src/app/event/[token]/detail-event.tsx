@@ -254,7 +254,7 @@ export default function DetailEvent(p: {
           </div>
         ) : (
           <p className="text-center text-xs text-slate-500 pt-2">
-            <Link href="/auth/login" className="text-lime-400">Masuk</Link> untuk bergabung ke event ini.
+            <Link href={`/auth/login?next=${encodeURIComponent(`/event/${p.token}`)}`} className="text-lime-400">Masuk</Link> untuk bergabung ke event ini.
           </p>
         )}
       </div>

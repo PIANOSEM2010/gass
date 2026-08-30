@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminEvent() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/admin/event");
 
   const { data: profil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (profil?.role !== "admin") redirect("/event");

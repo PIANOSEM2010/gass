@@ -10,7 +10,7 @@ import { IkonSos, IkonPantau } from "@/components/bug-icons";
 export default async function SosPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/sos");
 
   const { data: contacts } = await supabase
     .from("emergency_contacts")

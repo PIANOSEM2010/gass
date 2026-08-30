@@ -71,7 +71,7 @@ export default async function DetailAktivitas({ params }: { params: Promise<{ id
 
         {user
           ? <FormKomentar activityId={id} />
-          : <p className="mt-4 text-xs text-slate-500"><Link href="/auth/login" className="text-lime-400">Masuk</Link> untuk ikut berkomentar.</p>}
+          : <p className="mt-4 text-xs text-slate-500"><Link href={`/auth/login?next=${encodeURIComponent(`/umpan/${id}`)}`} className="text-lime-400">Masuk</Link> untuk ikut berkomentar.</p>}
       </div>
     </div>
   );

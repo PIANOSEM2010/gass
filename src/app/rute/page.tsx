@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function DaftarRute() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/rute");
 
   const { data: rute, error } = await supabase
     .from("saved_routes")

@@ -12,7 +12,7 @@ export default async function HalamanCari({
   const { q } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/cari");
 
   const kunci = (q || "").trim();
   const { data: hasil } = kunci.length >= 2

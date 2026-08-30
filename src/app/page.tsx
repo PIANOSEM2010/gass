@@ -5,6 +5,7 @@ import TombolTema from "@/components/tema";
 import KartuAktivitas, { type Aktivitas } from "@/components/umpan-kartu";
 import BarisStory, { type Story } from "@/components/story-baris";
 import GeserFitur from "@/components/geser-fitur";
+import EventBeranda, { type EventRingkas } from "@/components/event-beranda";
 import { type Titik } from "@/components/jejak-rute";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function Umpan() {
   const idPengguna = [...new Set(daftar.map((r) => String(r.user_id)))];
   const idAktivitas = daftar.map((r) => String(r.id));
 
-  const [{ data: profil }, { data: kudos }, { data: komentar }, { data: story }] = await Promise.all([
+  const [{ data: profil }, { data: kudos }, { data: komentar }, { data: story }, { data: eventDb }] = await Promise.all([
     idPengguna.length
       ? supabase.from("profiles").select("id,full_name,organization,avatar_url").in("id", idPengguna)
       : Promise.resolve({ data: [] as BarisProfil[] }),
@@ -39,6 +40,11 @@ export default async function Umpan() {
       ? supabase.from("activity_comments").select("activity_id,user_id,body,created_at").in("activity_id", idAktivitas).order("created_at", { ascending: true })
       : Promise.resolve({ data: [] as { activity_id: string; user_id: string; body: string }[] }),
     supabase.from("stories").select("id,user_id,image_url,caption,created_at").order("created_at", { ascending: false }).limit(40),
+    supabase.from("events")
+      .select("id,name,logo_url,share_token,start_at,distance_m,waypoints")
+      .eq("status", "disetujui")
+      .order("start_at", { ascending: true })
+      .limit(20),
   ]);
 
   const namaProfil = new Map<string, BarisProfil>();
@@ -79,6 +85,30 @@ export default async function Umpan() {
       foto: p?.avatar_url || null,
     };
   });
+
+  // Event dianggap berlangsung sejak waktu mulainya sampai enam jam sesudahnya;
+  // gowes bareng jarang lebih lama dari itu. Yang sudah lewat tidak ditampilkan.
+  const sekarang = Date.now();
+  const ENAM_JAM = 6 * 3600 * 1000;
+  const eventBeranda: EventRingkas[] = (eventDb || [])
+    .map((e) => {
+      const mulai = e.start_at ? new Date(String(e.start_at)).getTime() : null;
+      return {
+        id: String(e.id),
+        nama: String(e.name),
+        logo: (e.logo_url as string) || null,
+        token: String(e.share_token),
+        mulai: (e.start_at as string) || null,
+        jarakM: Number(e.distance_m) || 0,
+        titik: Array.isArray(e.waypoints) ? (e.waypoints as Titik[]) : null,
+        berlangsung: mulai !== null && sekarang >= mulai && sekarang <= mulai + ENAM_JAM,
+        _mulai: mulai,
+      };
+    })
+    .filter((e) => e.berlangsung || e._mulai === null || e._mulai > sekarang)
+    .sort((a, b) => Number(b.berlangsung) - Number(a.berlangsung) || (a._mulai ?? Infinity) - (b._mulai ?? Infinity))
+    .slice(0, 3)
+    .map(({ _mulai, ...sisa }) => { void _mulai; return sisa; });
 
   const daftarStory: Story[] = (story || []).map((s) => ({
     id: String(s.id), user_id: String(s.user_id), nama: nama(String(s.user_id)),
@@ -121,6 +151,8 @@ export default async function Umpan() {
 
       <div className="max-w-md mx-auto">
         <GeserFitur />
+
+        <EventBeranda daftar={eventBeranda} />
 
         <BarisStory stories={daftarStory} masuk={!!user} idSaya={user?.id || null}
           namaSaya={String(user?.user_metadata?.full_name || "")} />

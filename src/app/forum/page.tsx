@@ -54,7 +54,7 @@ export default async function ForumPage() {
 
         {!user && (
           <div className="bg-amber-400/10 border border-amber-400/25 rounded-2xl p-4 mb-4 text-sm">
-            <Link href="/auth/login" className="text-lime-300 font-bold">Masuk</Link>{" "}
+            <Link href="/auth/login?next=/forum" className="text-lime-300 font-bold">Masuk</Link>{" "}
             <span className="text-amber-300">untuk membuat post atau memberi komentar.</span>
           </div>
         )}

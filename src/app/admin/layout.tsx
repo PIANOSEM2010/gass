@@ -6,7 +6,7 @@ import { LayoutDashboard, MapPin, MessageSquare, Siren, Users, TriangleAlert, La
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?next=/admin");
 
   const { data: profile } = await supabase
     .from("profiles")
