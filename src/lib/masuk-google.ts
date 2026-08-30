@@ -28,6 +28,22 @@ import { createClient } from "@/lib/supabase/client";
 
 export const SKEMA_APLIKASI = "id.bulungan.bug://auth/callback";
 
+/**
+ * Memeriksa apakah plugin tautan dalam sudah ada di APK yang terpasang.
+ * Bila belum, masuk dengan Google tidak akan bisa diselesaikan karena aplikasi
+ * tidak dapat menangkap kepulangan dari Google.
+ */
+export async function tautanDalamSiap(): Promise<boolean> {
+  if (!diAplikasi()) return true;
+  try {
+    const { App } = await import("@capacitor/app");
+    await App.getLaunchUrl();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function diAplikasi(): boolean {
   try { return Capacitor.isNativePlatform(); } catch { return false; }
 }
@@ -62,8 +78,20 @@ export async function masukGoogle(tujuan = "/profil"): Promise<void> {
   if (error) throw new Error(error.message);
   if (!data?.url) throw new Error("Alamat masuk Google tidak diterima.");
 
-  const { Browser } = await import("@capacitor/browser");
-  await Browser.open({ url: data.url, presentationStyle: "popover" });
+  // Membuka halaman Google di peramban sistem.
+  //
+  // Jalur utamanya plugin Browser. Tetapi plugin Capacitor punya dua sisi -
+  // JavaScript dan Java - dan sisi Java-nya hanya ikut bila APK dibangun ulang.
+  // Bila aplikasi yang terpasang belum diperbarui, plugin ini melempar
+  // "not implemented on android". Untuk itu ada jalur cadangan: berpindah
+  // halaman biasa. Capacitor sendiri membuka alamat di luar wilayah aplikasi
+  // lewat peramban sistem, sehingga hasilnya sama tanpa perlu plugin apa pun.
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url: data.url, presentationStyle: "popover" });
+  } catch {
+    window.location.href = data.url;
+  }
 }
 
 /**

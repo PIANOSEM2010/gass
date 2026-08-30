@@ -1,9 +1,9 @@
 "use client";
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { masukGoogle } from "@/lib/masuk-google";
+import { masukGoogle, diAplikasi, tautanDalamSiap } from "@/lib/masuk-google";
 import {
   KerangkaAuth, LogoGoogle, TandaSah, PetunjukTombol, kelasIsian, useTombolTali,
 } from "@/components/auth-ui";
@@ -37,6 +37,14 @@ function IsiLoginPage() {
   // Galat dari proses masuk Google di aplikasi dikirim lewat alamat, karena
   // saat itu halaman ini baru saja dibuka ulang.
   const galatTautan = params?.get("galat") || "";
+  // Di aplikasi lama yang belum dibangun ulang, plugin tautan dalam belum ada
+  // dan proses masuk Google tidak akan bisa diselesaikan. Lebih baik
+  // mengatakannya di depan daripada membiarkan pengguna berputar-putar.
+  const [apkUsang, setApkUsang] = useState(false);
+  useEffect(() => {
+    if (!diAplikasi()) return;
+    void tautanDalamSiap().then((siap) => setApkUsang(!siap));
+  }, []);
 
   const emailSah = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const sandiSah = password.length >= 6;
@@ -96,7 +104,13 @@ function IsiLoginPage() {
       baris={["BULUNGAN", "UNTUK"]} sorot="GOWESER"
       keterangan="Platform keselamatan pesepeda Kabupaten Bulungan."
     >
-      <button onClick={handleGoogle} disabled={googleLoading}
+      {apkUsang && (
+        <p className="mb-3 rounded-xl border border-amber-400/35 bg-amber-400/10 px-4 py-3 text-[11.5px] text-amber-100 leading-relaxed">
+          Aplikasi yang terpasang belum mendukung masuk dengan Google. Unduh dan pasang
+          APK BUG versi terbaru, atau masuk dengan email dan kata sandi di bawah.
+        </p>
+      )}
+      <button onClick={handleGoogle} disabled={googleLoading || apkUsang}
         className="w-full bg-white text-slate-800 rounded-xl py-3.5 flex items-center justify-center gap-2.5 font-semibold text-sm active:scale-[.98] transition-transform disabled:opacity-70">
         <LogoGoogle />
         {googleLoading ? "Membuka Google…" : "Masuk dengan Google"}

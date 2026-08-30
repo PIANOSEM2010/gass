@@ -20,7 +20,15 @@ export default function PenerimaTautan() {
     let lepas: (() => void) | null = null;
 
     (async () => {
-      const { App } = await import("@capacitor/app");
+      // Plugin App hanya ada bila APK sudah dibangun ulang setelah plugin
+      // ditambahkan. Bila belum, komponen ini diam saja alih-alih membuat
+      // seluruh halaman gagal dimuat.
+      let App: typeof import("@capacitor/app").App;
+      try {
+        ({ App } = await import("@capacitor/app"));
+      } catch {
+        return;
+      }
 
       const tangani = async (url: string) => {
         try {
@@ -32,13 +40,19 @@ export default function PenerimaTautan() {
         }
       };
 
-      // Aplikasi sudah berjalan lalu dibangunkan tautan.
-      const pendengar = await App.addListener("appUrlOpen", (e) => { void tangani(e.url); });
-      lepas = () => { void pendengar.remove(); };
+      try {
+        // Aplikasi sudah berjalan lalu dibangunkan tautan.
+        const pendengar = await App.addListener("appUrlOpen", (e) => { void tangani(e.url); });
+        lepas = () => { void pendengar.remove(); };
 
-      // Aplikasi baru dibuka OLEH tautan itu; peristiwa di atas bisa terlewat.
-      const awal = await App.getLaunchUrl();
-      if (awal?.url) void tangani(awal.url);
+        // Aplikasi baru dibuka OLEH tautan itu; peristiwa di atas bisa terlewat.
+        const awal = await App.getLaunchUrl();
+        if (awal?.url) void tangani(awal.url);
+      } catch {
+        // Sisi Java-nya belum ada di APK ini. Masuk dengan Google akan
+        // berhenti setelah kembali dari peramban, dan pesannya sudah
+        // dijelaskan pada tombolnya.
+      }
     })();
 
     return () => { lepas?.(); };
