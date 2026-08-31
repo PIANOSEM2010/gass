@@ -32,7 +32,7 @@ export default async function HalamanEvent({
   return (
     <div className="min-h-screen bg-[var(--latar)] pb-10">
       <KepalaHalaman ikon={<IkonKampanyeJalan size={22} />} judul="EVENT GOWES"
-        keterangan="Gowes bareng di Bulungan. Ajukan eventmu, dan tampil di sini setelah disetujui admin."
+        keterangan="Gowes bareng bersama komunitas. Ajukan eventmu, dan tampil di sini setelah disetujui admin."
         warna="#FB923C" />
 
       <div className="max-w-md mx-auto px-4 pt-5">
@@ -79,7 +79,7 @@ export default async function HalamanEvent({
           <div className="rounded-2xl border border-white/8 bg-[var(--kartu)] p-8 text-center">
             <p className="display-title text-lime-300">BELUM ADA EVENT</p>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Jadilah yang pertama mengajak goweser Bulungan bersepeda bersama.
+              Jadilah yang pertama mengajak goweser di daerahmu bersepeda bersama.
             </p>
           </div>
         ) : (

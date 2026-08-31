@@ -26,7 +26,7 @@ export default async function HalamanCari({
   return (
     <div className="min-h-screen bg-[var(--latar)] pb-10">
       <KepalaHalaman ikon={<IkonProfil size={22} />} judul="CARI GOWESER"
-        keterangan="Temukan pesepeda lain di Bulungan, lihat pencapaiannya, lalu ikuti."
+        keterangan="Temukan pesepeda lain, lihat pencapaiannya, lalu ikuti."
         warna="#38BDF8" />
       <div className="max-w-md mx-auto px-4 pt-5">
         <KotakCari awal={kunci} />
