@@ -379,14 +379,39 @@ export default function CatatClient({
 
   // Menyusun panduan belok dari titik-titik jalur event.
   //
-  // Yang dipakai sebagai titik singgah hanyalah CEK POINT, bukan seluruh titik
-  // pembentuk jalur: mesin rute hanya menerima dua titik sekali jalan, dan
-  // memintanya untuk ratusan titik akan lambat sekaligus menghabiskan kuota.
+  // Titik singgahnya BUKAN hanya cek point. Bila panduan disusun cuma dari
+  // titik awal dan akhir, mesin rute akan mencari jalannya sendiri di antara
+  // keduanya - dan itu bisa jalan yang sama sekali berbeda dari jalur yang
+  // digambar panitia. Pada event, memandu orang lewat jalan lain berbahaya:
+  // rombongan bisa terpecah, dan peringatan zona rawan yang menempel pada
+  // jalur resmi jadi tidak berlaku.
+  //
+  // Karena mesin rute hanya menerima dua titik sekali jalan, jalur event
+  // diringkas menjadi paling banyak delapan titik singgah yang tersebar
+  // merata, dengan cek point selalu ikut. Delapan titik berarti tujuh
+  // permintaan - cukup rapat untuk mengikuti bentuk jalur, dan tetap hemat
+  // terhadap batas harian penyedia rute.
   async function susunPanduan(titikEvent: TitikEvent[], label: string) {
-    const singgah = titikEvent.filter((t) => t.cek);
-    const daftar = singgah.length >= 2
-      ? singgah
-      : [titikEvent[0], titikEvent[titikEvent.length - 1]].filter(Boolean);
+    const MAKS_SINGGAH = 8;
+    const bersih = titikEvent.filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lng));
+    if (bersih.length < 2) return;
+
+    const indeks = new Set<number>([0, bersih.length - 1]);
+    bersih.forEach((t, i) => { if (t.cek) indeks.add(i); });
+
+    // Sisa kuota titik singgah diisi titik yang tersebar merata, supaya
+    // panduannya tetap menempel pada bentuk jalur meski cek pointnya sedikit.
+    const sisa = MAKS_SINGGAH - indeks.size;
+    if (sisa > 0 && bersih.length > 2) {
+      for (let k = 1; k <= sisa; k++) {
+        indeks.add(Math.round((k / (sisa + 1)) * (bersih.length - 1)));
+      }
+    }
+
+    const daftar = [...indeks]
+      .sort((a, b) => a - b)
+      .slice(0, MAKS_SINGGAH)
+      .map((i) => bersih[i]);
     if (daftar.length < 2) return;
 
     setSiapkanPanduan(true);

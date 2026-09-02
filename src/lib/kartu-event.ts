@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { type TitikEvent, cekPoint } from "@/lib/titik-event";
+import { gambarPetaOsm, KREDIT_OSM } from "@/lib/peta-kanvas";
 
 // Kartu bagikan event.
 //
@@ -120,51 +121,75 @@ export async function gambarKartuEvent(
   }
   spasi(0);
 
-  // --- Jalur digambar sebagai jalan ---
+  // --- Peta sungguhan dengan rute di atasnya ---
+  //
+  // Sebelumnya rutenya digambar sebagai garis mengambang di bidang kosong.
+  // Bentuknya bagus, tapi penerima kartu tidak bisa tahu jalurnya lewat mana.
+  // Sekarang peta OpenStreetMap digambar lebih dulu sebagai latar, lengkap
+  // dengan nama jalan dan sungainya, lalu rute ditimpakan di atasnya.
   const by = y + (o.titikKumpul ? 84 : 50);
-  const bh = 430;
-  jalurBulat(c, 62, by, W - 124, bh, 34);
-  c.save(); c.clip();
-  c.fillStyle = TANAH_TUA; c.fillRect(62, by, W - 124, bh);
+  const bh = 424;
+  const bx = 62, bw = W - 124;
+
+  jalurBulat(c, bx, by, bw, bh, 34);
+  c.save();
+  c.clip();
+  c.fillStyle = TANAH_TUA; c.fillRect(bx, by, bw, bh);
 
   const p = o.titik.filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lng));
-  if (p.length >= 2) {
-    const lats = p.map((q) => q.lat), lngs = p.map((q) => q.lng);
-    const miLa = Math.min(...lats), maLa = Math.max(...lats);
-    const miLo = Math.min(...lngs), maLo = Math.max(...lngs);
-    const sLa = maLa - miLa || 1e-6, sLo = maLo - miLo || 1e-6;
-    const pad = 78;
-    const sc = Math.min((W - 124 - pad * 2) / sLo, (bh - pad * 2) / sLa);
-    const ox = 62 + (W - 124 - sLo * sc) / 2;
-    const oy = by + (bh - sLa * sc) / 2;
-    const xy = p.map((q) => [ox + (q.lng - miLo) * sc, oy + (maLa - q.lat) * sc] as [number, number]);
+  let keKanvas: (t: { lat: number; lng: number }) => [number, number];
+  let adaPeta = false;
 
-    const garis = (lw: number, warna: string, dash: number[] = [], dy = 0) => {
-      c.save(); c.setLineDash(dash); c.lineWidth = lw; c.strokeStyle = warna;
+  if (p.length >= 2) {
+    const peta = await gambarPetaOsm(c, p, { x: bx, y: by, w: bw, h: bh }, { gelap: true, pad: 76 });
+    keKanvas = peta.keKanvas;
+    adaPeta = peta.berhasil;
+
+    // Bila ubin peta gagal dimuat, jalurnya tetap digambar dengan penskalaan
+    // sendiri supaya kartunya tidak pernah kosong.
+    if (!adaPeta) {
+      const lats = p.map((q) => q.lat), lngs = p.map((q) => q.lng);
+      const miLa = Math.min(...lats), maLa = Math.max(...lats);
+      const miLo = Math.min(...lngs), maLo = Math.max(...lngs);
+      const sLa = maLa - miLa || 1e-6, sLo = maLo - miLo || 1e-6;
+      const pad = 78;
+      const sc = Math.min((bw - pad * 2) / sLo, (bh - pad * 2) / sLa);
+      const ox = bx + (bw - sLo * sc) / 2;
+      const oy = by + (bh - sLa * sc) / 2;
+      keKanvas = (t) => [ox + (t.lng - miLo) * sc, oy + (maLa - t.lat) * sc];
+    }
+
+    const xy = p.map((q) => keKanvas(q));
+
+    const garis = (lw: number, warna: string, dash: number[] = [], dy = 0, blur = 0) => {
+      c.save();
+      if (blur) { c.shadowColor = warna; c.shadowBlur = blur; }
+      c.setLineDash(dash); c.lineWidth = lw; c.strokeStyle = warna;
       c.lineJoin = "round"; c.lineCap = "round"; c.beginPath();
-      xy.forEach(([x, yy], i) => (i === 0 ? c.moveTo(x, yy + dy) : c.lineTo(x, yy + dy)));
+      xy.forEach(([qx, qy], i) => (i === 0 ? c.moveTo(qx, qy + dy) : c.lineTo(qx, qy + dy)));
       c.stroke(); c.restore();
     };
-    garis(44, "rgba(0,0,0,.24)", [], 8);
-    garis(38, KERTAS);
-    garis(27, TANAH_TUA);
-    garis(3.4, KERTAS, [14, 18]);
 
-    // Hanya cek point yang diberi huruf. Titik lain adalah pembentuk jalur,
-    // dan memberinya huruf akan membuat kartu penuh lingkaran tanpa arti.
-    //
-    // Di samping tiap huruf ditempelkan nama tempatnya, supaya penerima kartu
-    // langsung tahu "A itu di mana" tanpa harus membuka tautan.
-    const kiriKotak = 62, kananKotak = W - 62;
+    // Rute: lapis gelap sebagai bayangan, lalu pendar hijau, lalu garis terang
+    // dengan marka putus-putus di tengahnya.
+    garis(26, "rgba(0,0,0,.55)", [], 6);
+    garis(20, "rgba(180,255,58,.35)", [], 0, 26);
+    garis(13, "#B4FF3A");
+    garis(4, "rgba(10,20,16,.75)", [16, 20]);
+
+    // Penanda cek point: hanya titik bertanda yang diberi huruf, karena
+    // memberi huruf pada semua titik akan membuat kartu penuh lingkaran
+    // tanpa arti. Nama tempatnya ditempel sebagai pelat di sampingnya supaya
+    // penerima kartu langsung tahu "A itu di mana".
+    const kiriKotak = bx, kananKotak = bx + bw;
     const labelTerpakai: { x: number; y: number; w: number }[] = [];
 
     for (const cp of cekPoint(o.titik)) {
       const t = xy[cp.indeks];
       if (!t) continue;
-      const [x, yy] = t;
+      const [px, py] = t;
       const akhir = cp.indeks === xy.length - 1;
 
-      // Nama tempat, ditempel sebagai pelat kecil di samping bulatan huruf.
       const nama = (cp.titik.nama || "").trim();
       if (nama) {
         c.font = fSans(23, 700);
@@ -172,47 +197,60 @@ export async function gambarKartuEvent(
         const wPelat = lebarTeks + 22;
         const hPelat = 34;
 
-        // Ditaruh di kanan bila muat, kalau tidak di kiri. Bila bertabrakan
-        // dengan pelat lain, digeser ke atas atau ke bawah.
-        let px = x + 34;
-        if (px + wPelat > kananKotak - 12) px = x - 34 - wPelat;
-        if (px < kiriKotak + 12) px = Math.min(x + 34, kananKotak - 12 - wPelat);
-        let py = yy - hPelat / 2;
+        let plx = px + 34;
+        if (plx + wPelat > kananKotak - 12) plx = px - 34 - wPelat;
+        if (plx < kiriKotak + 12) plx = Math.min(px + 34, kananKotak - 12 - wPelat);
+        let ply = py - hPelat / 2;
         let putar = 0;
         while (putar < 6 && labelTerpakai.some((l) =>
-          Math.abs(l.y - py) < hPelat + 4 && Math.abs(l.x - px) < Math.max(l.w, wPelat))) {
-          py += hPelat + 8;
+          Math.abs(l.y - ply) < hPelat + 4 && Math.abs(l.x - plx) < Math.max(l.w, wPelat))) {
+          ply += hPelat + 8;
           putar++;
         }
-        labelTerpakai.push({ x: px, y: py, w: wPelat });
+        labelTerpakai.push({ x: plx, y: ply, w: wPelat });
 
         c.save();
-        c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = 8; c.shadowOffsetY = 3;
-        jalurBulat(c, px, py, wPelat, hPelat, 17);
-        c.fillStyle = "rgba(10,20,16,.86)";
+        c.shadowColor = "rgba(0,0,0,.45)"; c.shadowBlur = 10; c.shadowOffsetY = 3;
+        jalurBulat(c, plx, ply, wPelat, hPelat, 17);
+        c.fillStyle = "rgba(10,20,16,.9)";
         c.fill();
         c.restore();
         c.fillStyle = "#F2E7D2";
         c.font = fSans(23, 700);
-        c.fillText(potong(c, nama, 250), px + 11, py + 23);
+        c.fillText(potong(c, nama, 250), plx + 11, ply + 23);
       }
 
       c.save();
-      c.shadowColor = "rgba(0,0,0,.4)"; c.shadowBlur = 12; c.shadowOffsetY = 4;
+      c.shadowColor = "rgba(0,0,0,.5)"; c.shadowBlur = 14; c.shadowOffsetY = 4;
       c.fillStyle = akhir ? "#B4FF3A" : KERTAS;
-      c.beginPath(); c.arc(x, yy, 25, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(px, py, 26, 0, Math.PI * 2); c.fill();
       c.restore();
-      c.fillStyle = "#0A1410"; c.textAlign = "center"; c.font = fSans(26, 800);
-      c.fillText(cp.huruf, x, yy + 9);
+      c.strokeStyle = "rgba(10,20,16,.85)"; c.lineWidth = 3;
+      c.beginPath(); c.arc(px, py, 26, 0, Math.PI * 2); c.stroke();
+      c.fillStyle = "#0A1410"; c.textAlign = "center"; c.font = fSans(27, 800);
+      c.fillText(cp.huruf, px, py + 9);
       c.textAlign = "left";
     }
   } else {
+    keKanvas = () => [bx + bw / 2, by + bh / 2];
     c.fillStyle = "rgba(253,246,232,.6)"; c.textAlign = "center"; c.font = fSans(30, 600);
-    c.fillText("Jalur belum ditandai", W / 2, by + bh / 2);
+    c.fillText("Jalur belum ditandai", bx + bw / 2, by + bh / 2);
     c.textAlign = "left";
   }
-  c.restore();
 
+  // Keterangan hak cipta peta. Wajib menyertai ubin OpenStreetMap, dan kartu
+  // ini akan dibagikan ke luar aplikasi.
+  if (adaPeta) {
+    c.font = fSans(18, 600);
+    const wKredit = c.measureText(KREDIT_OSM).width + 18;
+    c.fillStyle = "rgba(10,20,16,.6)";
+    jalurBulat(c, bx + bw - wKredit - 12, by + bh - 34, wKredit, 24, 8);
+    c.fill();
+    c.fillStyle = "rgba(242,231,210,.9)";
+    c.fillText(KREDIT_OSM, bx + bw - wKredit - 3, by + bh - 17);
+  }
+
+  c.restore();
   // Jarak & jumlah titik
   spasi(4); c.font = fSans(23, 700);
   c.fillStyle = "rgba(253,246,232,.7)";

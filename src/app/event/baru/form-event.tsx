@@ -6,7 +6,6 @@ import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 import { periksaJalurAman } from "@/lib/periksa-jalur";
 import { panjangRute } from "@/lib/rute-tersimpan";
 import PilihTitikPeta from "@/components/pilih-titik-peta";
-import RuteDariNamaJalan from "@/components/rute-dari-nama-jalan";
 import PilihRuteTersimpan from "@/components/pilih-rute-tersimpan";
 import KepalaHalaman from "@/components/kepala-halaman";
 import { IkonKampanyeJalan } from "@/components/fitur-ikon";
@@ -26,7 +25,7 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
   const [logo, setLogo] = useState<File | null>(null);
   const [pratinjau, setPratinjau] = useState<string | null>(null);
   // Dua cara menyusun jalur: ketik nama jalan, atau tandai sendiri di peta.
-  const [caraJalur, setCaraJalur] = useState<"nama" | "peta" | "simpan">("nama");
+  const [caraJalur, setCaraJalur] = useState<"peta" | "simpan">("peta");
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
 
@@ -161,12 +160,11 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
         <div className="kartu-bug p-4">
           <p className="display-title text-[14px] text-white mb-1">JALUR EVENT</p>
           <p className="text-[11.5px] text-slate-400 mb-3 leading-relaxed">
-            Susun jalur dengan menuliskan nama jalannya, atau tandai sendiri di peta.
+            Tandai jalurnya sendiri di peta, atau ambil dari rute yang sudah kamu simpan.
           </p>
 
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             {([
-              ["nama", "Tulis nama jalan"],
               ["peta", "Tandai di peta"],
               ["simpan", "Dari rute tersimpan"],
             ] as const).map(([k, l]) => (
@@ -179,17 +177,7 @@ export default function FormEvent({ zona }: { zona: Zona[] }) {
             ))}
           </div>
 
-          {caraJalur === "nama" ? (
-            <>
-              <RuteDariNamaJalan zona={zona} selesai={(t) => setTitik(t)} />
-              {titik.length > 0 && (
-                <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
-                  Rute tersusun dari {titik.length} titik mengikuti jalan sungguhan.
-                  Ganti ke &ldquo;Tandai di peta&rdquo; bila ingin memeriksa atau menyesuaikan cek pointnya.
-                </p>
-              )}
-            </>
-          ) : caraJalur === "simpan" ? (
+          {caraJalur === "simpan" ? (
             <>
               <PilihRuteTersimpan
                 pilih={(t, _jarak, namaRute) => {
