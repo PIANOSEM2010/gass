@@ -174,7 +174,7 @@ export default function UbahPostingan({
                 <p className="text-[11.5px] text-slate-400 mb-3 leading-relaxed">
                   Undang orang yang gowes bersamamu. Mereka akan mendapat catatan
                   perjalanannya sendiri di beranda dan profilnya, dengan jarak dan
-                  jejak yang sama.
+                  jejak yang sama, dan rentetan harinya ikut hidup hari itu.
                 </p>
 
                 {kolaborator.length > 0 && (
