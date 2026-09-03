@@ -67,7 +67,13 @@ export async function gambarPetaOsm(
   // piksel peta jadi dua kali lipat pada luas yang sama, sehingga nama jalan
   // dan garis jalannya terbaca. Tanpa ini, rute panjang memaksa zoom rendah
   // dan petanya hanya menampilkan nama desa tanpa jalan sama sekali.
-  const LIPAT = 2;
+  // Semakin besar LIPAT, semakin rinci petanya: ubin diambil dari zoom lebih
+  // dekat lalu digambar lebih kecil. LIPAT 2 masih menghasilkan zoom 13 untuk
+  // rute belasan kilometer, dan pada zoom itu OpenStreetMap hanya menampilkan
+  // jalan utama tanpa nama. Dengan LIPAT 3, zoomnya naik ke 14 - 15 sehingga
+  // nama jalan mulai terbaca. Harganya jumlah ubin: sekitar 70 per kartu,
+  // tetapi semuanya tersimpan di sisi peladen dan tidak diminta ulang.
+  const LIPAT = 3;
   const ubinTampil = UKURAN_UBIN / LIPAT;
 
   let dasar = 10;
@@ -114,7 +120,7 @@ export async function gambarPetaOsm(
   // Batas jumlah ubin. Karena tiap ubin digambar setengah ukuran, satu kartu
   // memerlukan lebih banyak ubin daripada sebelumnya, tapi masing-masing kecil
   // dan tersimpan di sisi peladen sehingga tidak diminta ulang.
-  if (daftar.length > 90) return { keKanvas, zoom, berhasil: false };
+  if (daftar.length > 130) return { keKanvas, zoom, berhasil: false };
 
   const gambar = await Promise.all(
     daftar.map((u) => muatGambar(`/api/ubin?z=${u.z}&x=${u.x}&y=${u.y}`)),
@@ -126,9 +132,16 @@ export async function gambarPetaOsm(
   c.rect(kotak.x, kotak.y, kotak.w, kotak.h);
   c.clip();
 
+  // Latar netral lebih dulu, supaya ubin yang gagal dimuat tidak meninggalkan
+  // lubang berwarna tanah di tengah peta.
+  c.fillStyle = "#E8E3DA";
+  c.fillRect(kotak.x, kotak.y, kotak.w, kotak.h);
+
   gambar.forEach((im, i) => {
     if (!im) return;
-    c.drawImage(im, daftar[i].kx, daftar[i].ky, ubinTampil, ubinTampil);
+    // Digambar sedikit melebihi ukuran agar tidak ada garis putih antar ubin
+    // akibat pembulatan piksel.
+    c.drawImage(im, daftar[i].kx, daftar[i].ky, ubinTampil + 1, ubinTampil + 1);
     terpasang++;
   });
 

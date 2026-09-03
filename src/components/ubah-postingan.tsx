@@ -8,6 +8,26 @@ import { Loader2, Pencil, Users, Search, X, Check, Trash2 } from "lucide-react";
 
 type Orang = { id: string; nama: string; asal: string; foto: string | null };
 
+// Menerjemahkan galat Supabase menjadi pesan yang bisa dibaca.
+//
+// Galat dari Supabase bukan objek Error bawaan, sehingga pemeriksaan
+// `e instanceof Error` gagal dan pesan aslinya terbuang. Akibatnya pengguna
+// hanya melihat "Gagal menambahkan kolaborator" tanpa tahu sebabnya, dan
+// masalahnya jadi tidak bisa dilacak.
+function pesanGalat(e: { message?: string; details?: string; hint?: string; code?: string }): string {
+  const inti = e.message || e.details || "Terjadi galat yang tidak dijelaskan";
+  if (/function .*(tambah_kolaborator|hapus_kolaborator)/i.test(inti)) {
+    return "Fungsi kolaborasi belum dipasang. Jalankan berkas bug-kolaborasi.sql di Supabase.";
+  }
+  if (/column .*is_demo/i.test(inti)) {
+    return "Kolom penanda data contoh belum ada. Jalankan bug-data-contoh.sql di Supabase.";
+  }
+  if (/no unique or exclusion constraint/i.test(inti)) {
+    return "Tabel rentetan belum punya kunci unik pada user_id. Jalankan ulang bug-kolaborasi.sql versi terbaru.";
+  }
+  return e.hint ? `${inti} (${e.hint})` : inti;
+}
+
 // Menyunting catatan perjalanan dan mengundang kolaborator.
 //
 // Kolaborator mendapat catatan perjalanannya sendiri, bukan namanya ditempel di
@@ -51,7 +71,10 @@ export default function UbahPostingan({
           asal: String(p.organization || ""),
           foto: (p.avatar_url as string) || null,
         })));
-      } catch { /* tabel kolaborasi belum dipasang */ }
+      } catch {
+        // Tabel kolaborasi belum dipasang. Daftar dibiarkan kosong; pesannya
+        // muncul nanti saat pengguna benar-benar mencoba mengundang.
+      }
     })();
     return () => { hidup = false; };
   }, [aktivitasId]);
@@ -64,7 +87,7 @@ export default function UbahPostingan({
       const { error } = await sb.from("activities")
         .update({ note: catatan.trim() || null })
         .eq("id", aktivitasId);
-      if (error) throw error;
+      if (error) throw new Error(pesanGalat(error));
       router.refresh();
       tutup();
     } catch (e) {
@@ -84,7 +107,7 @@ export default function UbahPostingan({
         .ilike("full_name", `%${q}%`)
         .neq("id", user?.id || "")
         .limit(20);
-      if (error) throw error;
+      if (error) throw new Error(pesanGalat(error));
       setHasil((data || []).map((p) => ({
         id: String(p.id),
         nama: String(p.full_name || "Goweser"),
@@ -106,7 +129,7 @@ export default function UbahPostingan({
         p_activity_id: aktivitasId,
         p_user_id: o.id,
       });
-      if (error) throw error;
+      if (error) throw new Error(pesanGalat(error));
       setKolaborator((k) => [...k, o]);
       setHasil((h) => h.filter((x) => x.id !== o.id));
       router.refresh();
@@ -124,7 +147,7 @@ export default function UbahPostingan({
         p_activity_id: aktivitasId,
         p_user_id: o.id,
       });
-      if (error) throw error;
+      if (error) throw new Error(pesanGalat(error));
       setKolaborator((k) => k.filter((x) => x.id !== o.id));
       router.refresh();
     } catch (e) {

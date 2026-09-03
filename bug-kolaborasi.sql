@@ -30,6 +30,23 @@ comment on column public.activities.collab_by is
 
 -- 2) Memperbarui rentetan hari dan total ---------------------------------
 --
+-- Kunci unik pada user_id dipastikan ada lebih dulu. Tanpa kunci ini, satu
+-- pengguna bisa punya dua baris rentetan dan angkanya jadi tidak menentu.
+do $$
+begin
+  if not exists (
+    select 1 from pg_indexes
+    where schemaname = 'public' and tablename = 'user_streaks'
+      and indexdef ilike '%unique%(user_id)%'
+  ) then
+    begin
+      create unique index user_streaks_user_id_key on public.user_streaks (user_id);
+    exception when others then
+      raise warning 'Kunci unik user_streaks tidak bisa dibuat: %', sqlerrm;
+    end;
+  end if;
+end $$;
+--
 -- Rentetan biasanya dihitung oleh /api/activity saat pengguna menekan Simpan.
 -- Kolaborator tidak melewati jalur itu - perjalanannya disalin langsung di
 -- basis data - sehingga tanpa fungsi ini rentetannya tidak ikut hidup meski ia
@@ -49,36 +66,57 @@ declare
   hari_ini    date := (now() + interval '8 hours')::date;
   kemarin     date := hari_ini - 1;
   dua_hari    date := hari_ini - 2;
-  total_hari  double precision;
-  total_jarak double precision;
-  total_rute  integer;
-  lama        public.user_streaks;
+  saringan    text := '';
+  total_hari  double precision := 0;
+  total_jarak double precision := 0;
+  total_rute  integer := 0;
+  lama_rentet integer := 0;
+  lama_panjang integer := 0;
+  lama_tgl    date;
   rentet_baru integer;
   tgl_baru    date;
   nama        text;
   asal        text;
+  ada_baris   boolean;
 begin
-  -- Total jarak hari ini, dihitung ulang dari aktivitas sungguhan supaya
-  -- tidak pernah menggandakan hitungan bila fungsi ini dipanggil dua kali.
-  select coalesce(sum(distance_m), 0) into total_hari
-  from public.activities
-  where user_id = p_user_id
-    and (started_at + interval '8 hours')::date = hari_ini
-    and coalesce(is_demo, false) = false;
+  -- Kolom is_demo hanya ada bila bug-data-contoh.sql sudah dijalankan.
+  -- Menyebutnya langsung akan menggagalkan seluruh fungsi di basis data yang
+  -- belum memasangnya - dan kegagalan itu ikut membatalkan penambahan
+  -- kolaborator, padahal keduanya tidak berhubungan. Karena itu saringannya
+  -- hanya dipasang bila kolomnya memang ada.
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'activities' and column_name = 'is_demo'
+  ) then
+    saringan := ' and coalesce(is_demo, false) = false';
+  end if;
 
-  select coalesce(sum(distance_m), 0), count(*) into total_jarak, total_rute
-  from public.activities
-  where user_id = p_user_id
-    and coalesce(is_demo, false) = false;
+  execute format($f$
+    select coalesce(sum(distance_m), 0)
+    from public.activities
+    where user_id = %L
+      and (started_at + interval '8 hours')::date = %L %s
+  $f$, p_user_id, hari_ini, saringan) into total_hari;
 
-  select * into lama from public.user_streaks where user_id = p_user_id;
+  execute format($f$
+    select coalesce(sum(distance_m), 0), count(*)
+    from public.activities
+    where user_id = %L %s
+  $f$, p_user_id, saringan) into total_jarak, total_rute;
 
-  rentet_baru := coalesce(lama.current_streak, 0);
-  tgl_baru    := lama.last_activity_date;
+  select current_streak, longest_streak, last_activity_date
+    into lama_rentet, lama_panjang, lama_tgl
+  from public.user_streaks where user_id = p_user_id;
+
+  lama_rentet  := coalesce(lama_rentet, 0);
+  lama_panjang := coalesce(lama_panjang, 0);
+
+  rentet_baru := lama_rentet;
+  tgl_baru    := lama_tgl;
 
   if total_hari >= 1000 and coalesce(tgl_baru, date '1900-01-01') <> hari_ini then
     if tgl_baru in (kemarin, dua_hari) then
-      rentet_baru := coalesce(lama.current_streak, 0) + 1;
+      rentet_baru := lama_rentet + 1;
     else
       rentet_baru := 1;
     end if;
@@ -88,24 +126,32 @@ begin
   select full_name, organization into nama, asal
   from public.profiles where id = p_user_id;
 
-  insert into public.user_streaks (
-    user_id, current_streak, longest_streak, last_activity_date,
-    total_distance_m, total_rides, full_name, organization, updated_at
-  )
-  values (
-    p_user_id, rentet_baru,
-    greatest(coalesce(lama.longest_streak, 0), rentet_baru), tgl_baru,
-    total_jarak, total_rute, nama, asal, now()
-  )
-  on conflict (user_id) do update set
-    current_streak     = excluded.current_streak,
-    longest_streak     = excluded.longest_streak,
-    last_activity_date = excluded.last_activity_date,
-    total_distance_m   = excluded.total_distance_m,
-    total_rides        = excluded.total_rides,
-    full_name          = coalesce(excluded.full_name, public.user_streaks.full_name),
-    organization       = coalesce(excluded.organization, public.user_streaks.organization),
-    updated_at         = now();
+  -- Diperbarui lewat UPDATE lalu INSERT, bukan ON CONFLICT.
+  -- ON CONFLICT mensyaratkan adanya kunci unik pada user_id; bila tabelnya
+  -- dibuat tanpa kunci itu, perintahnya gagal dengan pesan yang sulit dikaitkan
+  -- ke penyebabnya. Cara ini bekerja apa pun bentuk tabelnya.
+  update public.user_streaks set
+    current_streak     = rentet_baru,
+    longest_streak     = greatest(lama_panjang, rentet_baru),
+    last_activity_date = tgl_baru,
+    total_distance_m   = total_jarak,
+    total_rides        = total_rute,
+    full_name          = coalesce(nama, full_name),
+    organization       = coalesce(asal, organization),
+    updated_at         = now()
+  where user_id = p_user_id;
+
+  ada_baris := found;
+
+  if not ada_baris then
+    insert into public.user_streaks (
+      user_id, current_streak, longest_streak, last_activity_date,
+      total_distance_m, total_rides, full_name, organization, updated_at
+    ) values (
+      p_user_id, rentet_baru, greatest(lama_panjang, rentet_baru), tgl_baru,
+      total_jarak, total_rute, nama, asal, now()
+    );
+  end if;
 end;
 $$;
 
@@ -168,7 +214,15 @@ begin
   returning id into baru;
 
   -- Rentetan hari kolaborator ikut hidup, karena ia memang bersepeda hari itu.
-  perform public.segarkan_rentetan(p_user_id);
+  --
+  -- Dibungkus penangkap galat: kalau ada masalah pada tabel rentetan, itu tidak
+  -- boleh membatalkan kolaborasi yang sudah berhasil dibuat. Lebih baik
+  -- kolaborasinya jadi dengan rentetan menyusul daripada keduanya gagal.
+  begin
+    perform public.segarkan_rentetan(p_user_id);
+  exception when others then
+    raise warning 'Rentetan gagal disegarkan untuk %: %', p_user_id, sqlerrm;
+  end;
 
   return baru;
 end;
@@ -209,7 +263,11 @@ begin
   -- dibuang. Rentetan hari yang sudah tercatat tidak ditarik kembali: hari itu
   -- memang sudah dilalui, dan mencabutnya kemudian akan membuat riwayat
   -- rentetan orang berubah-ubah tanpa sebab yang bisa mereka lihat.
-  perform public.segarkan_rentetan(p_user_id);
+  begin
+    perform public.segarkan_rentetan(p_user_id);
+  exception when others then
+    raise warning 'Rentetan gagal disegarkan untuk %: %', p_user_id, sqlerrm;
+  end;
 end;
 $$;
 
