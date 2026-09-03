@@ -61,32 +61,41 @@ export async function gambarPetaOsm(
   const miLo = Math.min(...lngs), maLo = Math.max(...lngs);
 
   // Zoom terbesar yang masih memuat seluruh jalur di dalam kotak.
-  let zoom = 17;
-  for (let z = 17; z >= 10; z--) {
-    const lebar = (lonKeX(maLo, z) - lonKeX(miLo, z)) * UKURAN_UBIN;
-    const tinggi = (latKeY(miLa, z) - latKeY(maLa, z)) * UKURAN_UBIN;
-    if (lebar <= kotak.w - pad * 2 && tinggi <= kotak.h - pad * 2) { zoom = z; break; }
-    zoom = z;
-  }
+  //
+  // Ubin diambil SATU TINGKAT lebih dekat lalu digambar setengah ukuran.
+  // Ini cara yang sama dipakai peta pada layar beresolusi tinggi: jumlah
+  // piksel peta jadi dua kali lipat pada luas yang sama, sehingga nama jalan
+  // dan garis jalannya terbaca. Tanpa ini, rute panjang memaksa zoom rendah
+  // dan petanya hanya menampilkan nama desa tanpa jalan sama sekali.
+  const LIPAT = 2;
+  const ubinTampil = UKURAN_UBIN / LIPAT;
 
-  // Titik tengah jalur, dalam satuan piksel dunia pada zoom itu.
-  const pusatX = (lonKeX(miLo, zoom) + lonKeX(maLo, zoom)) / 2 * UKURAN_UBIN;
-  const pusatY = (latKeY(miLa, zoom) + latKeY(maLa, zoom)) / 2 * UKURAN_UBIN;
+  let dasar = 10;
+  for (let z = 17; z >= 10; z--) {
+    const lebar = (lonKeX(maLo, z) - lonKeX(miLo, z)) * ubinTampil;
+    const tinggi = (latKeY(miLa, z) - latKeY(maLa, z)) * ubinTampil;
+    if (lebar <= kotak.w - pad * 2 && tinggi <= kotak.h - pad * 2) { dasar = z; break; }
+  }
+  const zoom = dasar;
+
+  // Titik tengah jalur, dalam satuan piksel tampilan pada zoom itu.
+  const pusatX = ((lonKeX(miLo, zoom) + lonKeX(maLo, zoom)) / 2) * ubinTampil;
+  const pusatY = ((latKeY(miLa, zoom) + latKeY(maLa, zoom)) / 2) * ubinTampil;
 
   // Sudut kiri atas kotak, dalam piksel dunia.
   const asalX = pusatX - kotak.w / 2;
   const asalY = pusatY - kotak.h / 2;
 
   const keKanvas = (t: Titik): [number, number] => [
-    kotak.x + lonKeX(t.lng, zoom) * UKURAN_UBIN - asalX,
-    kotak.y + latKeY(t.lat, zoom) * UKURAN_UBIN - asalY,
+    kotak.x + lonKeX(t.lng, zoom) * ubinTampil - asalX,
+    kotak.y + latKeY(t.lat, zoom) * ubinTampil - asalY,
   ];
 
   // Ubin mana saja yang tersentuh kotak ini.
-  const ubinX1 = Math.floor(asalX / UKURAN_UBIN);
-  const ubinX2 = Math.floor((asalX + kotak.w) / UKURAN_UBIN);
-  const ubinY1 = Math.floor(asalY / UKURAN_UBIN);
-  const ubinY2 = Math.floor((asalY + kotak.h) / UKURAN_UBIN);
+  const ubinX1 = Math.floor(asalX / ubinTampil);
+  const ubinX2 = Math.floor((asalX + kotak.w) / ubinTampil);
+  const ubinY1 = Math.floor(asalY / ubinTampil);
+  const ubinY2 = Math.floor((asalY + kotak.h) / ubinTampil);
   const batas = 2 ** zoom;
 
   const daftar: { z: number; x: number; y: number; kx: number; ky: number }[] = [];
@@ -95,14 +104,17 @@ export async function gambarPetaOsm(
       if (tx < 0 || ty < 0 || tx >= batas || ty >= batas) continue;
       daftar.push({
         z: zoom, x: tx, y: ty,
-        kx: kotak.x + tx * UKURAN_UBIN - asalX,
-        ky: kotak.y + ty * UKURAN_UBIN - asalY,
+        kx: kotak.x + tx * ubinTampil - asalX,
+        ky: kotak.y + ty * ubinTampil - asalY,
       });
     }
   }
 
   // Jumlah ubin dibatasi agar satu kartu tidak menarik puluhan berkas.
-  if (daftar.length > 40) return { keKanvas, zoom, berhasil: false };
+  // Batas jumlah ubin. Karena tiap ubin digambar setengah ukuran, satu kartu
+  // memerlukan lebih banyak ubin daripada sebelumnya, tapi masing-masing kecil
+  // dan tersimpan di sisi peladen sehingga tidak diminta ulang.
+  if (daftar.length > 90) return { keKanvas, zoom, berhasil: false };
 
   const gambar = await Promise.all(
     daftar.map((u) => muatGambar(`/api/ubin?z=${u.z}&x=${u.x}&y=${u.y}`)),
@@ -116,14 +128,17 @@ export async function gambarPetaOsm(
 
   gambar.forEach((im, i) => {
     if (!im) return;
-    c.drawImage(im, daftar[i].kx, daftar[i].ky, UKURAN_UBIN, UKURAN_UBIN);
+    c.drawImage(im, daftar[i].kx, daftar[i].ky, ubinTampil, ubinTampil);
     terpasang++;
   });
 
   // Peta diredam sedikit agar rutenya menonjol dan warnanya sejalan dengan
   // kartu. Tanpa ini, warna-warni peta bersaing dengan garis rute.
   if (terpasang > 0) {
-    c.fillStyle = opsi.gelap ? "rgba(10,20,16,.42)" : "rgba(255,255,255,.18)";
+    // Hanya diredam sangat tipis. Percobaan sebelumnya memakai lapisan gelap
+    // 42 persen dan hasilnya petanya tidak terbaca sama sekali - yang justru
+    // menghilangkan alasan memasang peta di kartu ini.
+    c.fillStyle = opsi.gelap ? "rgba(10,20,16,.10)" : "rgba(255,255,255,.06)";
     c.fillRect(kotak.x, kotak.y, kotak.w, kotak.h);
   }
   c.restore();

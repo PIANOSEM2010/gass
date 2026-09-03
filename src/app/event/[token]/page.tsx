@@ -20,7 +20,7 @@ export default async function HalamanDetailEvent({
   if (!e) notFound();
 
   const [{ data: peserta }, { data: sudahIkut }, { data: pengaju }] = await Promise.all([
-    supabase.from("event_participants").select("user_id").eq("event_id", String(e.id)),
+    supabase.from("event_participants").select("user_id,joined_at,finished_at").eq("event_id", String(e.id)),
     user
       ? supabase.from("event_participants").select("user_id,activity_id")
           .eq("event_id", String(e.id)).eq("user_id", user.id).maybeSingle()
@@ -28,8 +28,28 @@ export default async function HalamanDetailEvent({
     supabase.from("profiles").select("full_name").eq("id", String(e.creator_id)).maybeSingle(),
   ]);
 
+  // Nama dan foto peserta diambil terpisah, karena tabel keikutsertaan hanya
+  // menyimpan id penggunanya.
+  const idPeserta = (peserta || []).map((x) => String(x.user_id));
+  const { data: profilPeserta } = idPeserta.length
+    ? await supabase.from("profiles").select("id,full_name,organization,avatar_url").in("id", idPeserta)
+    : { data: [] };
+
+  const daftarPeserta = (peserta || []).map((x) => {
+    const pr = (profilPeserta || []).find((q) => String(q.id) === String(x.user_id));
+    return {
+      id: String(x.user_id),
+      nama: String(pr?.full_name || "Goweser"),
+      asal: String(pr?.organization || ""),
+      foto: (pr?.avatar_url as string) || null,
+      selesai: Boolean(x.finished_at),
+      gabung: (x.joined_at as string) || null,
+    };
+  }).sort((a, b) => Number(b.selesai) - Number(a.selesai) || a.nama.localeCompare(b.nama));
+
   return (
     <DetailEvent
+      peserta={daftarPeserta}
       id={String(e.id)}
       token={String(e.share_token)}
       nama={String(e.name)}

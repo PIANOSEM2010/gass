@@ -92,6 +92,10 @@ export default async function Umpan() {
       komentarTeratas: c.length ? { nama: nama(String(c[0].user_id)), body: c[0].body } : null,
       foto: kontoh ? null : (p?.avatar_url || null),
       contoh: kontoh,
+      // Hanya pemilik yang boleh menyunting catatan dan mengundang kolaborator.
+      milikSaya: Boolean(user) && String(r.user_id) === user?.id,
+      // Bila baris ini salinan kolaborasi, sebutkan pemilik perjalanan aslinya.
+      kolabDari: r.collab_by ? (namaProfil.get(String(r.collab_by))?.full_name || "goweser lain") : null,
     };
   });
 

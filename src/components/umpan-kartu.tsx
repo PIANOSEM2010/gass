@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import UbahPostingan from "@/components/ubah-postingan";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import JejakRute, { type Titik } from "@/components/jejak-rute";
@@ -22,6 +24,10 @@ export type Aktivitas = {
   komentarTeratas: { nama: string; body: string } | null;
   foto: string | null;
   contoh: boolean;
+  /** Kartu ini milik pengguna yang sedang masuk, jadi bisa disunting. */
+  milikSaya: boolean;
+  /** Nama pemilik perjalanan asli, bila kartu ini hasil kolaborasi. */
+  kolabDari: string | null;
 };
 
 const CINCIN = ["#B4FF3A", "#4ADE80", "#FBBF24", "#A78BFA", "#38BDF8", "#FB7185"];
@@ -71,6 +77,7 @@ function selisihWaktu(iso: string | null) {
 }
 
 export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: boolean }) {
+  const [bukaUbah, setBukaUbah] = useState(false);
   const [kudos, setKudos] = useState(a.kudos);
   const [sudah, setSudah] = useState(a.sudahKudos);
   const [sibuk, setSibuk] = useState(false);
@@ -107,10 +114,22 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
               </span>
             )}
           </p>
+          {a.kolabDari && (
+            <p className="text-[10.5px] text-lime-300/85 mt-0.5 truncate">
+              Gowes bareng {a.kolabDari}
+            </p>
+          )}
           <p className="text-[11px] text-slate-500 truncate">
             {a.asal}{a.asal && a.waktu ? " · " : ""}{selisihWaktu(a.waktu)}
           </p>
         </div>
+        {a.milikSaya && (
+          <button onClick={() => setBukaUbah(true)}
+            aria-label="Ubah postingan dan kolaborasi"
+            className="text-slate-500 p-1.5 rounded-lg active:bg-white/5 flex-shrink-0">
+            <Pencil size={15} />
+          </button>
+        )}
       </header>
 
       {a.catatan && <p className="px-4 pt-3 text-[13px] leading-relaxed text-slate-300">{a.catatan}</p>}
@@ -163,6 +182,14 @@ export default function KartuAktivitas({ a, masuk }: { a: Aktivitas; masuk: bool
             {a.komentarTeratas.body}
           </p>
         </div>
+      )}
+
+      {bukaUbah && (
+        <UbahPostingan
+          aktivitasId={a.id}
+          catatanAwal={a.catatan || ""}
+          tutup={() => setBukaUbah(false)}
+        />
       )}
     </article>
   );

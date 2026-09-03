@@ -433,13 +433,30 @@ export default function CatatClient({
         durasi += ruas.info.duration;
       }
 
+      const awal = daftar[0];
       const akhir = daftar[daftar.length - 1];
+
+      // Jalur melingkar: titik finish berdekatan dengan titik start.
+      //
+      // Tanpa penanda ini, deteksi "sudah sampai tujuan" langsung menyala
+      // begitu navigasi dimulai - karena pengguna memang sedang berdiri di
+      // titik tujuan - lalu panduannya berhenti sebelum mengarahkan apa pun.
+      // Dengan penanda ini, kedatangan baru dihitung setelah hampir seluruh
+      // jalur ditempuh.
+      const dLat = ((akhir.lat - awal.lat) * Math.PI) / 180;
+      const dLng = ((akhir.lng - awal.lng) * Math.PI) / 180;
+      const latRata = ((awal.lat + akhir.lat) / 2) * (Math.PI / 180);
+      const jarakUjung = Math.sqrt(
+        dLat * dLat + (dLng * Math.cos(latRata)) ** 2,
+      ) * 6371000;
+
       nav.begin({
         coords: koordinat,
         steps: langkah,
         info: { distance: jarak, duration: durasi },
         dest: { lat: akhir.lat, lng: akhir.lng },
         label,
+        isLoop: jarakUjung < 150,
       }, null);
     } catch {
       // Panduan gagal disusun bukan alasan menghentikan pencatatan gowes.

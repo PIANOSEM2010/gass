@@ -6,8 +6,10 @@ import { createClient } from "@/lib/supabase/client";
 import { gambarKartuEvent } from "@/lib/kartu-event";
 import { shareImageDataUrl } from "@/lib/native-share";
 import { type TitikEvent, cekPoint } from "@/lib/titik-event";
+import Lapisan from "@/components/lapisan";
+import { Avatar } from "@/components/umpan-kartu";
 import {
-  Share2, Download, Loader2, Users, MapPin, CalendarDays,
+  Share2, Download, Loader2, Users, MapPin, CalendarDays, X, ChevronRight,
   AlertTriangle, ShieldCheck, Play, Check,
 } from "lucide-react";
 
@@ -17,11 +19,16 @@ export default function DetailEvent(p: {
   mulai: string | null; titikKumpul: string | null; titik: TitikEvent[]; distanceM: number;
   catatanRawan: string; catatanEtika: string; status: string; pengaju: string;
   jumlahPeserta: number; sudahIkut: boolean; masuk: boolean; selesai: boolean;
+  peserta: {
+    id: string; nama: string; asal: string; foto: string | null;
+    selesai: boolean; gabung: string | null;
+  }[];
 }) {
   const router = useRouter();
   const [ikut, setIkut] = useState(p.sudahIkut);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
+  const [lihatPeserta, setLihatPeserta] = useState(false);
   const kanvasRef = useRef<HTMLCanvasElement>(null);
 
   const tautan = typeof window !== "undefined"
@@ -127,14 +134,47 @@ export default function DetailEvent(p: {
             {[
               { n: (p.distanceM / 1000).toFixed(1).replace(".", ","), l: "km jalur" },
               { n: String(cekPoint(p.titik).length), l: "cek point" },
-              { n: String(p.jumlahPeserta), l: "peserta" },
             ].map((s) => (
               <div key={s.l}>
                 <p className="display-num text-[22px] leading-none text-white">{s.n}</p>
                 <p className="eyebrow !text-[8px] text-slate-500 mt-1.5">{s.l}</p>
               </div>
             ))}
+
+            {/* Jumlah peserta sekaligus jadi tombol pembuka daftarnya. Angka
+                tanpa nama tidak banyak artinya; orang ingin tahu siapa saja
+                yang ikut sebelum memutuskan bergabung. */}
+            <button onClick={() => setLihatPeserta(true)} disabled={p.jumlahPeserta === 0}
+              className="text-left disabled:opacity-60">
+              <p className="display-num text-[22px] leading-none text-white">{p.jumlahPeserta}</p>
+              <p className="eyebrow !text-[8px] text-slate-500 mt-1.5 flex items-center gap-0.5">
+                peserta
+                {p.jumlahPeserta > 0 && (
+                  <span className="inline-flex items-center text-lime-400 normal-case tracking-normal">
+                    <ChevronRight size={11} />
+                  </span>
+                )}
+              </p>
+            </button>
           </div>
+
+          {p.jumlahPeserta > 0 && (
+            <button onClick={() => setLihatPeserta(true)}
+              className="mt-4 w-full flex items-center gap-2.5 rounded-xl border border-white/12 px-3.5 py-2.5">
+              <span className="flex -space-x-2 flex-shrink-0">
+                {p.peserta.slice(0, 4).map((o) => (
+                  <span key={o.id} className="rounded-full ring-2 ring-[var(--latar)]">
+                    <Avatar nama={o.nama} foto={o.foto} ukuran={24} />
+                  </span>
+                ))}
+              </span>
+              <span className="text-[12px] text-slate-300 flex-1 text-left truncate">
+                {p.peserta[0]?.nama.split(" ")[0]}
+                {p.jumlahPeserta > 1 ? ` dan ${p.jumlahPeserta - 1} lainnya` : ""}
+              </span>
+              <span className="display-title text-[11px] text-lime-300 flex-shrink-0">LIHAT PESERTA</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -277,6 +317,53 @@ export default function DetailEvent(p: {
           </p>
         )}
       </div>
+
+      {lihatPeserta && (
+        <Lapisan>
+          <div className="fixed inset-0 z-[4200] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
+            onClick={() => setLihatPeserta(false)}>
+            <div className="bg-[var(--kartu)] border border-lime-400/15 rounded-t-3xl sm:rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-4 pt-4 pb-3 flex-shrink-0">
+                <div>
+                  <p className="display-title text-base text-white">PESERTA EVENT</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {p.jumlahPeserta} bergabung ·{" "}
+                    {p.peserta.filter((o) => o.selesai).length} sudah menyelesaikan
+                  </p>
+                </div>
+                <button onClick={() => setLihatPeserta(false)} className="text-slate-500 p-1" aria-label="Tutup">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <ul className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 space-y-2 min-h-0">
+                {p.peserta.map((o) => (
+                  <li key={o.id}>
+                    <Link href={`/goweser/${o.id}`}
+                      className="flex items-center gap-3 rounded-xl border border-white/8 bg-[var(--kartu-2)] px-3 py-2.5">
+                      <Avatar nama={o.nama} foto={o.foto} ukuran={34} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] font-semibold text-white truncate">{o.nama}</span>
+                        {o.asal && <span className="block text-[10.5px] text-slate-500 truncate">{o.asal}</span>}
+                      </span>
+                      {o.selesai ? (
+                        <span className="rounded-full bg-lime-400/20 text-lime-300 px-2.5 py-0.5 eyebrow !text-[8px] flex-shrink-0">
+                          Selesai
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-white/8 text-slate-400 px-2.5 py-0.5 eyebrow !text-[8px] flex-shrink-0">
+                          Terdaftar
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Lapisan>
+      )}
     </div>
   );
 }
