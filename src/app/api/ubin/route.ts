@@ -1,5 +1,12 @@
 export const runtime = "nodejs";
 
+// Jangan pernah dipranata maupun disimpan oleh lapisan cache kerangka kerja.
+// Tiap ubin berbeda hanya pada parameter alamatnya, dan cache yang mengabaikan
+// parameter akan mengembalikan ubin yang sama berulang kali - yang tampak
+// sebagai peta bermotif berulang, bukan peta sungguhan.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Proksi ubin peta OpenStreetMap.
 //
 // Dipakai saat menggambar kartu event: peta latarnya perlu masuk ke dalam
@@ -37,18 +44,25 @@ export async function GET(req: Request) {
   }
 
   try {
+    // Tanpa cache kerangka kerja. Cache data bawaan menyimpan isi tanggapan
+    // dan tidak dirancang untuk berkas gambar; penyimpanan sementaranya
+    // diserahkan ke lapisan jaringan lewat tajuk Cache-Control di bawah.
     const res = await fetch(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`, {
       headers: { "User-Agent": UA, Accept: "image/png,image/*" },
-      // Disimpan sementara di sisi peladen: ubin peta praktis tidak berubah.
-      next: { revalidate: 60 * 60 * 24 * 7 },
+      cache: "no-store",
     });
-    if (!res.ok) return new Response("Ubin tidak tersedia", { status: 502 });
+    if (!res.ok) {
+      return new Response(`Ubin tidak tersedia (${res.status})`, { status: 502 });
+    }
 
     const isi = await res.arrayBuffer();
     return new Response(isi, {
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=604800, immutable",
+        "Content-Length": String(isi.byteLength),
+        "Cache-Control": "public, max-age=604800",
+        // Menegaskan bahwa tanggapan berbeda untuk alamat berbeda.
+        "X-Ubin": `${z}/${x}/${y}`,
       },
     });
   } catch {

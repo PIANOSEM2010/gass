@@ -62,6 +62,9 @@ export async function GET(req: Request) {
         return Response.json({
           ok: true,
           name,
+          // Provinsi ikut dikirim karena dipakai untuk menyusun wilayah
+          // pengguna, bukan hanya menamai satu titik.
+          provinsi: address.state || address.province || "",
           zoom,
           ...(debug ? { address, display_name: data.display_name } : {}),
         });

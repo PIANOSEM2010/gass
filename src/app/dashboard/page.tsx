@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NamaWilayah from "@/components/nama-wilayah";
 import {
   ShieldCheck, FileWarning, CheckCircle2, TriangleAlert, MapPin, Bike, Siren, ArrowLeft,
 } from "lucide-react";
@@ -149,7 +150,7 @@ export default async function DashboardPage() {
             <ShieldCheck size={28} />
             <div>
               <h1 className="text-xl font-extrabold leading-tight">Dashboard Keselamatan</h1>
-              <p className="text-xs opacity-80">Kabupaten Bulungan</p>
+              <p className="text-xs opacity-80"><NamaWilayah /></p>
             </div>
           </div>
           <div className="mt-4 bg-white/10 rounded-2xl p-4">

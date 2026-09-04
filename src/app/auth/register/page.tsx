@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import PilihWilayah from "@/components/pilih-wilayah";
+import { simpanWilayah, type Wilayah } from "@/lib/wilayah";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { masukGoogle } from "@/lib/masuk-google";
@@ -31,6 +33,7 @@ function IsiRegisterPage() {
   const [password, setPassword] = useState("");
   const [memberType, setMemberType] = useState<MemberType>("pelajar");
   const [organization, setOrganization] = useState("");
+  const [wilayah, setWilayah] = useState<Wilayah | null>(null);
   const [lihatSandi, setLihatSandi] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -78,7 +81,13 @@ function IsiRegisterPage() {
       email,
       password,
       options: {
-        data: { full_name: fullName, member_type: memberType, organization },
+        data: {
+          full_name: fullName, member_type: memberType, organization,
+          region: wilayah?.nama || null,
+          province: wilayah?.provinsi || null,
+          region_lat: wilayah?.lat || null,
+          region_lng: wilayah?.lng || null,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(tujuan)}`,
       },
     });
@@ -164,6 +173,8 @@ function IsiRegisterPage() {
             className={kelasIsian(asalSah, "pr-11")} />
           <TandaSah tampil={asalSah} />
         </div>
+
+          <PilihWilayah nilai={wilayah} ubah={(w) => { setWilayah(w); if (w) simpanWilayah(w); }} />
 
         <div className="relative">
           <input ref={emailRef} type="email" required value={email}

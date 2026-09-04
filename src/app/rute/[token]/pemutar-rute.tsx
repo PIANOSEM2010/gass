@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { namaWilayahCepat } from "@/lib/wilayah";
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Share2, Download, Loader2, Trash2, Map as MapIcon } from "lucide-react";
 import { type Titik } from "@/components/jejak-rute";
@@ -113,7 +114,7 @@ export default function PemutarRute({
     setSibuk(true); setPesan("");
     try {
       const teks =
-        `Rute ${nama}\n${(distanceM / 1000).toFixed(2).replace(".", ",")} km di Bulungan.\n` +
+        `Rute ${nama}\n${(distanceM / 1000).toFixed(2).replace(".", ",")} km.\n` +
         `Buka rutenya: ${tautanRute(token)}`;
       const r = await shareImageDataUrl(
         k.toDataURL("image/png"),
@@ -158,7 +159,7 @@ export default function PemutarRute({
     if (!kanvasRef.current || path.length < 2) return;
     gambarKartuTanah(kanvasRef.current, {
       template: "blok", warna: "terakota", rasio: "1:1", path,
-      distanceM, durationS: durationS ?? 0, elevM, place: "Bulungan",
+      distanceM, durationS: durationS ?? 0, elevM, place: namaWilayahCepat(),
       kalori: Math.round((distanceM / 1000) * 35),
       penanda: penandaTitik,
     });

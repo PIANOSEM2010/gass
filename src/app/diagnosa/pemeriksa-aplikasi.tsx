@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Check, X, Loader2, Globe, Smartphone } from "lucide-react";
+import UjiUbin from "./uji-ubin";
 
 type Baris = { nama: string; ada: boolean | null; ket: string };
 
@@ -61,6 +62,8 @@ export default function PemeriksaAplikasi({ versiWeb }: { versiWeb: string }) {
 
   return (
     <div className="space-y-4">
+      <UjiUbin />
+
       <div className="kartu-bug p-4">
         <p className="eyebrow !text-[9px] text-slate-500">Versi web yang sedang dimuat</p>
         <p className="display-num text-[20px] text-lime-300 mt-1 break-all">{versiWeb}</p>

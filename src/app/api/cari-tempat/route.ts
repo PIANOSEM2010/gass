@@ -12,9 +12,12 @@ const simpanan = new Map<string, Simpanan>();
 const UMUR_MS = 24 * 3600 * 1000;
 const UA = "BUG-BulunganUntukGoweser/1.0 (https://gass-bulungan.netlify.app)";
 
-// Kotak pembatas kasar Kabupaten Bulungan dan sekitarnya, supaya "Jl. Durian"
-// tidak tertukar dengan jalan bernama sama di Jawa.
-const KOTAK = { kiri: 116.60, atas: 3.60, kanan: 118.10, bawah: 2.20 };
+// Pencarian dibatasi di sekitar wilayah penggunanya, bukan di kotak tetap.
+//
+// Batas ini penting: tanpa itu "Jl. Durian" bisa tertukar dengan jalan bernama
+// sama di provinsi lain. Tetapi kotak yang tertulis tetap membuat aplikasi
+// hanya berguna di satu kabupaten, jadi titik pusatnya dikirim pemanggil.
+const RADIUS_DERAJAT = 0.75; // kira-kira 80 km
 
 function rapikan(nama: string): string {
   return nama.replace(/^Jalan\s+/i, "Jl. ").replace(/^Gang\s+/i, "Gg. ").trim();
@@ -25,7 +28,17 @@ export async function GET(req: Request) {
   const q = (u.searchParams.get("q") || "").trim();
   if (q.length < 3) return Response.json({ hasil: [] });
 
-  const kunci = q.toLowerCase();
+  const lat = Number(u.searchParams.get("lat"));
+  const lng = Number(u.searchParams.get("lng"));
+  const adaPusat = Number.isFinite(lat) && Number.isFinite(lng);
+  const kotak = adaPusat
+    ? {
+        kiri: lng - RADIUS_DERAJAT, kanan: lng + RADIUS_DERAJAT,
+        atas: lat + RADIUS_DERAJAT, bawah: lat - RADIUS_DERAJAT,
+      }
+    : null;
+
+  const kunci = `${q.toLowerCase()}|${adaPusat ? `${lat.toFixed(2)},${lng.toFixed(2)}` : "id"}`;
   const ada = simpanan.get(kunci);
   if (ada && Date.now() - ada.pada < UMUR_MS) {
     return Response.json({ hasil: ada.hasil, dari: "simpanan" });
@@ -35,8 +48,10 @@ export async function GET(req: Request) {
     const url =
       `https://nominatim.openstreetmap.org/search?format=jsonv2` +
       `&q=${encodeURIComponent(q)}` +
-      `&viewbox=${KOTAK.kiri},${KOTAK.atas},${KOTAK.kanan},${KOTAK.bawah}` +
-      `&bounded=1&limit=6&addressdetails=1&accept-language=id`;
+      (kotak
+        ? `&viewbox=${kotak.kiri},${kotak.atas},${kotak.kanan},${kotak.bawah}&bounded=1`
+        : "&countrycodes=id") +
+      `&limit=6&addressdetails=1&accept-language=id`;
     const res = await fetch(url, {
       headers: { "User-Agent": UA, Accept: "application/json" },
       cache: "no-store",

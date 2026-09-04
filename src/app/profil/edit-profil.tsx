@@ -1,9 +1,11 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Camera, Loader2, Check, X } from "lucide-react";
 import { Avatar } from "@/components/umpan-kartu";
+import PilihWilayah from "@/components/pilih-wilayah";
+import { simpanWilayahKeProfil, bacaWilayahTersimpan, type Wilayah } from "@/lib/wilayah";
 import Lapisan from "@/components/lapisan";
 import { kecilkanGambar } from "@/lib/kecilkan-gambar";
 
@@ -16,6 +18,8 @@ export default function EditProfil({ nama, asal, jenis, fotoUrl }: {
   const router = useRouter();
   const [buka, setBuka] = useState(false);
   const [namaBaru, setNamaBaru] = useState(nama);
+  const [wilayah, setWilayah] = useState<Wilayah | null>(null);
+  useEffect(() => { setWilayah(bacaWilayahTersimpan()); }, []);
   const [asalBaru, setAsalBaru] = useState(asal);
   const [jenisBaru, setJenisBaru] = useState(jenis);
   const [sibuk, setSibuk] = useState(false);
@@ -63,6 +67,13 @@ export default function EditProfil({ nama, asal, jenis, fotoUrl }: {
         .update({ full_name: namaBaru.trim(), organization: asalBaru.trim(), member_type: jenisBaru })
         .eq("id", user.id);
       if (error) throw error;
+
+      // Wilayah disimpan terpisah agar kegagalannya tidak membatalkan
+      // perubahan nama dan asal yang sudah berhasil.
+      if (wilayah?.nama) {
+        try { await simpanWilayahKeProfil(wilayah); }
+        catch { setPesan("Nama tersimpan, tetapi wilayah gagal diperbarui."); }
+      }
       await sb.auth.updateUser({
         data: { full_name: namaBaru.trim(), organization: asalBaru.trim(), member_type: jenisBaru },
       });
@@ -126,6 +137,8 @@ export default function EditProfil({ nama, asal, jenis, fotoUrl }: {
             </label>
             <input value={asalBaru} onChange={(e) => setAsalBaru(e.target.value)}
               className="w-full bg-[var(--isian)] border border-lime-400/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-lime-400/50" />
+
+            <PilihWilayah nilai={wilayah} ubah={setWilayah} />
 
             {pesan && <p className="text-[11.5px] text-slate-400 mt-3">{pesan}</p>}
 

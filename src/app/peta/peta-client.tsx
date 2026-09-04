@@ -20,6 +20,7 @@ import { startWatch, getPositionOnce, type WatchHandle } from "@/lib/native-geo"
 import { periksaJalurAman, type HasilPeriksa } from "@/lib/periksa-jalur";
 import TombolSimpanRute from "@/components/tombol-simpan-rute";
 import PenjagaDiam from "@/components/penjaga-diam";
+import { bacaWilayahTersimpan, muatWilayahPengguna, WILAYAH_BAWAAN } from "@/lib/wilayah";
 
 type RoadMarker = {
   id: string;
@@ -468,6 +469,16 @@ export default function PetaClient({
   // Panel bisa dikecilkan menjadi bilah tipis agar peta di baliknya terlihat.
   // Ini dipakai dua kali: sesudah rute jadi, dan selama pengguna memilih titik.
   const [panelKecil, setPanelKecil] = useState(false);
+  // Titik awal peta mengikuti wilayah pengguna, bukan Tanjung Selor untuk
+  // semua orang. Dibaca dari penyimpanan peranti supaya peta tidak menunggu
+  // jaringan, lalu disegarkan di latar.
+  const [pusatAwal, setPusatAwal] = useState<[number, number]>(() => {
+    const w = typeof window !== "undefined" ? bacaWilayahTersimpan() : null;
+    return [w?.lat ?? WILAYAH_BAWAAN.lat, w?.lng ?? WILAYAH_BAWAAN.lng];
+  });
+  useEffect(() => {
+    void muatWilayahPengguna().then((w) => setPusatAwal([w.lat, w.lng]));
+  }, []);
 
   // Navigasi kini global (NavProvider di root layout): tetap jalan saat buka fitur lain
   const nav = useNav();
@@ -1435,7 +1446,7 @@ export default function PetaClient({
       )}
 
       {/* Map */}
-      <MapContainer center={[2.8450, 117.3680]} zoom={14} style={{ height: "100%", width: "100%" }}
+      <MapContainer center={pusatAwal} zoom={14} style={{ height: "100%", width: "100%" }}
         className={petaGelap ? "ubin-malam" : ""}>
         <MapSizeFixer />
         {/* Satu sumber ubin saja: OpenStreetMap, yang memang bebas dipakai.
