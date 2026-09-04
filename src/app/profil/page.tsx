@@ -202,7 +202,14 @@ export default async function ProfilPage() {
         )}
 
         <LogoutButton />
-        <p className="mt-6 text-center text-[11px] text-slate-600">BUG {BUILD_TAG}</p>
+        {/* Kebijakan privasi harus bisa ditemukan dari dalam aplikasi, bukan
+            hanya lewat tautan di Play Store. */}
+        <div className="mt-6 flex items-center justify-center gap-3 text-[11px]">
+          <Link href="/privasi" className="text-slate-500 underline">Kebijakan Privasi</Link>
+          <span className="text-slate-700">·</span>
+          <Link href="/diagnosa" className="text-slate-500 underline">Diagnosa aplikasi</Link>
+        </div>
+        <p className="mt-3 text-center text-[11px] text-slate-600">BUG {BUILD_TAG}</p>
       </div>
     </div>
   );
